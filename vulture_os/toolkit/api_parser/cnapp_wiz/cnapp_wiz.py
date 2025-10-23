@@ -109,122 +109,122 @@ class CnappWizParser(ApiParser):
         issue_list = []
 
         # this is the graphql query string, we need double-brackets in order to format some variables inside the query
-        QUERY = f"""
-                        query GetIssuesQuery {{
-                          issuesV2(
-                            first: {limit}
-                            after: null
-                            orderBy: {{ direction: ASC, field: CREATED_AT }}
-                            filterBy: {{
-                              createdAt: {{
-                                before: "{to.isoformat()}"
-                                after: "{since.isoformat()}"
-                              }}
-                              type: [THREAT_DETECTION]
-                              status: [OPEN, IN_PROGRESS]
-                              severity: [CRITICAL, HIGH, MEDIUM, LOW]
-                            }}
-                          ) {{
-                            totalCount
-                            pageInfo {{
-                              endCursor
-                              hasNextPage
-                            }}
-                            nodes {{
-                              id
-                              remediationStrategies{{
-                                id
-                              }}
-                              aiClassification {{
-                                scenario
-                                description
-                              }}
-                              commentThread {{
-                                id
-                              }}
-                              resolvedAt
-                              reopenedAt
-                              resolutionReason
-
-                              resolutionEvidence {{
-                                id
-
-                              }}
-                              projects {{
-                                id
-
-                              }}
-                              cloudAccounts {{
-                                id
-
-                              }}
-                              cloudOrganizations {{
-                                id
-                              }}
-                              evidenceQuery
-                              entitySnapshot {{
-                                id
-                              }}
-                              resolvedBy{{
-                                user {{
-                                  id
+        graphql_query = f"""
+                            query GetIssuesQuery {{
+                              issuesV2(
+                                first: {limit}
+                                after: null
+                                orderBy: {{ direction: ASC, field: CREATED_AT }}
+                                filterBy: {{
+                                  createdAt: {{
+                                    before: "{to.isoformat()}"
+                                    after: "{since.isoformat()}"
+                                  }}
+                                  type: [THREAT_DETECTION]
+                                  status: [OPEN, IN_PROGRESS]
+                                  severity: [CRITICAL, HIGH, MEDIUM, LOW]
                                 }}
-                              }}
-                              serviceTickets {{
-                                id
-                              }}
-                              resolutionNote
-                              openReason
-                              dueAt
-                              rejectionExpiredAt
-                              statusChangedAt
-                              suggestions
-                              threatDetectionDetails {{
-                                id
-                              }}
-                              applicationServices {{
-                                id
-                              }}
-                              environments
-                              url
-                              groupingType
-                              applicationServiceIssueDetails {{
-                                issuesTotalCount
-                              }}
-                              threatCenterActors {{
-                                id
-
-                              }}
-                              responseActions {{
-                                edges {{
-                                  node {{
+                              ) {{
+                                totalCount
+                                pageInfo {{
+                                  endCursor
+                                  hasNextPage
+                                }}
+                                nodes {{
+                                  id
+                                  remediationStrategies{{
                                     id
                                   }}
+                                  aiClassification {{
+                                    scenario
+                                    description
+                                  }}
+                                  commentThread {{
+                                    id
+                                  }}
+                                  resolvedAt
+                                  reopenedAt
+                                  resolutionReason
+    
+                                  resolutionEvidence {{
+                                    id
+    
+                                  }}
+                                  projects {{
+                                    id
+    
+                                  }}
+                                  cloudAccounts {{
+                                    id
+    
+                                  }}
+                                  cloudOrganizations {{
+                                    id
+                                  }}
+                                  evidenceQuery
+                                  entitySnapshot {{
+                                    id
+                                  }}
+                                  resolvedBy{{
+                                    user {{
+                                      id
+                                    }}
+                                  }}
+                                  serviceTickets {{
+                                    id
+                                  }}
+                                  resolutionNote
+                                  openReason
+                                  dueAt
+                                  rejectionExpiredAt
+                                  statusChangedAt
+                                  suggestions
+                                  threatDetectionDetails {{
+                                    id
+                                  }}
+                                  applicationServices {{
+                                    id
+                                  }}
+                                  environments
+                                  url
+                                  groupingType
+                                  applicationServiceIssueDetails {{
+                                    issuesTotalCount
+                                  }}
+                                  threatCenterActors {{
+                                    id
+    
+                                  }}
+                                  responseActions {{
+                                    edges {{
+                                      node {{
+                                        id
+                                      }}
+                                    }}
+                                  }}
+    
+                                  assignee {{
+                                    id
+                                  }}
+                                  sourceRules {{
+                                    id
+                                  }}
+                                  status
+                                  type
+                                  severity
+                                  createdAt
+                                  updatedAt
+                                  description
+                                  entity {{
+                                    id
+                                    name
+                                    type
+                                    lastSeen
+                                  }},
                                 }}
                               }}
-
-                              assignee {{
-                                id
-                              }}
-                              sourceRules {{
-                                id
-                              }}
-                              status
-                              type
-                              severity
-                              createdAt
-                              updatedAt
-                              description
-                              entity {{
-                                id
-                                name
-                                type
-                                lastSeen
-                              }},
                             }}
-                          }}
-                        }}
-                    """
+                        """
 
         headers = {
             "Authorization": f"Bearer {self.access_token}",
@@ -232,7 +232,7 @@ class CnappWizParser(ApiParser):
         }
 
         query = {
-            "query": QUERY
+            "query": graphql_query
         }
 
         try:
@@ -261,6 +261,10 @@ class CnappWizParser(ApiParser):
                     f"[{__parser__}]:__execute_query: Status: {response.status_code}, Content: {response.content}",
                     extra={'frontend': str(self.frontend)})
             raise CnappWizAPIError("Could not fetch logs, HTTP error")
+        except KeyError as e:
+            logger.error(f"[{__parser__}]:__execute_query: error while accessing issues in response: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not fetch logs, key access error")
         except json.JSONDecodeError as e:
             logger.error(f"[{__parser__}]:__execute_query: error while decoding json result: {e}",
                          extra={'frontend': str(self.frontend)})
@@ -311,7 +315,6 @@ class CnappWizParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: Received data, update timestamp to {last_timestamp}", extra={'frontend': str(self.frontend)})
 
                 self.frontend.last_api_call = last_timestamp
-                self.frontend.save(update_fields=["last_api_call"])
             elif since < timezone.now() - timedelta(hours=24):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
@@ -319,7 +322,8 @@ class CnappWizParser(ApiParser):
                             f"to {since + timedelta(hours=1)}",
                             extra={'frontend': str(self.frontend)})
                 self.frontend.last_api_call = since + timedelta(hours=1)
-                self.frontend.save(update_fields=["last_api_call"])
+
+            self.frontend.save(update_fields=["last_api_call"])
 
         except Exception as e:
             raise CnappWizAPIError(e)
