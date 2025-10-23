@@ -240,7 +240,19 @@ $(function() {
   /* Show network only fields, or hide them */
   function show_network_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an rsyslog / File only conf */
-    if ((mode === "log" && listening_mode === "file") || (mode === "filebeat" && filebeat_listening_mode === "file" )) {
+    if (mode === "filebeat") {
+      $('.api-mode').hide();
+      $('.kafka-mode').hide();
+      $('.redis-mode').hide();
+      $('.file-mode').hide();
+      if ($('#id_filebeat_config').val().includes("%ip%")) {
+        $('.network-mode').show();
+        $('.haproxy-conf').show();
+      } else {
+        $('.network-mode').hide();
+        $('.haproxy-conf').hide();
+      }
+    } else if (mode === "log" && listening_mode === "file") {
       $('.network-mode').hide();
       $('.api-mode').hide();
       $('.kafka-mode').hide();
@@ -556,13 +568,7 @@ $(function() {
   }).trigger('change');
 
   $('#id_filebeat_config').on("change", function(e) {
-    if ($(this).val().includes("%ip%")) {
-      $('.network-mode').show();
-      $('.haproxy-conf').show();
-    } else {
-      $('.network-mode').hide();
-      $('.haproxy-conf').hide();
-    }
+    show_network_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
     show_node($('#id_mode').val(), $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
   }).trigger('change');
 
