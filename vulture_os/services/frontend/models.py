@@ -584,7 +584,8 @@ class Frontend(RsyslogQueue, models.Model):
     )
     api_parser_use_proxy = models.BooleanField(
         default=False,
-        help_text=_("Use Proxy")
+        verbose_name=_("Use Proxy"),
+        help_text=_("Use a proxy to connect to distant endpoint")
     )
     api_parser_custom_proxy = models.TextField(
         default="",
