@@ -50,7 +50,7 @@ class FilebeatSettings(models.Model):
         """
         """ Variables used by template rendering """
         return {
-            'redis_password': Cluster.get_global_config().redis_password,
+            'cluster_redis_password': Cluster.get_global_config().redis_password,
             'frontends': Frontend.objects.filter(enabled=True, mode="filebeat"),
             'tenants_name': Config.objects.get().internal_tenants.name,
             'nodes': Node.objects.exclude(name=settings.HOSTNAME),
