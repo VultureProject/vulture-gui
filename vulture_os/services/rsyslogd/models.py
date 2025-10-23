@@ -103,7 +103,7 @@ class RsyslogSettings(models.Model):
         frontends.update(Frontend.objects.filter(
             Q(mode="log", listening_mode__in=['redis', 'kafka', 'file'], node=current_node) |
             Q(mode="log", listening_mode__in=['redis', 'kafka', 'file'], node=None) |
-            Q(mode="filebeat", filebeat_listening_mode__in=["file", "api"], node=current_node) |
+            Q(mode="filebeat", node=current_node) |
             Q(mode="log", listening_mode="api")).distinct())
         return {
             'frontends': frontends,

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [API_PARSER] [SENTINEL_ONE] Fix double slashes in URLs
 - [FRONTEND] [REDIS] Correctly use the local redis password when set for rsyslog/filebeat configurations
+- [FRONTEND] [FILEBEAT] Correctly rebuild rsyslog input configurations when filebeat Listeners are created/updated
 
 
 ## [2.32.0] - 2025-10-13
