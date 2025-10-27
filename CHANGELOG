@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [GUI] [USER_SCOPES] Correctly show the edition page when clicking on a User's Scope configuration
 
 
 ## [2.33.0] - 2025-10-24
