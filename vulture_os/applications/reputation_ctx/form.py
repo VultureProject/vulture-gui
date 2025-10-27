@@ -48,7 +48,7 @@ class ReputationContextForm(ModelForm):
     class Meta:
         model = ReputationContext
         fields = ('name', 'description', 'db_type', 'method', 'url', 'verify_cert', 'post_data', 'auth_type', 'user',
-                  'password', 'tags', 'enable_hour_download')
+                  'password', 'tags')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
@@ -57,12 +57,11 @@ class ReputationContextForm(ModelForm):
             'method': Select(choices=HTTP_METHOD_CHOICES, attrs={'class': 'form-control select2'}),
             'url': TextInput(attrs={'class': 'form-control'}),
             'verify_cert': CheckboxInput(attrs={'class': "form-control js-switch"}),
-            'enable_hour_download': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'post_data': TextInput(attrs={'class': 'form-control'}),
             'auth_type': Select(choices=HTTP_AUTH_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
             'user': TextInput(attrs={'class': 'form-control'}),
-            'password': TextInput(attrs={'type':'password', 'class': 'form-control'}),
-            'tags': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+            'password': TextInput(attrs={'class': 'form-control'}),
+            'tags': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"})
         }
 
     def __init__(self, *args, **kwargs):
@@ -71,7 +70,7 @@ class ReputationContextForm(ModelForm):
         for field_name in ['auth_type', 'verify_cert', 'post_data', 'user', 'password', 'tags']:
             self.fields[field_name].required = False
         # Set readonly if internal reputation context
-        if kwargs.get('instance') and kwargs['instance'].internal:
+        if kwargs.get('instance') and kwargs.get('instance').internal:
             for field in self.fields:
                 self.fields[field].widget.attrs['readonly'] = True
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
