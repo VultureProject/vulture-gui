@@ -61,7 +61,7 @@
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
                   <li><a href="#tab_network" data-toggle="tab" class="network-mode">{% translate "Listeners" %}</a></li>
-                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode filebeat-api-mode">{% translate "Vendor API" %}</a></li>
+                  <li><a href="#tab_log_settings" data-toggle="tab" class="api-mode filebeat-mode">{% translate "LOG Settings" %}</a></li>
                   <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% translate "HTTP Options" %}</a></li>
                   <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% translate "HTTP Headers" %}</a></li>
                   <li><a href="#tab_enrichment" data-toggle="tab" class="logging">{% translate "Logs Enrichment" %}</a></li>
@@ -161,17 +161,6 @@
                     <div class="row filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% translate "Filebeat Listening mode" %}</label>
-                          <div class="col-sm-5">
-                            {{form.filebeat_listening_mode}}
-                            {{form.filebeat_listening_mode.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row filebeat-mode -->
-                    <div class="row filebeat-mode">
-                      <div class="col-md-12">
-                        <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Filebeat Module" %}</label>
                           <div class="col-sm-5">
                             {{form.filebeat_module}}
@@ -179,8 +168,15 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row filebeat-mode -->
-                    <div class="row filebeat-mode">
+                      <div class="col-md-12" id="filebeat-input-div">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% translate "Filebeat Input" %}</label>
+                          <div class="col-sm-5">
+                            {{form.filebeat_listening_mode}}
+                            {{form.filebeat_listening_mode.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Filebeat Configuration" %}</label>
@@ -1107,7 +1103,7 @@
                       </div>
                     </div>
                   </div> <!-- /.tab-pane tab_custom_haproxy -->
-                  <div class="tab-pane" id="tab_api_client">
+                  <div class="tab-pane" id="tab_log_settings">
                     <div class="row">
                       <div class="col-md-12 api-mode">
                         <div class="form-group">
@@ -1118,7 +1114,7 @@
                           </div>
                         </div>
                       </div>
-                      <div class="col-md-12 api-mode filebeat-api-mode">
+                      <div class="col-md-12 api-mode filebeat-mode">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{% translate "Use proxy" %}</label>
                           <div class="col-sm-5">
@@ -1136,1442 +1132,1465 @@
                           </div>
                         </div>
                       </div>
-                      <div class="col-md-12 api-mode filebeat-api-mode">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.api_parser_verify_ssl.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.api_parser_verify_ssl }}
-                            {{ form.api_parser_verify_ssl.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12" id="api_parser_custom_certificate">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.api_parser_custom_certificate.label }}</label>
-                          <div class="col-sm-5">
-                            {{form.api_parser_custom_certificate}}
-                            {{form.api_parser_custom_certificate.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_office_365_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.office365_tenant_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.office365_tenant_id }}
-                            {{ form.office365_tenant_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.office365_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.office365_client_id }}
-                            {{ form.office365_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.office365_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.office365_client_secret }}
-                            {{ form.office365_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_akamai_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.akamai_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.akamai_host }}
-                            {{ form.akamai_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.akamai_config_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.akamai_config_id }}
-                            {{ form.akamai_config_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.akamai_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.akamai_client_secret }}
-                            {{ form.akamai_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.akamai_access_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.akamai_access_token }}
-                            {{ form.akamai_access_token.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.akamai_client_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.akamai_client_token }}
-                            {{ form.akamai_client_token.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_forcepoint_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.forcepoint_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.forcepoint_host }}
-                            {{ form.forcepoint_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.forcepoint_username.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.forcepoint_username }}
-                            {{ form.forcepoint_username.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.forcepoint_password.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.forcepoint_password }}
-                            {{ form.forcepoint_password.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_imperva_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.imperva_base_url.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.imperva_base_url }}
-                            {{ form.imperva_base_url.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.imperva_api_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.imperva_api_key }}
-                            {{ form.imperva_api_key.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.imperva_api_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.imperva_api_id }}
-                            {{ form.imperva_api_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.imperva_private_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.imperva_private_key }}
-                            {{ form.imperva_private_key.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_symantec_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.symantec_username.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.symantec_username }}
-                            {{ form.symantec_username.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.symantec_password.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.symantec_password }}
-                            {{ form.symantec_password.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_reachfive_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.reachfive_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.reachfive_host }}
-                            {{ form.reachfive_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.reachfive_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.reachfive_client_id }}
-                            {{ form.reachfive_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.reachfive_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.reachfive_client_secret }}
-                            {{ form.reachfive_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_mongodb_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.mongodb_api_user.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.mongodb_api_user }}
-                            {{ form.mongodb_api_user.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.mongodb_api_password.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.mongodb_api_password }}
-                            {{ form.mongodb_api_password.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.mongodb_api_group_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.mongodb_api_group_id }}
-                            {{ form.mongodb_api_group_id.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_defender_atp_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.mdatp_api_tenant.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.mdatp_api_tenant }}
-                            {{ form.mdatp_api_tenant.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.mdatp_api_appid.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.mdatp_api_appid }}
-                            {{ form.mdatp_api_appid.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.mdatp_api_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.mdatp_api_secret }}
-                            {{ form.mdatp_api_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_cortex_xdr_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cortex_xdr_host }}
-                            {{ form.cortex_xdr_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_apikey_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cortex_xdr_apikey_id }}
-                            {{ form.cortex_xdr_apikey_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cortex_xdr_apikey }}
-                            {{ form.cortex_xdr_apikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_advanced_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cortex_xdr_advanced_token }}
-                            {{ form.cortex_xdr_advanced_token.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_cisco_meraki_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_meraki_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_meraki_apikey }}
-                            {{ form.cisco_meraki_apikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_meraki_get_security_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_meraki_get_security_logs }}
-                            {{ form.cisco_meraki_get_security_logs.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_meraki_get_configuration_changes_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_meraki_get_configuration_changes_logs }}
-                            {{ form.cisco_meraki_get_configuration_changes_logs.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_cybereason_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cybereason_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cybereason_host }}
-                            {{ form.cybereason_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cybereason_username.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cybereason_username }}
-                            {{ form.cybereason_username.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cybereason_password.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cybereason_password }}
-                            {{ form.cybereason_password.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_aws_bucket_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.aws_access_key_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.aws_access_key_id }}
-                            {{ form.aws_access_key_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.aws_secret_access_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.aws_secret_access_key }}
-                            {{ form.aws_secret_access_key.errors|safe }}
-                          </div>
-                        </div>
-
-                        <div class="text-center mar-btm">
-                          <button class="btn btn-primary fetch_data_api_parser" data-target="id_aws_bucket_name" data-type="select" type="button">
-                            {% translate "Fetch buckets name" %}
-                          </button>
-                        </div>
-
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.aws_bucket_name.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.aws_bucket_name }}
-                            {{ form.aws_bucket_name.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_proofpoint_tap_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_tap_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_tap_host }}
-                            {{ form.proofpoint_tap_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_tap_endpoint.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_tap_endpoint }}
-                            {{ form.proofpoint_tap_endpoint.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_tap_principal.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_tap_principal }}
-                            {{ form.proofpoint_tap_principal.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_tap_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_tap_secret }}
-                            {{ form.proofpoint_tap_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_sentinel_one_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_host }}
-                            {{ form.sentinel_one_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_apikey }}
-                            {{ form.sentinel_one_apikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_account_type.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_account_type }}
-                            {{ form.sentinel_one_account_type.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_carbon_black_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.carbon_black_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.carbon_black_host }}
-                            {{ form.carbon_black_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.carbon_black_orgkey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.carbon_black_orgkey }}
-                            {{ form.carbon_black_orgkey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.carbon_black_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.carbon_black_apikey }}
-                            {{ form.carbon_black_apikey.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_rapid7_idr_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.rapid7_idr_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.rapid7_idr_host }}
-                            {{ form.rapid7_idr_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.rapid7_idr_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.rapid7_idr_apikey }}
-                            {{ form.rapid7_idr_apikey.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_harfanglab_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.harfanglab_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.harfanglab_host }}
-                            {{ form.harfanglab_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.harfanglab_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.harfanglab_apikey }}
-                            {{ form.harfanglab_apikey.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_vadesecure_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vadesecure_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vadesecure_host }}
-                            {{ form.vadesecure_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vadesecure_login.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vadesecure_login }}
-                            {{ form.vadesecure_login.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vadesecure_password.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vadesecure_password }}
-                            {{ form.vadesecure_password.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_nozomi_probe_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.nozomi_probe_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.nozomi_probe_host }}
-                            {{ form.nozomi_probe_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.nozomi_probe_login.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.nozomi_probe_login }}
-                            {{ form.nozomi_probe_login.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.nozomi_probe_password.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.nozomi_probe_password }}
-                            {{ form.nozomi_probe_password.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_netskope_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.netskope_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.netskope_host }}
-                            {{ form.netskope_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.netskope_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.netskope_apikey }}
-                            {{ form.netskope_apikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.netskope_get_page_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.netskope_get_page_logs }}
-                            {{ form.netskope_get_page_logs.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.netskope_get_network_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.netskope_get_network_logs }}
-                            {{ form.netskope_get_network_logs.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.netskope_get_application_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.netskope_get_application_logs }}
-                            {{ form.netskope_get_application_logs.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_defender_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.defender_token_endpoint.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.defender_token_endpoint }}
-                            {{ form.defender_token_endpoint.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.defender_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.defender_client_id }}
-                            {{ form.defender_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.defender_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.defender_client_secret }}
-                            {{ form.defender_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_crowdstrike_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.crowdstrike_request_incidents.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.crowdstrike_request_incidents }}
-                            {{ form.crowdstrike_request_incidents.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.crowdstrike_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.crowdstrike_host }}
-                            {{ form.crowdstrike_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.crowdstrike_client.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.crowdstrike_client }}
-                            {{ form.crowdstrike_client.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.crowdstrike_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.crowdstrike_client_id }}
-                            {{ form.crowdstrike_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.crowdstrike_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.crowdstrike_client_secret }}
-                            {{ form.crowdstrike_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_vadesecure_o365_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vadesecure_o365_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vadesecure_o365_host }}
-                            {{ form.vadesecure_o365_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vadesecure_o365_tenant.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vadesecure_o365_tenant }}
-                            {{ form.vadesecure_o365_tenant.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vadesecure_o365_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vadesecure_o365_client_id }}
-                            {{ form.vadesecure_o365_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vadesecure_o365_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vadesecure_o365_client_secret }}
-                            {{ form.vadesecure_o365_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_ms_sentinel_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_tenant_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ms_sentinel_tenant_id }}
-                            {{ form.ms_sentinel_tenant_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_appid.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ms_sentinel_appid }}
-                            {{ form.ms_sentinel_appid.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_appsecret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ms_sentinel_appsecret }}
-                            {{ form.ms_sentinel_appsecret.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_subscription_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ms_sentinel_subscription_id }}
-                            {{ form.ms_sentinel_subscription_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_resource_group.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ms_sentinel_resource_group }}
-                            {{ form.ms_sentinel_resource_group.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_workspace.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ms_sentinel_workspace }}
-                            {{ form.ms_sentinel_workspace.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_waf_cloudflare_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.waf_cloudflare_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_cloudflare_apikey }}
-                            {{ form.waf_cloudflare_apikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.waf_cloudflare_zoneid.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_cloudflare_zoneid }}
-                            {{ form.waf_cloudflare_zoneid.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_sophos_cloud_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sophos_cloud_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sophos_cloud_client_id }}
-                            {{ form.sophos_cloud_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sophos_cloud_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sophos_cloud_client_secret }}
-                            {{ form.sophos_cloud_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sophos_cloud_tenant_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sophos_cloud_tenant_id }}
-                            {{ form.sophos_cloud_tenant_id.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_blackberry_cylance_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.blackberry_cylance_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.blackberry_cylance_host }}
-                            {{ form.blackberry_cylance_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.blackberry_cylance_tenant.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.blackberry_cylance_tenant }}
-                            {{ form.blackberry_cylance_tenant.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.blackberry_cylance_app_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.blackberry_cylance_app_id }}
-                            {{ form.blackberry_cylance_app_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.blackberry_cylance_app_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.blackberry_cylance_app_secret }}
-                            {{ form.blackberry_cylance_app_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_proofpoint_pod_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_pod_uri.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_pod_uri }}
-                            {{ form.proofpoint_pod_uri.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_pod_cluster_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_pod_cluster_id }}
-                            {{ form.proofpoint_pod_cluster_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_pod_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_pod_token }}
-                            {{ form.proofpoint_pod_token.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_gsuite_alertcenter_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.gsuite_alertcenter_json_conf.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.gsuite_alertcenter_json_conf }}
-                            {{ form.gsuite_alertcenter_json_conf.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.gsuite_alertcenter_admin_mail.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.gsuite_alertcenter_admin_mail }}
-                            {{ form.gsuite_alertcenter_admin_mail.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_trendmicro_worryfree_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.trendmicro_worryfree_access_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.trendmicro_worryfree_access_token }}
-                            {{ form.trendmicro_worryfree_access_token.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.trendmicro_worryfree_secret_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.trendmicro_worryfree_secret_key }}
-                            {{ form.trendmicro_worryfree_secret_key.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">{{ form.trendmicro_worryfree_server_name.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.trendmicro_worryfree_server_name }}
-                            {{ form.trendmicro_worryfree_server_name.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.trendmicro_worryfree_server_port.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.trendmicro_worryfree_server_port }}
-                            {{ form.trendmicro_worryfree_server_port.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_safenet_row">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">{{ form.safenet_tenant_code.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.safenet_tenant_code }}
-                            {{ form.safenet_tenant_code.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.safenet_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.safenet_apikey }}
-                            {{ form.safenet_apikey.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_signalsciences_ngwaf_row">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">{{ form.signalsciences_ngwaf_email.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.signalsciences_ngwaf_email }}
-                            {{ form.signalsciences_ngwaf_email.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.signalsciences_ngwaf_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.signalsciences_ngwaf_token }}
-                            {{ form.signalsciences_ngwaf_token.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.signalsciences_ngwaf_corp_name.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.signalsciences_ngwaf_corp_name }}
-                            {{ form.signalsciences_ngwaf_corp_name.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.signalsciences_ngwaf_site_name.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.signalsciences_ngwaf_site_name }}
-                            {{ form.signalsciences_ngwaf_site_name.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_proofpoint_casb_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_casb_api_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_casb_api_key }}
-                            {{ form.proofpoint_casb_api_key.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_casb_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_casb_client_id }}
-                            {{ form.proofpoint_casb_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_casb_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_casb_client_secret }}
-                            {{ form.proofpoint_casb_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_proofpoint_trap_row">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">{{ form.proofpoint_trap_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_trap_host }}
-                            {{ form.proofpoint_trap_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_trap_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_trap_apikey }}
-                            {{ form.proofpoint_trap_apikey.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_waf_cloud_protector_row">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_cloud_protector_host }}
-                            {{ form.waf_cloud_protector_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_api_key_pub.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_cloud_protector_api_key_pub }}
-                            {{ form.waf_cloud_protector_api_key_pub.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_api_key_priv.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_cloud_protector_api_key_priv }}
-                            {{ form.waf_cloud_protector_api_key_priv.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_provider.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_cloud_protector_provider }}
-                            {{ form.waf_cloud_protector_provider.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_tenant.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_cloud_protector_tenant }}
-                            {{ form.waf_cloud_protector_tenant.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_servers.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_cloud_protector_servers }}
-                            {{ form.waf_cloud_protector_servers.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_trendmicro_visionone_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.trendmicro_visionone_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.trendmicro_visionone_token }}
-                            {{ form.trendmicro_visionone_token.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_cisco_duo_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_duo_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_duo_host }}
-                            {{ form.cisco_duo_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_duo_ikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_duo_ikey }}
-                            {{ form.cisco_duo_ikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_duo_skey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_duo_skey }}
-                            {{ form.cisco_duo_skey.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_sentinel_one_mobile_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_mobile_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_mobile_host }}
-                            {{ form.sentinel_one_mobile_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_mobile_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_mobile_apikey }}
-                            {{ form.sentinel_one_mobile_apikey.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_sentinel_one_singularity_mobile_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_singularity_mobile_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_singularity_mobile_host }}
-                            {{ form.sentinel_one_singularity_mobile_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_singularity_mobile_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_singularity_mobile_client_id }}
-                            {{ form.sentinel_one_singularity_mobile_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_singularity_mobile_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_singularity_mobile_client_secret }}
-                            {{ form.sentinel_one_singularity_mobile_client_secret.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_csc_domainmanager_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.csc_domainmanager_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.csc_domainmanager_apikey }}
-                            {{ form.csc_domainmanager_apikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.csc_domainmanager_authorization.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.csc_domainmanager_authorization }}
-                            {{ form.csc_domainmanager_authorization.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_retarus_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.retarus_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.retarus_token }}
-                            {{ form.retarus_token.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.retarus_channel.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.retarus_channel }}
-                            {{ form.retarus_channel.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_vectra_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vectra_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vectra_host }}
-                            {{ form.vectra_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vectra_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vectra_client_id }}
-                            {{ form.vectra_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.vectra_secret_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.vectra_secret_key }}
-                            {{ form.vectra_secret_key.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_apex_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.apex_server_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.apex_server_host }}
-                            {{ form.apex_server_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.apex_api_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.apex_api_key }}
-                            {{ form.apex_api_key.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.apex_application_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.apex_application_id }}
-                            {{ form.apex_application_id.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_gatewatcher_alerts_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.gatewatcher_alerts_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.gatewatcher_alerts_host }}
-                            {{ form.gatewatcher_alerts_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.gatewatcher_alerts_api_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.gatewatcher_alerts_api_key }}
-                            {{ form.gatewatcher_alerts_api_key.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_cisco_umbrella_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_umbrella_client_id }}
-                            {{ form.cisco_umbrella_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_secret_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_umbrella_secret_key }}
-                            {{ form.cisco_umbrella_secret_key.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_waf_barracuda_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.waf_barracuda_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.waf_barracuda_token }}
-                            {{ form.waf_barracuda_token.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_beyondtrust_pra_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_pra_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_pra_client_id }}
-                            {{ form.beyondtrust_pra_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_pra_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_pra_secret }}
-                            {{ form.beyondtrust_pra_secret.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_pra_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_pra_host }}
-                            {{ form.beyondtrust_pra_host.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_lockself_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.lockself_x_ls_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.lockself_x_ls_token }}
-                            {{ form.lockself_x_ls_token.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.lockself_x_auth_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.lockself_x_auth_token }}
-                            {{ form.lockself_x_auth_token.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.lockself_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.lockself_host }}
-                            {{ form.lockself_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.lockself_organization_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.lockself_organization_id }}
-                            {{ form.lockself_organization_id.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_cisco_umbrella_managed_org_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_api_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_umbrella_managed_org_api_key }}
-                            {{ form.cisco_umbrella_managed_org_api_key.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_secret_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_umbrella_managed_org_secret_key }}
-                            {{ form.cisco_umbrella_managed_org_secret_key.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_customers_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_umbrella_managed_org_customers_id }}
-                            {{ form.cisco_umbrella_managed_org_customers_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_get_dns.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_umbrella_managed_org_get_dns }}
-                            {{ form.cisco_umbrella_managed_org_get_dns.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_get_proxy.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.cisco_umbrella_managed_org_get_proxy }}
-                            {{ form.cisco_umbrella_managed_org_get_proxy.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_catonetworks_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.catonetworks_api_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.catonetworks_api_key }}
-                            {{ form.catonetworks_api_key.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.catonetworks_account_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.catonetworks_account_id }}
-                            {{ form.catonetworks_account_id.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_infoblox_threat_defense_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.infoblox_threat_defense_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.infoblox_threat_defense_host }}
-                            {{ form.infoblox_threat_defense_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.infoblox_threat_defense_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.infoblox_threat_defense_token }}
-                            {{ form.infoblox_threat_defense_token.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_beyondtrust_reportings_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_reportings_client_id }}
-                            {{ form.beyondtrust_reportings_client_id.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_reportings_secret }}
-                            {{ form.beyondtrust_reportings_secret.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_reportings_host }}
-                            {{ form.beyondtrust_reportings_host.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_team_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_reportings_get_team_logs }}
-                            {{ form.beyondtrust_reportings_get_team_logs.errors|safe }}
-                          </div>
-                        </div>
+                      <div class="api-mode">
+                        <div class="col-md-12">
                           <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_access_session_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_reportings_get_access_session_logs }}
-                            {{ form.beyondtrust_reportings_get_access_session_logs.errors|safe }}
+                            <label class="col-sm-3 control-label">{{ form.api_parser_verify_ssl.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.api_parser_verify_ssl }}
+                              {{ form.api_parser_verify_ssl.errors|safe }}
+                            </div>
                           </div>
                         </div>
+                        <div class="col-md-12" id="api_parser_custom_certificate">
                           <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_vault_account_activity_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_reportings_get_vault_account_activity_logs }}
-                            {{ form.beyondtrust_reportings_get_vault_account_activity_logs.errors|safe }}
+                            <label class="col-sm-3 control-label">{{ form.api_parser_custom_certificate.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.api_parser_custom_certificate}}
+                              {{form.api_parser_custom_certificate.errors|safe}}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_support_session_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.beyondtrust_reportings_get_support_session_logs }}
-                            {{ form.beyondtrust_reportings_get_support_session_logs.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_office_365_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.office365_tenant_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.office365_tenant_id }}
+                              {{ form.office365_tenant_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.office365_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.office365_client_id }}
+                              {{ form.office365_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.office365_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.office365_client_secret }}
+                              {{ form.office365_client_secret.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_varonis_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.varonis_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.varonis_host }}
-                            {{ form.varonis_host.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_akamai_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.akamai_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.akamai_host }}
+                              {{ form.akamai_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.akamai_config_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.akamai_config_id }}
+                              {{ form.akamai_config_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.akamai_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.akamai_client_secret }}
+                              {{ form.akamai_client_secret.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.akamai_access_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.akamai_access_token }}
+                              {{ form.akamai_access_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.akamai_client_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.akamai_client_token }}
+                              {{ form.akamai_client_token.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.varonis_api_key.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.varonis_api_key }}
-                            {{ form.varonis_api_key.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_forcepoint_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.forcepoint_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.forcepoint_host }}
+                              {{ form.forcepoint_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.forcepoint_username.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.forcepoint_username }}
+                              {{ form.forcepoint_username.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.forcepoint_password.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.forcepoint_password }}
+                              {{ form.forcepoint_password.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_armis_centrix_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.armis_centrix_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.armis_centrix_host }}
-                            {{ form.armis_centrix_host.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_imperva_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.imperva_base_url.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.imperva_base_url }}
+                              {{ form.imperva_base_url.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.imperva_api_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.imperva_api_key }}
+                              {{ form.imperva_api_key.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.imperva_api_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.imperva_api_id }}
+                              {{ form.imperva_api_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.imperva_private_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.imperva_private_key }}
+                              {{ form.imperva_private_key.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.armis_centrix_secretkey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.armis_centrix_secretkey }}
-                            {{ form.armis_centrix_secretkey.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_symantec_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.symantec_username.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.symantec_username }}
+                              {{ form.symantec_username.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.symantec_password.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.symantec_password }}
+                              {{ form.symantec_password.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.armis_centrix_get_activity_logs.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.armis_centrix_get_activity_logs }}
-                            {{ form.armis_centrix_get_activity_logs.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_reachfive_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.reachfive_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.reachfive_host }}
+                              {{ form.reachfive_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.reachfive_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.reachfive_client_id }}
+                              {{ form.reachfive_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.reachfive_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.reachfive_client_secret }}
+                              {{ form.reachfive_client_secret.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_perception_point_x_ray_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.perception_point_x_ray_host }}
-                            {{ form.perception_point_x_ray_host.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_mongodb_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.mongodb_api_user.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.mongodb_api_user }}
+                              {{ form.mongodb_api_user.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.mongodb_api_password.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.mongodb_api_password }}
+                              {{ form.mongodb_api_password.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.mongodb_api_group_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.mongodb_api_group_id }}
+                              {{ form.mongodb_api_group_id.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.perception_point_x_ray_token }}
-                            {{ form.perception_point_x_ray_token.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_defender_atp_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.mdatp_api_tenant.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.mdatp_api_tenant }}
+                              {{ form.mdatp_api_tenant.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.mdatp_api_appid.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.mdatp_api_appid }}
+                              {{ form.mdatp_api_appid.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.mdatp_api_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.mdatp_api_secret }}
+                              {{ form.mdatp_api_secret.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_extrahop_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.extrahop_host.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.extrahop_host }}
-                            {{ form.extrahop_host.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_cortex_xdr_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cortex_xdr_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cortex_xdr_host }}
+                              {{ form.cortex_xdr_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cortex_xdr_apikey_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cortex_xdr_apikey_id }}
+                              {{ form.cortex_xdr_apikey_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cortex_xdr_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cortex_xdr_apikey }}
+                              {{ form.cortex_xdr_apikey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cortex_xdr_advanced_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cortex_xdr_advanced_token }}
+                              {{ form.cortex_xdr_advanced_token.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.extrahop_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.extrahop_id }}
-                            {{ form.extrahop_id.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_cisco_meraki_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_meraki_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_meraki_apikey }}
+                              {{ form.cisco_meraki_apikey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_meraki_get_security_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_meraki_get_security_logs }}
+                              {{ form.cisco_meraki_get_security_logs.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_meraki_get_configuration_changes_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_meraki_get_configuration_changes_logs }}
+                              {{ form.cisco_meraki_get_configuration_changes_logs.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.extrahop_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.extrahop_secret }}
-                            {{ form.extrahop_secret.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_cybereason_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cybereason_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cybereason_host }}
+                              {{ form.cybereason_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cybereason_username.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cybereason_username }}
+                              {{ form.cybereason_username.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cybereason_password.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cybereason_password }}
+                              {{ form.cybereason_password.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_hornetsecurity_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.hornetsecurity_app_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.hornetsecurity_app_id }}
-                            {{ form.hornetsecurity_app_id.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_aws_bucket_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.aws_access_key_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.aws_access_key_id }}
+                              {{ form.aws_access_key_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.aws_secret_access_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.aws_secret_access_key }}
+                              {{ form.aws_secret_access_key.errors|safe }}
+                            </div>
+                          </div>
+
+                          <div class="text-center mar-btm">
+                            <button class="btn btn-primary fetch_data_api_parser" data-target="id_aws_bucket_name" data-type="select" type="button">
+                              {% translate "Fetch buckets name" %}
+                            </button>
+                          </div>
+
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.aws_bucket_name.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.aws_bucket_name }}
+                              {{ form.aws_bucket_name.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.hornetsecurity_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.hornetsecurity_token }}
-                            {{ form.hornetsecurity_token.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_proofpoint_tap_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_tap_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_tap_host }}
+                              {{ form.proofpoint_tap_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_tap_endpoint.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_tap_endpoint }}
+                              {{ form.proofpoint_tap_endpoint.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_tap_principal.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_tap_principal }}
+                              {{ form.proofpoint_tap_principal.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_tap_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_tap_secret }}
+                              {{ form.proofpoint_tap_secret.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_ubika_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ubika_base_refresh_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ubika_base_refresh_token }}
-                            {{ form.ubika_base_refresh_token.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_sentinel_one_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_host }}
+                              {{ form.sentinel_one_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_apikey }}
+                              {{ form.sentinel_one_apikey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_account_type.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_account_type }}
+                              {{ form.sentinel_one_account_type.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ubika_namespaces.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ubika_namespaces }}
-                            {{ form.ubika_namespaces.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_carbon_black_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.carbon_black_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.carbon_black_host }}
+                              {{ form.carbon_black_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.carbon_black_orgkey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.carbon_black_orgkey }}
+                              {{ form.carbon_black_orgkey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.carbon_black_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.carbon_black_apikey }}
+                              {{ form.carbon_black_apikey.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_sentinel_one_graph_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_graph_token.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_graph_token }}
-                            {{ form.sentinel_one_graph_token.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_rapid7_idr_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.rapid7_idr_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.rapid7_idr_host }}
+                              {{ form.rapid7_idr_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.rapid7_idr_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.rapid7_idr_apikey }}
+                              {{ form.rapid7_idr_apikey.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.sentinel_one_graph_console_url.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.sentinel_one_graph_console_url }}
-                            {{ form.sentinel_one_graph_console_url.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_harfanglab_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.harfanglab_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.harfanglab_host }}
+                              {{ form.harfanglab_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.harfanglab_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.harfanglab_apikey }}
+                              {{ form.harfanglab_apikey.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api_clients_row" id="api_messagetrace_o365_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.messagetrace_o365_tenant_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.messagetrace_o365_tenant_id }}
-                            {{ form.messagetrace_o365_tenant_id.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_vadesecure_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vadesecure_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vadesecure_host }}
+                              {{ form.vadesecure_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vadesecure_login.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vadesecure_login }}
+                              {{ form.vadesecure_login.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vadesecure_password.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vadesecure_password }}
+                              {{ form.vadesecure_password.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.messagetrace_o365_client_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.messagetrace_o365_client_id }}
-                            {{ form.messagetrace_o365_client_id.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_nozomi_probe_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.nozomi_probe_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.nozomi_probe_host }}
+                              {{ form.nozomi_probe_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.nozomi_probe_login.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.nozomi_probe_login }}
+                              {{ form.nozomi_probe_login.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.nozomi_probe_password.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.nozomi_probe_password }}
+                              {{ form.nozomi_probe_password.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.messagetrace_o365_client_secret.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.messagetrace_o365_client_secret }}
-                            {{ form.messagetrace_o365_client_secret.errors|safe }}
+                        <div class="col-md-12 api_clients_row" id="api_netskope_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.netskope_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.netskope_host }}
+                              {{ form.netskope_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.netskope_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.netskope_apikey }}
+                              {{ form.netskope_apikey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.netskope_get_page_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.netskope_get_page_logs }}
+                              {{ form.netskope_get_page_logs.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.netskope_get_network_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.netskope_get_network_logs }}
+                              {{ form.netskope_get_network_logs.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.netskope_get_application_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.netskope_get_application_logs }}
+                              {{ form.netskope_get_application_logs.errors|safe }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="col-md-12 api-mode">
-                        <div class="text-center mar-btm">
-                          <button class="btn btn-warning" id="test_api_parser" type="button">
-                            {% translate "Test Configuration" %}
-                          </button>
-                          <input type="hidden" name="api_parser_has_been_tested" id="id_api_parser_has_been_tested" value="{% if object_id %}1{% else %}0{% endif %}"/>
+                        <div class="col-md-12 api_clients_row" id="api_defender_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.defender_token_endpoint.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.defender_token_endpoint }}
+                              {{ form.defender_token_endpoint.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.defender_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.defender_client_id }}
+                              {{ form.defender_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.defender_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.defender_client_secret }}
+                              {{ form.defender_client_secret.errors|safe }}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                        <div class="col-md-12 api_clients_row" id="api_crowdstrike_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.crowdstrike_request_incidents.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.crowdstrike_request_incidents }}
+                              {{ form.crowdstrike_request_incidents.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.crowdstrike_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.crowdstrike_host }}
+                              {{ form.crowdstrike_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.crowdstrike_client.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.crowdstrike_client }}
+                              {{ form.crowdstrike_client.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.crowdstrike_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.crowdstrike_client_id }}
+                              {{ form.crowdstrike_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.crowdstrike_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.crowdstrike_client_secret }}
+                              {{ form.crowdstrike_client_secret.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_vadesecure_o365_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vadesecure_o365_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vadesecure_o365_host }}
+                              {{ form.vadesecure_o365_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vadesecure_o365_tenant.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vadesecure_o365_tenant }}
+                              {{ form.vadesecure_o365_tenant.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vadesecure_o365_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vadesecure_o365_client_id }}
+                              {{ form.vadesecure_o365_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vadesecure_o365_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vadesecure_o365_client_secret }}
+                              {{ form.vadesecure_o365_client_secret.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_ms_sentinel_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ms_sentinel_tenant_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ms_sentinel_tenant_id }}
+                              {{ form.ms_sentinel_tenant_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ms_sentinel_appid.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ms_sentinel_appid }}
+                              {{ form.ms_sentinel_appid.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ms_sentinel_appsecret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ms_sentinel_appsecret }}
+                              {{ form.ms_sentinel_appsecret.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ms_sentinel_subscription_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ms_sentinel_subscription_id }}
+                              {{ form.ms_sentinel_subscription_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ms_sentinel_resource_group.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ms_sentinel_resource_group }}
+                              {{ form.ms_sentinel_resource_group.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ms_sentinel_workspace.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ms_sentinel_workspace }}
+                              {{ form.ms_sentinel_workspace.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_waf_cloudflare_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_cloudflare_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloudflare_apikey }}
+                              {{ form.waf_cloudflare_apikey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_cloudflare_zoneid.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloudflare_zoneid }}
+                              {{ form.waf_cloudflare_zoneid.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_sophos_cloud_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sophos_cloud_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sophos_cloud_client_id }}
+                              {{ form.sophos_cloud_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sophos_cloud_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sophos_cloud_client_secret }}
+                              {{ form.sophos_cloud_client_secret.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sophos_cloud_tenant_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sophos_cloud_tenant_id }}
+                              {{ form.sophos_cloud_tenant_id.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_blackberry_cylance_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.blackberry_cylance_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.blackberry_cylance_host }}
+                              {{ form.blackberry_cylance_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.blackberry_cylance_tenant.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.blackberry_cylance_tenant }}
+                              {{ form.blackberry_cylance_tenant.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.blackberry_cylance_app_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.blackberry_cylance_app_id }}
+                              {{ form.blackberry_cylance_app_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.blackberry_cylance_app_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.blackberry_cylance_app_secret }}
+                              {{ form.blackberry_cylance_app_secret.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_proofpoint_pod_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_pod_uri.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_pod_uri }}
+                              {{ form.proofpoint_pod_uri.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_pod_cluster_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_pod_cluster_id }}
+                              {{ form.proofpoint_pod_cluster_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_pod_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_pod_token }}
+                              {{ form.proofpoint_pod_token.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_gsuite_alertcenter_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.gsuite_alertcenter_json_conf.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.gsuite_alertcenter_json_conf }}
+                              {{ form.gsuite_alertcenter_json_conf.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.gsuite_alertcenter_admin_mail.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.gsuite_alertcenter_admin_mail }}
+                              {{ form.gsuite_alertcenter_admin_mail.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_trendmicro_worryfree_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.trendmicro_worryfree_access_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.trendmicro_worryfree_access_token }}
+                              {{ form.trendmicro_worryfree_access_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.trendmicro_worryfree_secret_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.trendmicro_worryfree_secret_key }}
+                              {{ form.trendmicro_worryfree_secret_key.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                              <label class="col-sm-3 control-label">{{ form.trendmicro_worryfree_server_name.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.trendmicro_worryfree_server_name }}
+                              {{ form.trendmicro_worryfree_server_name.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.trendmicro_worryfree_server_port.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.trendmicro_worryfree_server_port }}
+                              {{ form.trendmicro_worryfree_server_port.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_safenet_row">
+                          <div class="form-group">
+                              <label class="col-sm-3 control-label">{{ form.safenet_tenant_code.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.safenet_tenant_code }}
+                              {{ form.safenet_tenant_code.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.safenet_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.safenet_apikey }}
+                              {{ form.safenet_apikey.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_signalsciences_ngwaf_row">
+                          <div class="form-group">
+                              <label class="col-sm-3 control-label">{{ form.signalsciences_ngwaf_email.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.signalsciences_ngwaf_email }}
+                              {{ form.signalsciences_ngwaf_email.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.signalsciences_ngwaf_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.signalsciences_ngwaf_token }}
+                              {{ form.signalsciences_ngwaf_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.signalsciences_ngwaf_corp_name.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.signalsciences_ngwaf_corp_name }}
+                              {{ form.signalsciences_ngwaf_corp_name.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.signalsciences_ngwaf_site_name.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.signalsciences_ngwaf_site_name }}
+                              {{ form.signalsciences_ngwaf_site_name.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_proofpoint_casb_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_casb_api_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_casb_api_key }}
+                              {{ form.proofpoint_casb_api_key.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_casb_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_casb_client_id }}
+                              {{ form.proofpoint_casb_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_casb_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_casb_client_secret }}
+                              {{ form.proofpoint_casb_client_secret.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_proofpoint_trap_row">
+                          <div class="form-group">
+                              <label class="col-sm-3 control-label">{{ form.proofpoint_trap_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_trap_host }}
+                              {{ form.proofpoint_trap_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.proofpoint_trap_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.proofpoint_trap_apikey }}
+                              {{ form.proofpoint_trap_apikey.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_waf_cloud_protector_row">
+                          <div class="form-group">
+                              <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloud_protector_host }}
+                              {{ form.waf_cloud_protector_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_api_key_pub.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloud_protector_api_key_pub }}
+                              {{ form.waf_cloud_protector_api_key_pub.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_api_key_priv.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloud_protector_api_key_priv }}
+                              {{ form.waf_cloud_protector_api_key_priv.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_provider.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloud_protector_provider }}
+                              {{ form.waf_cloud_protector_provider.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_tenant.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloud_protector_tenant }}
+                              {{ form.waf_cloud_protector_tenant.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_servers.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloud_protector_servers }}
+                              {{ form.waf_cloud_protector_servers.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_trendmicro_visionone_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.trendmicro_visionone_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.trendmicro_visionone_token }}
+                              {{ form.trendmicro_visionone_token.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_cisco_duo_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_duo_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_duo_host }}
+                              {{ form.cisco_duo_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_duo_ikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_duo_ikey }}
+                              {{ form.cisco_duo_ikey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_duo_skey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_duo_skey }}
+                              {{ form.cisco_duo_skey.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_sentinel_one_mobile_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_mobile_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_mobile_host }}
+                              {{ form.sentinel_one_mobile_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_mobile_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_mobile_apikey }}
+                              {{ form.sentinel_one_mobile_apikey.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_sentinel_one_singularity_mobile_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_singularity_mobile_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_singularity_mobile_host }}
+                              {{ form.sentinel_one_singularity_mobile_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_singularity_mobile_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_singularity_mobile_client_id }}
+                              {{ form.sentinel_one_singularity_mobile_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_singularity_mobile_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_singularity_mobile_client_secret }}
+                              {{ form.sentinel_one_singularity_mobile_client_secret.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_csc_domainmanager_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.csc_domainmanager_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.csc_domainmanager_apikey }}
+                              {{ form.csc_domainmanager_apikey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.csc_domainmanager_authorization.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.csc_domainmanager_authorization }}
+                              {{ form.csc_domainmanager_authorization.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_retarus_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.retarus_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.retarus_token }}
+                              {{ form.retarus_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.retarus_channel.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.retarus_channel }}
+                              {{ form.retarus_channel.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_vectra_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vectra_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vectra_host }}
+                              {{ form.vectra_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vectra_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vectra_client_id }}
+                              {{ form.vectra_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.vectra_secret_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.vectra_secret_key }}
+                              {{ form.vectra_secret_key.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_apex_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.apex_server_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.apex_server_host }}
+                              {{ form.apex_server_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.apex_api_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.apex_api_key }}
+                              {{ form.apex_api_key.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.apex_application_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.apex_application_id }}
+                              {{ form.apex_application_id.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_gatewatcher_alerts_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.gatewatcher_alerts_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.gatewatcher_alerts_host }}
+                              {{ form.gatewatcher_alerts_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.gatewatcher_alerts_api_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.gatewatcher_alerts_api_key }}
+                              {{ form.gatewatcher_alerts_api_key.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_cisco_umbrella_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_umbrella_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_umbrella_client_id }}
+                              {{ form.cisco_umbrella_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_umbrella_secret_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_umbrella_secret_key }}
+                              {{ form.cisco_umbrella_secret_key.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_waf_barracuda_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_barracuda_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_barracuda_token }}
+                              {{ form.waf_barracuda_token.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_beyondtrust_pra_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_pra_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_pra_client_id }}
+                              {{ form.beyondtrust_pra_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_pra_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_pra_secret }}
+                              {{ form.beyondtrust_pra_secret.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_pra_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_pra_host }}
+                              {{ form.beyondtrust_pra_host.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_lockself_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.lockself_x_ls_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.lockself_x_ls_token }}
+                              {{ form.lockself_x_ls_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.lockself_x_auth_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.lockself_x_auth_token }}
+                              {{ form.lockself_x_auth_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.lockself_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.lockself_host }}
+                              {{ form.lockself_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.lockself_organization_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.lockself_organization_id }}
+                              {{ form.lockself_organization_id.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_cisco_umbrella_managed_org_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_api_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_umbrella_managed_org_api_key }}
+                              {{ form.cisco_umbrella_managed_org_api_key.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_secret_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_umbrella_managed_org_secret_key }}
+                              {{ form.cisco_umbrella_managed_org_secret_key.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_customers_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_umbrella_managed_org_customers_id }}
+                              {{ form.cisco_umbrella_managed_org_customers_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_get_dns.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_umbrella_managed_org_get_dns }}
+                              {{ form.cisco_umbrella_managed_org_get_dns.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_get_proxy.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.cisco_umbrella_managed_org_get_proxy }}
+                              {{ form.cisco_umbrella_managed_org_get_proxy.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_catonetworks_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.catonetworks_api_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.catonetworks_api_key }}
+                              {{ form.catonetworks_api_key.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.catonetworks_account_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.catonetworks_account_id }}
+                              {{ form.catonetworks_account_id.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_infoblox_threat_defense_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.infoblox_threat_defense_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.infoblox_threat_defense_host }}
+                              {{ form.infoblox_threat_defense_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.infoblox_threat_defense_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.infoblox_threat_defense_token }}
+                              {{ form.infoblox_threat_defense_token.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_beyondtrust_reportings_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_reportings_client_id }}
+                              {{ form.beyondtrust_reportings_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_reportings_secret }}
+                              {{ form.beyondtrust_reportings_secret.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_reportings_host }}
+                              {{ form.beyondtrust_reportings_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_team_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_reportings_get_team_logs }}
+                              {{ form.beyondtrust_reportings_get_team_logs.errors|safe }}
+                            </div>
+                          </div>
+                            <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_access_session_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_reportings_get_access_session_logs }}
+                              {{ form.beyondtrust_reportings_get_access_session_logs.errors|safe }}
+                            </div>
+                          </div>
+                            <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_vault_account_activity_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_reportings_get_vault_account_activity_logs }}
+                              {{ form.beyondtrust_reportings_get_vault_account_activity_logs.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_support_session_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.beyondtrust_reportings_get_support_session_logs }}
+                              {{ form.beyondtrust_reportings_get_support_session_logs.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_varonis_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.varonis_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.varonis_host }}
+                              {{ form.varonis_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.varonis_api_key.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.varonis_api_key }}
+                              {{ form.varonis_api_key.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_armis_centrix_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.armis_centrix_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.armis_centrix_host }}
+                              {{ form.armis_centrix_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.armis_centrix_secretkey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.armis_centrix_secretkey }}
+                              {{ form.armis_centrix_secretkey.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.armis_centrix_get_activity_logs.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.armis_centrix_get_activity_logs }}
+                              {{ form.armis_centrix_get_activity_logs.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_perception_point_x_ray_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.perception_point_x_ray_host }}
+                              {{ form.perception_point_x_ray_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.perception_point_x_ray_token }}
+                              {{ form.perception_point_x_ray_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_organization_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.perception_point_x_ray_organization_id }}
+                              {{ form.perception_point_x_ray_organization_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_environment_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.perception_point_x_ray_environment_id }}
+                              {{ form.perception_point_x_ray_environment_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_case_types.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.perception_point_x_ray_case_types }}
+                              {{ form.perception_point_x_ray_case_types.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_extrahop_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.extrahop_host.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.extrahop_host }}
+                              {{ form.extrahop_host.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.extrahop_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.extrahop_id }}
+                              {{ form.extrahop_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.extrahop_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.extrahop_secret }}
+                              {{ form.extrahop_secret.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_hornetsecurity_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.hornetsecurity_app_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.hornetsecurity_app_id }}
+                              {{ form.hornetsecurity_app_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.hornetsecurity_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.hornetsecurity_token }}
+                              {{ form.hornetsecurity_token.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_ubika_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ubika_base_refresh_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ubika_base_refresh_token }}
+                              {{ form.ubika_base_refresh_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ubika_namespaces.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ubika_namespaces }}
+                              {{ form.ubika_namespaces.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_sentinel_one_graph_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_graph_token.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_graph_token }}
+                              {{ form.sentinel_one_graph_token.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.sentinel_one_graph_console_url.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.sentinel_one_graph_console_url }}
+                              {{ form.sentinel_one_graph_console_url.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12 api_clients_row" id="api_messagetrace_o365_row">
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.messagetrace_o365_tenant_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.messagetrace_o365_tenant_id }}
+                              {{ form.messagetrace_o365_tenant_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.messagetrace_o365_client_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.messagetrace_o365_client_id }}
+                              {{ form.messagetrace_o365_client_id.errors|safe }}
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.messagetrace_o365_client_secret.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.messagetrace_o365_client_secret }}
+                              {{ form.messagetrace_o365_client_secret.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-12">
+                          <div class="text-center mar-btm">
+                            <button class="btn btn-warning" id="test_api_parser" type="button">
+                              {% translate "Test Configuration" %}
+                            </button>
+                            <input type="hidden" name="api_parser_has_been_tested" id="id_api_parser_has_been_tested" value="{% if object_id %}1{% else %}0{% endif %}"/>
+                          </div>
+                        </div>
+                      </div> <!-- form-group api-mode -->
                     </div> <!-- /.row -->
-                  </div> <!-- /.tab-pane tab_api_client -->
+                  </div> <!-- /.tab-pane tab_log_settings -->
                 </div>
               </div>
             </div>

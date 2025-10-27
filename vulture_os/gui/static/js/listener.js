@@ -240,22 +240,27 @@ $(function() {
   /* Show network only fields, or hide them */
   function show_network_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an rsyslog / File only conf */
-    if ((mode === "log" && listening_mode === "file") || (mode === "filebeat" && filebeat_listening_mode === "file" )) {
+    if (mode === "filebeat") {
+      $('.api-mode').hide();
+      $('.kafka-mode').hide();
+      $('.redis-mode').hide();
+      $('.file-mode').hide();
+      if ($('#id_filebeat_config').val().includes("%ip%")) {
+        $('.network-mode').show();
+        $('.haproxy-conf').show();
+      } else {
+        $('.network-mode').hide();
+        $('.haproxy-conf').hide();
+      }
+      $('.filebeat-mode').show();
+    } else if (mode === "log" && listening_mode === "file") {
       $('.network-mode').hide();
       $('.api-mode').hide();
       $('.kafka-mode').hide();
       $('.redis-mode').hide();
       // ALWAYS put show at last
       $('.file-mode').show();
-    } else if (mode === "filebeat" && filebeat_listening_mode === "api") {
-      $('.network-mode').hide();
-      $('.file-mode').hide();
-      $('.kafka-mode').hide();
-      $('.redis-mode').hide();
-      $('.api-mode').hide();
-      // ALWAYS put show at last
-      $('.filebeat-api-mode').show();
-    }else if (mode === "log" && listening_mode === "api") {
+    } else if (mode === "log" && listening_mode === "api") {
       $('.network-mode').hide();
       $('.file-mode').hide();
       $('.kafka-mode').hide();
@@ -286,14 +291,15 @@ $(function() {
     }
   }
 
-  /* Show rsyslog only fields, or hide them */
+  /* Show haproxy-only fields, or hide them */
   function show_custom_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an UDP mode only => HAProxy is useless */
-    if( (mode === "log" && ["udp", "file", "api", "kafka", "redis"].includes(listening_mode)) ||
-        (mode === "filebeat" && ["udp", "file", "api"].includes(filebeat_listening_mode)) ) {
-      $('.haproxy-conf').hide();
-    } else {
+    if (mode === "tcp" || mode === "http" ||
+      (mode === "log" && ["tcp", "tcp,udp", "relp"].includes(listening_mode)) ||
+      (mode === "filebeat" && $('#id_filebeat_config').val().includes("%ip%"))) {
       $('.haproxy-conf').show();
+    } else {
+      $('.haproxy-conf').hide();
     }
   }
 
@@ -327,11 +333,20 @@ $(function() {
   /* Show node field, or hide them, depending on chosen listening mode */
   function show_node(mode, listening_mode, filebeat_listening_mode) {
     /* If listening mode is TCP, show according options */
-    if( (mode === "log" && ["file", "api", "kafka", "redis"].includes(listening_mode)) ||
-    (mode === "filebeat" && ["file", "api"].includes(filebeat_listening_mode)) ) {
+    if ((mode === "log" && ["file", "api", "kafka", "redis"].includes(listening_mode)) ||
+      (mode === "filebeat" && !$('#id_filebeat_config').val().includes("%ip%"))) {
       $('#node-div').show();
     } else {
       $('#node-div').hide();
+    }
+  }
+
+  /* Show filebeat input field, or hide it, depending on chosen filebeat module */
+  function show_filebeat_input(mode, filebeat_module) {
+    if ((mode === "filebeat" && filebeat_module === "_custom")) {
+      $('#filebeat-input-div').show();
+    } else {
+      $('#filebeat-input-div').hide();
     }
   }
 
@@ -342,9 +357,9 @@ $(function() {
     }
     else {
       $('#ruleset-div').hide();
-      if((mode === "log" && listening_mode === "api") || (mode === "filebeat" && filebeat_listening_mode === "api") ){
+      if(mode === "log" && listening_mode === "api"){
         // Bind API inputs
-        $("#tab_api_client input").each(function(){
+        $("#tab_log_settings input").each(function(){
           $(this).unbind('click');
           $(this).on('click', function(e){
             $('#id_api_parser_has_been_tested').val('0');
@@ -445,6 +460,7 @@ $(function() {
     show_network_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_redis_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_node(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+    show_filebeat_input(mode, $('#id_filebeat_module').val());
     show_log_condition_failure();
     old_mode = mode;
   }).trigger('change');
@@ -532,6 +548,7 @@ $(function() {
   function refresh_filebeat_module() {
     var module = $("#id_filebeat_module").val();
     $('#id_filebeat_config').text(filebeat_config[module]);
+    $('#id_filebeat_config').trigger('change');
   }
 
   function refresh_filebeat_ruleset(module) {
@@ -545,11 +562,16 @@ $(function() {
   }
 
   $('#id_filebeat_module').on("change", function(e) {
+    show_filebeat_input($('#id_mode').val(), $(this).val());
     refresh_filebeat_module();
     // Automatically select parser if present
     refresh_filebeat_ruleset($(this).val());
-  });
-  refresh_filebeat_module();
+  }).trigger('change');
+
+  $('#id_filebeat_config').on("change", function(e) {
+    show_network_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
+    show_node($('#id_mode').val(), $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+  }).trigger('change');
 
   /* Show log_condition_failure depending on mode and ruleset */
   function show_log_condition_failure() {
@@ -658,7 +680,7 @@ $(function() {
       // Need to check if the API Parser has been tested
       if ($('#id_api_parser_has_been_tested').val() === "0"){
         event.preventDefault();
-        notify('error', gettext('Error'), gettext('Test your API configuration before saving this frontend'))
+        notify('error', gettext('Error'), gettext('Test your API configuration before saving this frontend'));
         return;
       }
     }
@@ -732,8 +754,7 @@ $(function() {
       let condition_block_array = new Array();
       for (let condition_line of condition_block.lines) {
         if (custom_actions_vue.validate_condition_line(condition_line).length > 0) {
-          notify('error', gettext('Error'), gettext('Error identified in custom operations tab'))
-          event.preventDefault()
+          notify('error', gettext('Error'), gettext('Error identified in custom operations tab'));
         };
         condition_block_array.push({
           'condition': condition_line.condition,

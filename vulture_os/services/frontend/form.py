@@ -119,7 +119,6 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
     REDIS_DEFAULT_SERVER = '127.0.0.5'
     REDIS_DEFAULT_PORT = 6379
-    REDIS_DEFAULT_PASSWORD = ''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -276,7 +275,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                            "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs", "beyondtrust_reportings_get_vault_account_activity_logs", "beyondtrust_reportings_get_support_session_logs",
                            "varonis_host", "varonis_api_key",
                            "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
-                           "perception_point_x_ray_host", "perception_point_x_ray_token",
+                           "perception_point_x_ray_host", "perception_point_x_ray_token", "perception_point_x_ray_organization_id", "perception_point_x_ray_environment_id", "perception_point_x_ray_case_types",
                            "extrahop_host", "extrahop_id", "extrahop_secret",
                            "hornetsecurity_app_id", "hornetsecurity_token",
                            "ubika_base_refresh_token", "ubika_namespaces",
@@ -315,14 +314,14 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         self.initial['kafka_options'] = ",".join(self.initial.get('kafka_options', []) or self.fields['kafka_options'].initial)
         self.initial['cisco_umbrella_managed_org_customers_id'] = ",".join(self.initial.get('cisco_umbrella_managed_org_customers_id', []) or self.fields['cisco_umbrella_managed_org_customers_id'].initial)
         self.initial['ubika_namespaces'] = ",".join(self.initial.get('ubika_namespaces', []) or self.fields['ubika_namespaces'].initial)
+        self.initial['perception_point_x_ray_case_types'] = ",".join([str(case_type) for case_type in (self.initial.get('perception_point_x_ray_case_types', []) or self.fields['perception_point_x_ray_case_types'].initial)])
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
 
         if  not self.instance or \
             self.instance.redis_server == self.REDIS_DEFAULT_SERVER and \
-            self.instance.redis_port == self.REDIS_DEFAULT_PORT and \
-            self.instance.redis_password == self.REDIS_DEFAULT_PASSWORD:
+            self.instance.redis_port == self.REDIS_DEFAULT_PORT:
             self.fields['redis_use_local'].initial = True
 
     class Meta:
@@ -405,7 +404,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                   "beyondtrust_reportings_get_support_session_logs",
                   "varonis_host", "varonis_api_key",
                   "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
-                  "perception_point_x_ray_host", "perception_point_x_ray_token",
+                  "perception_point_x_ray_host", "perception_point_x_ray_token", "perception_point_x_ray_organization_id", "perception_point_x_ray_environment_id", "perception_point_x_ray_case_types",
                   "extrahop_host", "extrahop_id", "extrahop_secret",
                   "hornetsecurity_app_id", "hornetsecurity_token",
                   "ubika_base_refresh_token", "ubika_namespaces",
@@ -641,6 +640,9 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'armis_centrix_get_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'perception_point_x_ray_host': TextInput(attrs={'class': 'form-control'}),
             'perception_point_x_ray_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'perception_point_x_ray_organization_id': TextInput(attrs={'class': 'form-control'}),
+            'perception_point_x_ray_environment_id': TextInput(attrs={'class': 'form-control'}),
+            'perception_point_x_ray_case_types': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'extrahop_host': TextInput(attrs={'class': 'form-control'}),
             'extrahop_id': TextInput(attrs={'class': 'form-control'}),
             'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
@@ -787,6 +789,14 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             return ast.literal_eval(data)
         return data.split(',')
 
+    def clean_perception_point_x_ray_case_types(self):
+        data = self.cleaned_data.get('perception_point_x_ray_case_types')
+        if not data:
+            return []
+        if "[" in data and "]" in data:
+            return ast.literal_eval(data)
+        return data.split(',')
+
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
@@ -831,12 +841,11 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             if not cleaned_data.get('filebeat_config'):
                 self.add_error('filebeat_config', "This field is required.")
             else:
-                if "output." in cleaned_data.get('filebeat_config'):
-                    self.add_error('filebeat_config', "Filebeat config cannot contains 'output', this is managed by Vulture")
-                elif "fields:" in cleaned_data.get('filebeat_config'):
-                    self.add_error('filebeat_config', "Filebeat config cannot contains 'fields', this is managed by Vulture")
-                elif "type:" in cleaned_data.get('filebeat_config'):
-                    self.add_error('filebeat_config', "Filebeat config cannot contains 'type', this is managed by Vulture")
+                for line in cleaned_data.get('filebeat_config', '').split('\n'):
+                    if re_match(r"^type:", line) or re_match(r"^\s*-\s*type:", line):
+                        print("Filebeat config cannot contains 'type', this is managed by Vulture")
+                    if re_match(r"^output:", line):
+                        print("Filebeat config cannot contains 'output', this is managed by Vulture")
 
         if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "tcp":
             if not cleaned_data.get('timeout_client'):
@@ -846,18 +855,13 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             if not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
 
-        if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "file":
+        if mode == "filebeat" and "%ip%" not in cleaned_data.get('filebeat_config'):
             if not cleaned_data.get('node'):
                 self.add_error('node', "This field is required.")
-            if not cleaned_data.get('tags'):
+            if cleaned_data.get('filebeat_listening_mode') == "file" and not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
 
-        if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
-            if not cleaned_data.get('node'):
-                self.add_error('node', "This field is required.")
-
-        if mode == "log" and cleaned_data.get('listening_mode') == "api" or \
-        mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
+        if mode == "log" and cleaned_data.get('listening_mode') == "api":
             if cleaned_data.get('api_parser_use_proxy', True) and cleaned_data.get('api_parser_custom_proxy', None):
                 # parse_proxy_url will validate and return a correct url
                 custom_proxy = parse_proxy_url(cleaned_data.get('api_parser_custom_proxy', None))
