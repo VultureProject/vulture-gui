@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] [REDIS] Correctly use the local redis password when set for rsyslog/filebeat configurations
 - [FRONTEND] [FILEBEAT] Correctly rebuild rsyslog input configurations when filebeat Listeners are created/updated
 - [FRONTEND] [GUI] Correctly save/restore input type/filebeat config when switching modes
+- [GUI] [USER_SCOPES] Correctly show the edition page when clicking on a User's Scope configuration
 
 
 ## [2.32.0] - 2025-10-13

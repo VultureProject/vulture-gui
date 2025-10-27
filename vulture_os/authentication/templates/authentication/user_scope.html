@@ -132,6 +132,7 @@
         /* Open a user scope edition in a new tab with ctrl click */
         if (e.ctrlKey || e.metaKey) {
           window.open(url, '_blank');
+        } else {
           window.location.href = url;
         }
       }); // /$(nRow).on('click', 'td'
