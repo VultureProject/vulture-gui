@@ -121,7 +121,7 @@ SENTINEL_ONE_ACCOUNT_TYPE_CHOICES = (
 )
 
 # Filebeat module list
-FILEBEAT_MODULE_PATH = path_join(settings.LOCALETC_PATH, "filebeat/modules.d")
+FILEBEAT_MODULE_PATH = path_join(settings.LOCALSHARE_PATH, "examples/beats/filebeat.modules.d")
 FILEBEAT_MODULE_LIST = [('_custom', 'Custom Filebeat config')]
 FILEBEAT_MODULE_CONFIG = {'_custom': '# Be sure to select the appropriate "Filebeat listening mode"\n\
 # Use the following variables when needed: \n\n\

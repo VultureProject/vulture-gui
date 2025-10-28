@@ -47,7 +47,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 JINJA_PATH = path_join(settings.BASE_DIR, "services/config/")
-FILEBEAT_PATH = path_join(settings.LOCALETC_PATH, "filebeat")
+FILEBEAT_PATH = path_join(settings.LOCALETC_PATH, "beats")
 INPUTS_PATH = path_join(FILEBEAT_PATH, "filebeat.yml")
 
 FILEBEAT_OWNER = "root:vlt-os"

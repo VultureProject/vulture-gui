@@ -36,6 +36,7 @@ LOGS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("LOGS_PATH", "var/log"))
 SOCKETS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("SOCKETS_PATH", "var/sockets"))
 HOMES_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("HOMES_PATH", "home"))
 LOCALETC_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("LOCALETC_PATH", "usr/local/etc"))
+LOCALSHARE_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("LOCALSHARE_PATH", "usr/local/share"))
 
 # Logging
 DEBUG_LOGS_PATH = os_path.join(LOGS_PATH, env.str("DEBUG_LOGS_PATH", "vulture/os/debug.log"))

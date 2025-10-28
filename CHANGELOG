@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [SERVICES] [FILEBEAT] Move filebeat module template to share directory
 ### Fixed
 - [GUI] [USER_SCOPES] Correctly show the edition page when clicking on a User's Scope configuration
 
