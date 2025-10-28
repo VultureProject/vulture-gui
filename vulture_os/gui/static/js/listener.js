@@ -423,6 +423,7 @@ $(function() {
 
   /* Show fields depending on chosen mode */
   var last_enable_log = ($('#id_mode').val()!=="log" && $('#id_mode').val()!=="filebeat") ? ($('#id_enable_logging').is(":checked")) : (false);
+  var last_ruleset = $('#id_ruleset').val();
   $('#id_mode').on('change', function(event) {
     var mode = $(this).val();
     $('.http-mode').hide();
@@ -431,25 +432,37 @@ $(function() {
     $('.filebeat-mode').hide();
     $('.'+mode+'-mode').show();
 
+    //get current ruleset value to rollback at next mode change
+    var new_last_ruleset = $('#id_ruleset').val();
+    // Set old value for ruleset
+    $('#id_ruleset').val(last_ruleset).trigger('change');
+    last_ruleset = new_last_ruleset;
+
     /* If mode = LOG / Filebeat => Activate logging automatically */
     var log_enabled = $('#id_enable_logging').is(":checked");
-    if( (mode === "log" || mode === "filebeat") && !log_enabled ) {
-      $('#id_enable_logging').trigger('click');
+    if(mode === "log") {
+      if(!log_enabled) {
+        last_enable_log = log_enabled;
+        $('#id_enable_logging').trigger('click');
+      }
       $('#id_enable_logging').prop("disabled", true);
-      last_enable_log = log_enabled;
+      if( $('#stock_logs_locally').is(':checked') ) {
+        $('#stock_logs_locally').click();
+      }
+      refresh_input_logs_type(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+    } else if(mode === "filebeat") {
+      if(!log_enabled) {
+        last_enable_log = log_enabled;
+        $('#id_enable_logging').trigger('click');
+      }
+      $('#id_enable_logging').prop("disabled", true);
+      refresh_filebeat_config();
+      refresh_filebeat_ruleset();
     } else if ( mode === "http" || mode === "tcp" ) {
       refresh_http();
       $('#id_enable_logging').prop("disabled", false);
       if( last_enable_log != log_enabled )
         $('#id_enable_logging').trigger('click');
-    } else if ( mode === "log") {
-      last_enable_log = log_enabled;
-      $('#id_enable_logging').prop("disabled", true);
-      if( $('#stock_logs_locally').is(':checked') ) {
-        $('#stock_logs_locally').click();
-      }
-
-      refresh_input_logs_type(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     }
 
     $('#id_enable_logging').trigger("change");
@@ -545,17 +558,24 @@ $(function() {
     show_darwin_mode(policy);
   }).trigger('change');
 
-  function refresh_filebeat_module() {
-    var module = $("#id_filebeat_module").val();
-    $('#id_filebeat_config').text(filebeat_config[module]);
+  var last_filebeat_module = $('#id_filebeat_module').val();
+
+  function refresh_filebeat_config() {
+    // Save current local config for this module, to show it again if re-selected during edition
+    if($('#id_filebeat_config').val()) {
+      filebeat_config[last_filebeat_module] = $('#id_filebeat_config').val();
+    }
+    // Update config field with related module configuration
+    $('#id_filebeat_config').val(filebeat_config[$("#id_filebeat_module").val()]);
     $('#id_filebeat_config').trigger('change');
   }
 
-  function refresh_filebeat_ruleset(module) {
-    if ($("#id_ruleset option[value='beat_" + module + "-ecs']").length > 0) {
-      $('#id_ruleset').val("beat_" + module + "-ecs").trigger('change');
-    } else if ($("#id_ruleset option[value='beat_" + module + "']").length > 0) {
-      $('#id_ruleset').val("beat_" + module).trigger('change');
+  function refresh_filebeat_ruleset() {
+    filebeat_module = $('#id_filebeat_module').val();
+    if ($("#id_ruleset option[value='beat_" + filebeat_module + "-ecs']").length > 0) {
+      $('#id_ruleset').val("beat_" + filebeat_module + "-ecs").trigger('change');
+    } else if ($("#id_ruleset option[value='beat_" + filebeat_module + "']").length > 0) {
+      $('#id_ruleset').val("beat_" + filebeat_module).trigger('change');
     } else {
       $('#id_ruleset').val('generic_json').trigger('change');
     }
@@ -563,10 +583,11 @@ $(function() {
 
   $('#id_filebeat_module').on("change", function(e) {
     show_filebeat_input($('#id_mode').val(), $(this).val());
-    refresh_filebeat_module();
-    // Automatically select parser if present
-    refresh_filebeat_ruleset($(this).val());
-  }).trigger('change');
+    refresh_filebeat_config();
+    refresh_filebeat_ruleset();
+    // Update value for next comparison
+    last_filebeat_module = $(this).val();
+  })
 
   $('#id_filebeat_config').on("change", function(e) {
     show_network_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
