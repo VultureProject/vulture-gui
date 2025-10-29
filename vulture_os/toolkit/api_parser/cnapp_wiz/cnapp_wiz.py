@@ -93,7 +93,7 @@ class CnappWizParser(ApiParser):
                 logger.info(
                     f"[{__parser__}]:__connect: Status: {response.status_code}, Content: {response.content}",
                     extra={'frontend': str(self.frontend)})
-            raise CnappWizAPIError("Could not fetch logs, HTTP error")
+            raise CnappWizAPIError("Could not retrieve token, HTTP error")
         except (ConnectionError, TimeoutError) as e:
             logger.error(f"[{__parser__}]:__connect: Network error while trying to get a new token: {e}",
                          extra={'frontend': str(self.frontend)})
