@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.33.1] - 2025-10-29
+### Fixed
+- [GUI] [FILBEAT] Don't automatically change the 'input logs type' attribute on existing configuration load
+
+
 ## [2.33.0] - 2025-10-24
 ### Removed
 - [HAPROXY] [SPOE] Remove unused configuration files
