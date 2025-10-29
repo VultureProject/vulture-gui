@@ -306,6 +306,7 @@ class CnappWizParser(ApiParser):
             logger.info(f"[{__parser__}]:execute: Querying logs from {since} to {to}",
                         extra={'frontend': str(self.frontend)})
             logs = self._get_logs(since, to)
+            self.update_lock()
 
             if len(logs) > 0:
                 self.write_to_file([self.format_log(log) for log in logs])
