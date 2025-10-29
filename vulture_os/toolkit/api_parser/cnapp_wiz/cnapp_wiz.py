@@ -89,9 +89,9 @@ class CnappWizParser(ApiParser):
         except requests.HTTPError as e:
             logger.error(f"[{__parser__}]:__connect: HTTP Error while trying to get a new token: {e}",
                          extra={'frontend': str(self.frontend)})
-            if response and response.content:
+            if e.response and e.response.content:
                 logger.info(
-                    f"[{__parser__}]:__connect: Status: {response.status_code}, Content: {response.content}",
+                    f"[{__parser__}]:__connect: Status: {e.response.status_code}, Content: {e.response.content}",
                     extra={'frontend': str(self.frontend)})
             raise CnappWizAPIError("Could not retrieve token, HTTP error")
         except (ConnectionError, TimeoutError) as e:
@@ -260,9 +260,9 @@ class CnappWizParser(ApiParser):
         except requests.HTTPError as e:
             logger.error(f"[{__parser__}]:__execute_query: HTTP Error while executing query: {e}",
                          extra={'frontend': str(self.frontend)})
-            if response and response.content:
+            if e.response and e.response.content:
                 logger.info(
-                    f"[{__parser__}]:__execute_query: Status: {response.status_code}, Content: {response.content}",
+                    f"[{__parser__}]:__execute_query: Status: {e.response.status_code}, Content: {e.response.content}",
                     extra={'frontend': str(self.frontend)})
             raise CnappWizAPIError("Could not fetch logs, HTTP error")
         except KeyError as e:
