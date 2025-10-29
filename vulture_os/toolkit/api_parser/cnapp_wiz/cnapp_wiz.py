@@ -80,8 +80,8 @@ class CnappWizParser(ApiParser):
 
             response.raise_for_status()
 
-            self.access_token = response.json().get("access_token")
-            self.access_expires_at = datetime.now() + timedelta(seconds=response.json().get('expires_in'))
+            self.access_token = response.json()['access_token']
+            self.access_expires_at = datetime.now() + timedelta(seconds=int(response.json()['expires_in']))
             if self.frontend:
                 self.frontend.cnapp_wiz_access_token = self.access_token
                 self.frontend.cnapp_wiz_access_expires_at = self.access_expires_at
@@ -98,6 +98,10 @@ class CnappWizParser(ApiParser):
             logger.error(f"[{__parser__}]:__connect: Network error while trying to get a new token: {e}",
                          extra={'frontend': str(self.frontend)})
             raise CnappWizAPIError("Could not retrieve token, network error")
+        except KeyError as e:
+            logger.error(f"[{__parser__}]:__connect: error while accessing token information in response: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not fetch logs, key access error")
         except Exception as e:
             logger.error(f"[{__parser__}]:__connect: Error while trying to get a new token: {e}",
                          extra={'frontend': str(self.frontend)})
