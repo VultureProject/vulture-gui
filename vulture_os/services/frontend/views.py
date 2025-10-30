@@ -382,7 +382,7 @@ def frontend_edit(request, object_id=None, api=False):
         listener_objs = []
         if form.data.get('mode') in ("http", "tcp") \
         or form.data.get('mode') == "log" and form.data.get('listening_mode') in ("tcp", "udp", "tcp,udp", "relp") \
-        or form.data.get('mode') == "filebeat" and form.data.get('filebeat_listening_mode') in ("tcp", "udp"):
+        or form.data.get('mode') == "filebeat" and "%ip%" in form.data.get('filebeat_config'):
 
             # At least one Listener is required if Frontend enabled, except for listener of type "File", and "API"
             if form.data.get('enabled') and not listener_ids:
@@ -582,8 +582,7 @@ def frontend_edit(request, object_id=None, api=False):
                         node.api_request('services.filebeat.filebeat.delete_conf', old_filebeat_filename)
 
                 if old_haproxy_filename:
-                    if frontend.rsyslog_only_conf \
-                    or frontend.filebeat_only_conf \
+                    if not frontend.has_haproxy_conf \
                     or node not in new_nodes:
                         logger.info(f"HAProxy config '{old_haproxy_filename}' deletion asked on node {node}.")
                         # API request deletion of frontend filename

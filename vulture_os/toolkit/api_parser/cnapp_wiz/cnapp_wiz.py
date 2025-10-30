@@ -57,6 +57,7 @@ class CnappWizParser(ApiParser):
             self.access_token = self.frontend.cnapp_wiz_access_token
             self.access_expires_at = self.frontend.cnapp_wiz_access_expires_at
 
+
     def __connect(self):
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -107,6 +108,7 @@ class CnappWizParser(ApiParser):
                          extra={'frontend': str(self.frontend)})
             raise CnappWizAPIError("Could not retrieve token, unknown error")
 
+
     def __execute_query(self, since, to, limit):
         logger.info(f"[{__parser__}]:__execute_query: Sending query with params since={since}, to={to}, limit={limit}",
                     extra={'frontend': str(self.frontend)})
@@ -149,18 +151,18 @@ class CnappWizParser(ApiParser):
                                   resolvedAt
                                   reopenedAt
                                   resolutionReason
-    
+
                                   resolutionEvidence {{
                                     id
-    
+
                                   }}
                                   projects {{
                                     id
-    
+
                                   }}
                                   cloudAccounts {{
                                     id
-    
+
                                   }}
                                   cloudOrganizations {{
                                     id
@@ -197,7 +199,7 @@ class CnappWizParser(ApiParser):
                                   }}
                                   threatCenterActors {{
                                     id
-    
+
                                   }}
                                   responseActions {{
                                     edges {{
@@ -206,7 +208,7 @@ class CnappWizParser(ApiParser):
                                       }}
                                     }}
                                   }}
-    
+
                                   assignee {{
                                     id
                                   }}
@@ -277,12 +279,14 @@ class CnappWizParser(ApiParser):
             logger.error(f"[{__parser__}]:__execute_query: unknown error {e}", extra={'frontend': str(self.frontend)})
             raise CnappWizAPIError("Could not fetch logs, unknown error")
 
+
     def _get_logs(self, since, to, limit=100):
         if not self.access_token or not self.access_expires_at or (self.access_expires_at <= (timezone.now() + timedelta(minutes=1))):
             logger.info(f"[{__parser__}]:_get_logs: No valid token found", extra={'frontend': str(self.frontend)})
             self.__connect()
 
         return self.__execute_query(since, to, limit)
+
 
     def test(self):
         try:
@@ -299,8 +303,10 @@ class CnappWizParser(ApiParser):
                 'error': str(e)
             }
 
+
     def format_log(self, log):
         return json.dumps(log)
+
 
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
@@ -323,7 +329,7 @@ class CnappWizParser(ApiParser):
             elif since < timezone.now() - timedelta(hours=24):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
-                logger.info(f"[{__parser__}]:execute: No data retrieved, update timestamp "
+                logger.info(f"[{__parser__}]:execute: No data retrieved for past 24h, updating timestamp "
                             f"to {since + timedelta(hours=1)}",
                             extra={'frontend': str(self.frontend)})
                 self.frontend.last_api_call = since + timedelta(hours=1)

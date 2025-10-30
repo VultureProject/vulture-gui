@@ -6,12 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [CNAPP_WIZ] New collector
+
+
+## [2.33.0] - 2025-10-24
+### Removed
+- [HAPROXY] [SPOE] Remove unused configuration files
+- [FRONTEND] [FILEBEAT] Prevent possibility to use 'Vendor API' inputs on filebeat Listeners
+### Added
+- [FRONTEND] [FILEBEAT] Add new inputs for filebeat listeners
 ### Changed
 - [FRONTEND] [GUI] Correctly show 'Log forwarders - parse failure' for Filebeat Listeners
-- [REPUTATION_CTX] Allow to configure if custom Reputation Context DBs should be downloaded every hour
-- [REPUTATION_CTX] Set back update crontab to download Reputation Context files every hour
+- [API_PARSER] [PERCEPTION_POINT_X_RAY] Add support for case ("ATO") logs
+- [FRONTEND] [GUI] Rename "Vendor Specific API" tab to "LOG Settings"
+- [HAPROXY] [REDIS-PROXY] Update client/server timeouts for stability
 ### Fixed
 - [API_PARSER] [SENTINEL_ONE] Fix double slashes in URLs
+- [FRONTEND] [REDIS] Correctly use the local redis password when set for rsyslog/filebeat configurations
+- [FRONTEND] [FILEBEAT] Correctly rebuild rsyslog input configurations when filebeat Listeners are created/updated
+- [FRONTEND] [GUI] Correctly save/restore input type/filebeat config when switching modes
+- [GUI] [USER_SCOPES] Correctly show the edition page when clicking on a User's Scope configuration
 
 
 ## [2.32.0] - 2025-10-13

@@ -149,7 +149,24 @@ FILEBEAT_LISTENING_MODE = (
     ('tcp', "TCP"),
     ('udp', "UDP"),
     ('file', "File"),
-    ('api', 'Vendor specific API')
+    ('aws-cloudwatch', "AWS Cloudwatch"),
+    ('aws-s3', "AWS S3"),
+    ('azure-eventhub', "Azure Event hub"),
+    ('azure-blob-storage', "Azure Blob Storage"),
+    ('benchmark', "Benchmark"),
+    ('cel', "CEL"),
+    ('cloudfoundry', "Cloud Foundry"),
+    ('cometd', "CometD"),
+    ('entity-analytics', "Entity Analytics"),
+    ('filestream', "Filestream"),
+    ('gcp-pubsub', "GCP Pub/Sub"),
+    ('gcs', "Google Cloud Storage"),
+    ('http_endpoint', "HTTP Endpoint"),
+    ('httpjson', "HTTP JSON"),
+    ('mqtt', "MQTT"),
+    ('netflow', "NetFlow"),
+    ('salesforce', "Salesforce"),
+    ('streaming', "Streaming")
 )
 
 def get_available_timezones() -> list[tuple]:
@@ -567,7 +584,8 @@ class Frontend(RsyslogQueue, models.Model):
     )
     api_parser_use_proxy = models.BooleanField(
         default=False,
-        help_text=_("Use Proxy")
+        verbose_name=_("Use Proxy"),
+        help_text=_("Use a proxy to connect to distant endpoint")
     )
     api_parser_custom_proxy = models.TextField(
         default="",
@@ -1599,6 +1617,21 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Perception Point X Ray API Key"),
         default="",
     )
+    perception_point_x_ray_organization_id = models.PositiveIntegerField(
+        verbose_name=_("Perception Point X Ray Organization ID"),
+        help_text=_("Perception Point X Ray Organization ID"),
+        default=0,
+    )
+    perception_point_x_ray_environment_id = models.PositiveIntegerField(
+        verbose_name=_("Perception Point X Ray Environment ID"),
+        help_text=_("Perception Point X Ray Environment ID"),
+        default = 0,
+    )
+    perception_point_x_ray_case_types = models.JSONField(
+        verbose_name=_("Perception Point X Ray Case Types"),
+        help_text=_("Perception Point X Ray Case Types"),
+        default=[],
+    )
 
     extrahop_host = models.TextField(
         verbose_name=_("Extrahop host"),
@@ -1787,10 +1820,6 @@ class Frontend(RsyslogQueue, models.Model):
             result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
                                     for log_fwd in self.log_forwarders.all().only('id')]
 
-        if not fields or "api_parser_custom_certificate" in fields:
-            if result['api_parser_custom_certificate'] is None:
-                result['api_parser_custom_certificate'] = {}
-
         return result
 
     def to_html_template(self):
@@ -1801,8 +1830,7 @@ class Frontend(RsyslogQueue, models.Model):
         if self.mode == "log" and self.listening_mode == "file" or\
             self.mode == "filebeat" and self.filebeat_listening_mode == "file":
             listeners_list = [self.file_path]
-        elif self.mode == "log" and self.listening_mode == "api" or\
-            self.mode == "filebeat" and self.filebeat_listening_mode == "api":
+        elif self.mode == "log" and self.listening_mode == "api":
             listeners_list = [self.api_parser_type]
         elif self.mode == "log" and self.listening_mode == "redis":
             listeners_list = ["Redis:", f"{self.redis_server}:{self.redis_port}"]
@@ -1969,7 +1997,7 @@ class Frontend(RsyslogQueue, models.Model):
         :return     The generated configuration as string, or raise
         """
         """ If no HAProxy conf - Rsyslog only conf """
-        if self.rsyslog_only_conf or self.filebeat_only_conf:
+        if not self.has_haproxy_conf:
             return ""
         # The following var is only used by error, do not forget to adapt if needed
         template_name = JINJA_PATH + JINJA_TEMPLATE
@@ -2242,7 +2270,7 @@ class Frontend(RsyslogQueue, models.Model):
         """ Generate filebeat configuration of this frontend
         """
         conf = self.to_template()
-        if self.filebeat_listening_mode in ["udp", "tcp"]:
+        if "%ip%" in self.filebeat_config:
             conf['filebeat_config'] = conf['filebeat_config'].replace ("%ip%", JAIL_ADDRESSES['rsyslog'][conf['listeners'][0].network_address.family])
             conf['filebeat_config'] = conf['filebeat_config'].replace ("%port%", str(conf['listeners'][0].rsyslog_port))
 
@@ -2396,7 +2424,7 @@ class Frontend(RsyslogQueue, models.Model):
         nodes = set()
         if self.mode == "log" and self.listening_mode in ["file", "kafka", "redis"]:
             nodes = {self.node} if self.node else set(Node.objects.all())
-        elif self.mode == "filebeat" and self.filebeat_listening_mode in ["file", "api"]:
+        elif self.mode == "filebeat" and "%ip%" not in self.filebeat_config:
             nodes = {self.node}
         elif self.mode == "log" and self.listening_mode == "api":
             nodes = set(Node.objects.all())
@@ -2478,16 +2506,6 @@ class Frontend(RsyslogQueue, models.Model):
         return f"Stop frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 
     @property
-    def rsyslog_only_conf(self):
-        """ Check if this frontend has only rsyslog configuration, not haproxy at all """
-        return (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka", "redis")))
-
-    @property
-    def filebeat_only_conf(self):
-        """ Check if this frontend has only filebeat configuration, not haproxy at all """
-        return self.mode == "filebeat" and self.filebeat_listening_mode in ("udp", "file", "api")
-
-    @property
     def has_rsyslog_conf(self):
         return self.mode in ("log", "filebeat") or self.enable_logging
 
@@ -2499,7 +2517,7 @@ class Frontend(RsyslogQueue, models.Model):
     def has_haproxy_conf(self):
         return self.mode in ("tcp", "http") or \
             self.mode == "log" and self.listening_mode in ("tcp", "tcp,udp", "relp") or \
-            self.mode == "filebeat" and self.filebeat_listening_mode == "tcp"
+            self.mode == "filebeat" and "%ip%" in self.filebeat_config
 
     def has_tls(self):
         # Test self.pk to prevent M2M errors when object isn't saved in DB

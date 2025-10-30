@@ -5,17 +5,14 @@
             "name": "Geolite2 Country",
             "db_type": "GeoIP",
             "method": "GET",
-            "url": "https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz",
-            "auth_type": "basic",
-            "user": "YOURACCOUNTID",
-            "password": "YOURLICENSEKEY",
+            "url": "https://barricade.vultureproject.org/ipsets/GeoLite2-Country.mmdb",
             "verify_cert": true,
             "filename": "GeoLite2-Country.mmdb",
-            "description": "Maxmind DBs Geoip country database.\nPLEASE FILL-IN YOUR PERSONAL ACCOUNDID AND LICENSEKEY TO USE THOSE DBS",
+            "description": "Maxmind DBs Geoip country database",
             "nb_netset": 0,
             "nb_unique": 0,
-            "internal": false,
-            "enable_hour_download": false
+            "internal": true,
+            "enable_hour_download": true
         }
     },
     {
@@ -24,17 +21,14 @@
             "name": "Geolite2 City",
             "db_type": "GeoIP",
             "method": "GET",
-            "url": "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz",
-            "auth_type": "basic",
-            "user": "YOURACCOUNTID",
-            "password": "YOURLICENSEKEY",
+            "url": "https://barricade.vultureproject.org/ipsets/GeoLite2-City.mmdb",
             "verify_cert": true,
             "filename": "GeoLite2-City.mmdb",
-            "description": "Maxmind DBs Geoip city database.\nPLEASE FILL-IN YOUR PERSONAL ACCOUNDID AND LICENSEKEY TO USE THOSE DBS",
+            "description": "Maxmind DBs Geoip city database",
             "nb_netset": 0,
             "nb_unique": 0,
-            "internal": false,
-            "enable_hour_download": false
+            "internal": true,
+            "enable_hour_download": true
         }
     }
 ]

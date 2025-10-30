@@ -29,7 +29,7 @@ from djongo import models
 # Django project imports
 from services.frontend.models import Frontend
 from system.config.models import Config
-from system.cluster.models import Node
+from system.cluster.models import Node, Cluster
 from toolkit.network.network import JAIL_ADDRESSES
 
 # Required exceptions imports
@@ -50,6 +50,7 @@ class FilebeatSettings(models.Model):
         """
         """ Variables used by template rendering """
         return {
+            'cluster_redis_password': Cluster.get_global_config().redis_password,
             'frontends': Frontend.objects.filter(enabled=True, mode="filebeat"),
             'tenants_name': Config.objects.get().internal_tenants.name,
             'nodes': Node.objects.exclude(name=settings.HOSTNAME),
