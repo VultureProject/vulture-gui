@@ -154,6 +154,10 @@ function redrawSwitch(id) {
   Switchery(elem);
 }
 
+function editing_existing_object() {
+  return !window.location.href.endsWith("/edit/")
+}
+
 $(function() {
 
   /* All events to refresh (re-apply) after a table is modified */
@@ -571,13 +575,16 @@ $(function() {
   }
 
   function refresh_filebeat_ruleset() {
-    filebeat_module = $('#id_filebeat_module').val();
-    if ($("#id_ruleset option[value='beat_" + filebeat_module + "-ecs']").length > 0) {
-      $('#id_ruleset').val("beat_" + filebeat_module + "-ecs").trigger('change');
-    } else if ($("#id_ruleset option[value='beat_" + filebeat_module + "']").length > 0) {
-      $('#id_ruleset').val("beat_" + filebeat_module).trigger('change');
-    } else {
-      $('#id_ruleset').val('generic_json').trigger('change');
+    // Do NOT update ruleset value on existing configurations (allows override during initial creation)
+    if(!editing_existing_object()) {
+      filebeat_module = $('#id_filebeat_module').val();
+      if ($("#id_ruleset option[value='beat_" + filebeat_module + "-ecs']").length > 0) {
+        $('#id_ruleset').val("beat_" + filebeat_module + "-ecs").trigger('change');
+      } else if ($("#id_ruleset option[value='beat_" + filebeat_module + "']").length > 0) {
+        $('#id_ruleset').val("beat_" + filebeat_module).trigger('change');
+      } else {
+        $('#id_ruleset').val('generic_json').trigger('change');
+      }
     }
   }
 
