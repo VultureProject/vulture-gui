@@ -170,6 +170,8 @@ class CnappWizParser(ApiParser):
                                   evidenceQuery
                                   entitySnapshot {{
                                     id
+                                    cloudPlatform
+                                    region
                                   }}
                                   resolvedBy{{
                                     user {{
@@ -214,6 +216,15 @@ class CnappWizParser(ApiParser):
                                   }}
                                   sourceRules {{
                                     id
+                                    securitySubCategories {{
+                                        category {{
+                                            framework {{
+                                                name
+                                            }}
+                                            name
+                                        }}
+                                        title
+                                    }}
                                   }}
                                   status
                                   type
