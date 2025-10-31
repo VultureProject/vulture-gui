@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [CNAPP_WIZ] New collector
+- [SCRIPTS] [REFRESH_NIC] Support CARP configuration import from rc.conf
 ### Fixed
 - [SCRIPTS] [REFRESH_NIC] Correctly parse complex rc.conf ifconfig entries
 
