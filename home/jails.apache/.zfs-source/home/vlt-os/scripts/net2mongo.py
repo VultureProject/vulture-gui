@@ -63,6 +63,9 @@ PATTERN_VLAN = re.compile("vlan ([0-9]+)")
 PATTERN_VLANDEV = re.compile("vlandev ([a-z0-9\.]+)")
 PATTERN_LAGGPROTO = re.compile("laggproto ([a-z]+)")
 PATTERN_LAGGPORT = re.compile("laggport ([a-z0-9]+)")
+PATTERN_CARP_VHID = re.compile(r"( |^)vhid ([0-9]+)( |$)")
+PATTERN_CARP_ADVSKEW = re.compile(r"( |^)advskew ([0-9]+)( |$)")
+PATTERN_CARP_PASS = re.compile(r"( |^)pass ([0-9a-zA-Z]+)( |$)")
 PATTERN_FIB = re.compile("fib ([0-9])")
 
 def refresh_physical_NICs(node):
@@ -161,6 +164,18 @@ def parse_ifconfig_values(line, config):
                 config['type'] = 'alias'
             else:
                 config['type'] = 'system'
+
+    if carp_vhid_match := re.search(PATTERN_CARP_VHID, line):
+        logger.debug(f"Node::parse_ifconfig_values: Found CARP VHID {carp_vhid_match.group(2)}")
+        config['carp_vhid'] = carp_vhid_match.group(2)
+
+    if carp_prio_match := re.search(PATTERN_CARP_ADVSKEW, line):
+        logger.debug(f"Node::parse_ifconfig_values: Found CARP skew {carp_prio_match.group(2)}")
+        config['carp_priority'] = carp_prio_match.group(2)
+
+    if carp_pass_match := re.search(PATTERN_CARP_PASS, line):
+        logger.debug("Node::parse_ifconfig_values: Found CARP password")
+        config['carp_password'] = carp_pass_match.group(2)
 
     fib_match = re.search(PATTERN_FIB, line)
     if fib_match:
@@ -352,9 +367,14 @@ if __name__ == "__main__":
                 for iface in interfaces:
                     try:
                         logger.info(f"Node::network_sync: creating/updating interface {iface}")
-                        address_nic, created = NetworkAddressNIC.objects.get_or_create(
+                        address_nic, created = NetworkAddressNIC.objects.update_or_create(
                             nic=iface,
-                            network_address=address)
+                            network_address=address,
+                            defaults={
+                                "carp_priority": config.get('carp_priority', 0),
+                                "carp_passwd": config.get('carp_password', ''),
+                            }
+                            )
                         logger.info("Node::network_sync: {} link {}".format("created" if created else "updated", address_nic))
                     except Exception as e:
                         logger.error(f"Node::network_sync: Could not create link {address} -> {iface}")
