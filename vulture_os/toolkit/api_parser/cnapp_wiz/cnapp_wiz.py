@@ -82,7 +82,7 @@ class CnappWizParser(ApiParser):
             response.raise_for_status()
 
             self.access_token = response.json()['access_token']
-            self.access_expires_at = datetime.now() + timedelta(seconds=int(response.json()['expires_in']))
+            self.access_expires_at = timezone.now() + timedelta(seconds=int(response.json()['expires_in']))
             if self.frontend:
                 self.frontend.cnapp_wiz_access_token = self.access_token
                 self.frontend.cnapp_wiz_access_expires_at = self.access_expires_at
