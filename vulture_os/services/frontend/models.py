@@ -1743,6 +1743,12 @@ class Frontend(RsyslogQueue, models.Model):
         verbose_name=_("Cnapp Wiz refresh token expiration timestamp")
     )
 
+    cnapp_wiz_api_url = models.TextField(
+        default="https://api.eu15.app.wiz.io/graphql",
+        help_text=_("Cnapp Wiz API URL"),
+        verbose_name=_("Cnapp Wiz API URL")
+    )
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """

@@ -281,7 +281,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                            "ubika_base_refresh_token", "ubika_namespaces",
                             "sentinel_one_graph_token", "sentinel_one_graph_console_url",
                            'messagetrace_o365_tenant_id', 'messagetrace_o365_client_id', 'messagetrace_o365_client_secret',
-                           'cnapp_wiz_client_id', 'cnapp_wiz_client_secret',
+                           'cnapp_wiz_client_id', 'cnapp_wiz_client_secret', 'cnapp_wiz_api_url',
                            ]:
             self.fields[field_name].required = False
 
@@ -411,7 +411,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                   "ubika_base_refresh_token", "ubika_namespaces",
                   "sentinel_one_graph_token", "sentinel_one_graph_console_url",
                   'messagetrace_o365_tenant_id', 'messagetrace_o365_client_id', 'messagetrace_o365_client_secret',
-                  'cnapp_wiz_client_id', 'cnapp_wiz_client_secret',
+                  'cnapp_wiz_client_id', 'cnapp_wiz_client_secret', 'cnapp_wiz_api_url',
         ] + RsyslogQueueForm.Meta.fields
 
         widgets = {
@@ -659,6 +659,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'messagetrace_o365_client_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'cnapp_wiz_client_id': TextInput(attrs={'class': 'form-control'}),
             'cnapp_wiz_client_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'cnapp_wiz_api_url': TextInput(attrs={'class': 'form-control'}),
         } | RsyslogQueueForm.Meta.widgets
 
     def clean_name(self):

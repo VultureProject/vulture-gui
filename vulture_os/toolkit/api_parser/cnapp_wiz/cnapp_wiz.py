@@ -48,7 +48,7 @@ class CnappWizParser(ApiParser):
         self.cnapp_wiz_client_id = data.get('cnapp_wiz_client_id')
         self.cnapp_wiz_client_secret = data.get('cnapp_wiz_client_secret')
         self.auth_url = "https://auth.app.wiz.io/oauth/token"
-        self.api_url = "https://api.eu15.app.wiz.io/graphql"
+        self.api_url = data.get('cnapp_wiz_api_url')
 
         self.access_token = None
         self.access_expires_at = None
