@@ -124,16 +124,32 @@
     };
   }
 
+  var require_carp_vhid = false;
+
+  function show_or_hide_carp_params(){
+    var current_type = $('#id_type').val();
+    var nics = $('#id_nic').val();
+    var vhid = $('#id_carp_vhid').val();
+
+    if(vhid != "0") {
+      $('#carp_info').show();
+    } else if(nics && nics.length > 1 && current_type === "alias") {
+      require_carp_vhid = true;
+      $('#carp_info').show();
+    } else {
+      require_carp_vhid = false;
+      $('#carp_info').hide();
+    }
+  }
+
   $(function() {
     $('.select2').select2();
 
-    var is_carp = false;
+    show_or_hide_carp_params();
 
     $('#id_nic').on('change', function(e){
       //$('#id_nic').select2('destroy');
 
-      if_carp = false;
-      $('#carp_info').hide();
       var val = $(this).val();
       var current_type = $('#id_type').val();
 
@@ -146,17 +162,14 @@
         return;
       }
 
-      if (val.length > 1 && current_type === "alias"){
-        $('#carp_info').show();
-        is_carp = true;
-      }
+      show_or_hide_carp_params();
 
       var ids = [];
       var node_names = [];
       var interface_names = [];
       $("#id_nic option:selected").each(function(){
         $(this).prop('disabled', false);
-      
+
         ids.push($(this).val());
         node_names.push($(this).text().split(' - ')[1]);
         interface_names.push($(this).text().split(' - ')[0]);
@@ -192,7 +205,7 @@
       var current_type = $('#id_type').val();
       $('.vlan_parameters').hide();
       $('.lagg_parameters').hide();
-      
+
       if(current_type === "vlan") {
         $('.vlan_parameters').show();
       }
@@ -205,7 +218,7 @@
     $('#netif_edit_form').on('submit', function(e){
       PNotify().removeAll()
       e.preventDefault();
-      if (is_carp && $('#id_carp_vhid').val() === "0"){
+      if (require_carp_vhid && $('#id_carp_vhid').val() === "0"){
         notify('error', gettext('Error'), gettext('Define a VHID > 0 for a CARP network address'))
         return false;
       }
