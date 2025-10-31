@@ -48,13 +48,24 @@ import subprocess
 PATTERN_IFCONFIG = re.compile('^ifconfig_(.*)="?\'?([^"\']*)"?\'?')
 PATTERN_GATEWAY = re.compile("^defaultrouter=(.*)")
 PATTERN_GATEWAY6 = re.compile("^ipv6_defaultrouter=(.*)")
-PATTERN_INET6 = re.compile("(inet6 )?(.*)(( prefixlen )|(/))([0-9\.]+)")
-PATTERN_INET = re.compile("(inet )?(.*)(( netmask )|(/))([0-9\.]+)")
+# Handles almost all types of IPv6 formats
+PATTERN_INET6 = re.compile(r"(inet6 )?(.* )?(((([0-9A-Fa-f]{1,4}:){1,6}:)|(([0-9A-Fa-f]{1,4}:){7}))([0-9A-Fa-f]{1,4}))(( prefixlen )|(/))([0-9\.]{1,3})")
+PATTERN_INET = re.compile(r"(inet )?(.* )?(([0-9]{1,3}\.){3}[0-9]{1,3})(( netmask )|(\/))([0-9\.]{1,2})( .*)?")
+# Correct group number for the pattern matches above, to get IP/prefix from it
+# WARNING change those groups if you change the patterns above!
+PATTERN_INET_IP_GROUP = 3
+PATTERN_INET_PREFIX_OR_NETMASK_GROUP = 8
+PATTERN_INET6_IP_GROUP = 3
+PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = 13
+PATTERN_ALIAS = re.compile(r"( |^)alias( |$)")
 PATTERN_IFACE_NAME = re.compile("([a-z]+)([0-9]+)")
 PATTERN_VLAN = re.compile("vlan ([0-9]+)")
 PATTERN_VLANDEV = re.compile("vlandev ([a-z0-9\.]+)")
 PATTERN_LAGGPROTO = re.compile("laggproto ([a-z]+)")
 PATTERN_LAGGPORT = re.compile("laggport ([a-z0-9]+)")
+PATTERN_CARP_VHID = re.compile(r"( |^)vhid ([0-9]+)( |$)")
+PATTERN_CARP_ADVSKEW = re.compile(r"( |^)advskew ([0-9]+)( |$)")
+PATTERN_CARP_PASS = re.compile(r"( |^)pass ([0-9a-zA-Z]+)( |$)")
 PATTERN_FIB = re.compile("fib ([0-9])")
 
 def refresh_physical_NICs(node):
@@ -134,17 +145,37 @@ def parse_ifconfig_values(line, config):
 
     if config.get('ipv6'):
         pattern = PATTERN_INET6
+        ip_group = PATTERN_INET_IP_GROUP
+        prefix_or_netmask_group = PATTERN_INET6_PREFIX_OR_NETMASK_GROUP
     else:
         pattern = PATTERN_INET
+        ip_group = PATTERN_INET6_IP_GROUP
+        prefix_or_netmask_group = PATTERN_INET_PREFIX_OR_NETMASK_GROUP
 
     inet_match = re.search(pattern, line)
     if inet_match:
-        logger.debug("Node::parse_ifconfig_values: interface is configured with static IP")
+        logger.debug("Node::parse_ifconfig_values: interface has an IP")
         parse_success = True
-        config['ip'] = inet_match.group(2)
-        config['prefix_or_netmask'] = inet_match.group(6)
+        config['ip'] = inet_match.group(ip_group)
+        logger.debug(f"Node::parse_ifconfig_values: IP {inet_match.group(ip_group)}")
+        config['prefix_or_netmask'] = inet_match.group(prefix_or_netmask_group)
         if 'type' not in config:
-            config['type'] = 'system'
+            if re.search(PATTERN_ALIAS, line):
+                config['type'] = 'alias'
+            else:
+                config['type'] = 'system'
+
+    if carp_vhid_match := re.search(PATTERN_CARP_VHID, line):
+        logger.debug(f"Node::parse_ifconfig_values: Found CARP VHID {carp_vhid_match.group(2)}")
+        config['carp_vhid'] = carp_vhid_match.group(2)
+
+    if carp_prio_match := re.search(PATTERN_CARP_ADVSKEW, line):
+        logger.debug(f"Node::parse_ifconfig_values: Found CARP skew {carp_prio_match.group(2)}")
+        config['carp_priority'] = carp_prio_match.group(2)
+
+    if carp_pass_match := re.search(PATTERN_CARP_PASS, line):
+        logger.debug("Node::parse_ifconfig_values: Found CARP password")
+        config['carp_password'] = carp_pass_match.group(2)
 
     fib_match = re.search(PATTERN_FIB, line)
     if fib_match:
@@ -336,9 +367,14 @@ if __name__ == "__main__":
                 for iface in interfaces:
                     try:
                         logger.info(f"Node::network_sync: creating/updating interface {iface}")
-                        address_nic, created = NetworkAddressNIC.objects.get_or_create(
+                        address_nic, created = NetworkAddressNIC.objects.update_or_create(
                             nic=iface,
-                            network_address=address)
+                            network_address=address,
+                            defaults={
+                                "carp_priority": config.get('carp_priority', 0),
+                                "carp_passwd": config.get('carp_password', ''),
+                            }
+                            )
                         logger.info("Node::network_sync: {} link {}".format("created" if created else "updated", address_nic))
                     except Exception as e:
                         logger.error(f"Node::network_sync: Could not create link {address} -> {iface}")
