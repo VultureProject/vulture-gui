@@ -1722,6 +1722,33 @@ class Frontend(RsyslogQueue, models.Model):
         default=""
     )
 
+    # Cnapp Wiz attributes
+    cnapp_wiz_client_id = models.TextField(
+        help_text=_('Cnapp Wiz Client ID'),
+        default=""
+    )
+    cnapp_wiz_client_secret = models.TextField(
+        help_text=_('Cnapp Wiz Client Secret'),
+        default=""
+    )
+
+    cnapp_wiz_access_token = models.TextField(
+        verbose_name=_("Cnapp Wiz access token"),
+        help_text=_("Cnapp Wiz access token"),
+        default=""
+    )
+    cnapp_wiz_access_expires_at = models.DateTimeField(
+        default=timezone.now,
+        help_text=_("Cnapp Wiz refresh token expiration timestamp"),
+        verbose_name=_("Cnapp Wiz refresh token expiration timestamp")
+    )
+
+    cnapp_wiz_api_url = models.TextField(
+        default="https://api.eu15.app.wiz.io/graphql",
+        help_text=_("Cnapp Wiz API URL"),
+        verbose_name=_("Cnapp Wiz API URL")
+    )
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
