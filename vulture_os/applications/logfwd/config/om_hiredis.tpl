@@ -32,9 +32,6 @@
             {%- if client_key %}
             client_key="{{client_key}}"
             {%- endif %}
-            {%- if sni %}
-            sni="{{sni}}"
-            {%- endif %}
         {%- endif %}
         {%- if mode == "stream" %}
             stream.outField="{{stream_outfield}}"
