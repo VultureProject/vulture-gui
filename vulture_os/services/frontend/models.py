@@ -520,7 +520,7 @@ class Frontend(RsyslogQueue, models.Model):
         null=True,
         blank=True,
         help_text=_("TLSProfile object to use."),
-        verbose_name=_("Use a TLS Profile")
+        verbose_name=_("Redis TLS Profile to use")
     )
     redis_key = models.TextField(
         default="vulture",

@@ -120,7 +120,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             queryset=TLSProfile.objects.all(),
             required=False,
             widget=Select(attrs={'class': 'form-control select2'}),
-            label=_('Use a TLS profile'),
+            label=_('Redis TLS Profile to use'),
             empty_label="No TLS"
     )
 
