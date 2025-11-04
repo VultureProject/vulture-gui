@@ -313,7 +313,9 @@ def tls_profile_edit(request, object_id=None, api=False):
                 frontend.reload_conf()
                 logger.info("LogOM Redis confs reloaded")
 
-            for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
+            frontends = set(listener.frontend for listener in tls_profile.listener_set.all())
+            frontends.update(tls_profile.frontend_set.all())
+            for frontend in frontends:
                 frontend.reload_conf()
                 logger.info("Frontend confs reloaded")
 
