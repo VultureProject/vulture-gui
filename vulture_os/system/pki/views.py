@@ -307,6 +307,11 @@ def tls_profile_edit(request, object_id=None, api=False):
                 Q(log_forwarders_parse_failure__in=list(tls_profile.logomsentinel_set.all()))).distinct():
                 frontend.reload_conf()
                 logger.info("LogOM Sentinel confs reloaded")
+            for frontend in Frontend.objects.filter(
+                Q(log_forwarders__in=list(tls_profile.logomhiredis_set.all())) |
+                Q(log_forwarders_parse_failure__in=list(tls_profile.logomhiredis_set.all()))).distinct():
+                frontend.reload_conf()
+                logger.info("LogOM Redis confs reloaded")
 
             for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
                 frontend.reload_conf()
