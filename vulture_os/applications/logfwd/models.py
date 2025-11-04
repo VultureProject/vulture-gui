@@ -554,13 +554,13 @@ class LogOMHIREDIS(LogOM):
         })
         if self.redis_tls_profile:
             template['use_tls'] = "on"
-            if self.redis_tls_profile.ca_cert:
-                template['ca_cert_bundle'] = self.redis_tls_profile.ca_cert.bundle_filename()
+            if self.redis_tls_profile.ca_cert and self.redis_tls_profile.verify_client != "none":
+                template['ca_cert_bundle'] = self.redis_tls_profile.ca_cert.bundle_filename
             if self.redis_tls_profile.x509_certificate:
                 template['client_cert'] = self.redis_tls_profile.x509_certificate.get_base_filename() + ".crt"
                 template['client_key'] = self.redis_tls_profile.x509_certificate.get_base_filename() + ".key"
         return template
-    
+
     def get_rsyslog_template(self):
         from services.frontend.models import Frontend
         if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.pk).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.pk).exists():
