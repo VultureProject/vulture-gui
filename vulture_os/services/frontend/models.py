@@ -519,6 +519,7 @@ class Frontend(RsyslogQueue, models.Model):
         default=None,
         null=True,
         blank=True,
+        related_name="redis_frontends",
         help_text=_("TLSProfile object to use."),
         verbose_name=_("Redis TLS Profile to use")
     )
