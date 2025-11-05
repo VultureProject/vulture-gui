@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] [REFRESH_NIC] Correctly parse complex rc.conf ifconfig entries
 - [MIDDLEWARE] [OS] Wrongly report that node is not bootstrapped
 - [GUI] Multiple requests sent on task lists toggle
+- [FRONTEND] [GUI] Wrongly display redis settings on filebeat configuration change
 
 
 ## [2.33.1] - 2025-10-29
