@@ -513,7 +513,7 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Default redis port is 6379"),
         verbose_name=_("Redis port to use")
     )
-    redis_tls_profile = models.ForeignKey(
+    tls_profile = models.ForeignKey(
         TLSProfile,
         on_delete=models.RESTRICT,
         default=None,

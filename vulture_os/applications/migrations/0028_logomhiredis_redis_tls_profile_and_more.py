@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='logomhiredis',
-            name='redis_tls_profile',
+            name='tls_profile',
             field=models.ForeignKey(blank=True, default=None, help_text='TLSProfile object to use.', null=True, on_delete=django.db.models.deletion.RESTRICT, to='system.tlsprofile', verbose_name='Use a TLS Profile'),
         ),
     ]

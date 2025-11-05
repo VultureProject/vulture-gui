@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='frontend',
-            name='redis_tls_profile',
+            name='tls_profile',
             field=models.ForeignKey(blank=True, default=None, help_text='TLSProfile object to use.', null=True, on_delete=django.db.models.deletion.RESTRICT, related_name='redis_frontends', to='system.tlsprofile', verbose_name='Redis TLS Profile to use'),
         ),
         migrations.AlterField(
