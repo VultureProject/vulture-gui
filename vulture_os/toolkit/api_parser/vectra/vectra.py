@@ -210,7 +210,9 @@ class VectraParser(ApiParser):
                 since = self.last_collected_timestamps.get(f"vectra_{kind}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
                 results = self.get_logs(since, to, kind)
                 if results:
-                    self.last_collected_timestamps[f"vectra_{kind}"] = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
+                    new_timestamp = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
+                    logger.info(f"[{__parser__}][execute] :: Successfully gets {len(results)} '{kind}' logs, updating last_collected_timestamps['vectra_{kind}'] -> {new_timestamp}", extra={'frontend': str(self.frontend)})
+                    self.last_collected_timestamps[f"vectra_{kind}"] = new_timestamp
                     logs.extend(results)
                 else:
                     if to == since + timedelta(hours=24):
@@ -225,7 +227,9 @@ class VectraParser(ApiParser):
                 since = self.last_collected_timestamps.get(f"vectra_{type}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
                 results = self.get_data_from_entity_api(since, to, type)
                 if results:
-                    self.last_collected_timestamps[f"vectra_{type}"] = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
+                    new_timestamp = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
+                    logger.info(f"[{__parser__}][execute] :: Successfully gets {len(results)} '{kind}' logs, updating last_collected_timestamps['vectra_{kind}'] -> {new_timestamp}", extra={'frontend': str(self.frontend)})
+                    self.last_collected_timestamps[f"vectra_{type}"] = new_timestamp
                     logs.extend(results)
                 else:
                     if to == since + timedelta(hours=24):
