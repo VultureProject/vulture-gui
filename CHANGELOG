@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] [NETIF] Show CARP information for addresses imported from rc.conf (support for externally managed CARP)
 ### Fixed
 - [SCRIPTS] [REFRESH_NIC] Correctly parse complex rc.conf ifconfig entries
+- [MIDDLEWARE] [OS] Wrongly report that node is not bootstrapped
 
 
 ## [2.33.1] - 2025-10-29

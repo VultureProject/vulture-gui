@@ -25,6 +25,7 @@ __doc__ = ''
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import DatabaseError
 
 from applications.apps import Apps
 from authentication.authentication import Authentication
@@ -57,6 +58,9 @@ def admin_media(request):
 
     except (ObjectDoesNotExist, AssertionError):
         node_name = ""
+    except DatabaseError as e:
+        node_name = ""
+        logger.error(f"context_processors:admin_media: MongoDB error: {e}")
 
     menu = (System().menu, Service().menu, Authentication().menu, Portal().menu, Darwin().menu, Apps().menu, Workflows().menu)
     results = {
@@ -65,7 +69,7 @@ def admin_media(request):
         'CURRENT_NODE': node_name,
         'DEV_MODE': settings.DEV_MODE,
         'TITLE': settings.HOSTNAME,
-        'COLLAPSE': request.session.get('collapse')
+        'COLLAPSE': False if not node_name else request.session.get('collapse')
     }
 
     return results
