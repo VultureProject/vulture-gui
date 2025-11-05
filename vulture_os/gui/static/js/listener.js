@@ -192,6 +192,7 @@ $(function() {
           && $('#id_redis_password').val() === redis_local.password
         ) {
       $('#id_redis_use_local').prop('checked', true).trigger('change');
+      redrawSwitch('id_redis_use_local');
     }
 
     if ($("#id_redis_use_local").is(':checked')) {
@@ -597,7 +598,8 @@ $(function() {
   })
 
   $('#id_filebeat_config').on("change", function(e) {
-    show_network_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
+    show_network_conf($('#id_mode').val(), $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+    show_redis_conf($('#id_mode').val(), $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_node($('#id_mode').val(), $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
   }).trigger('change');
 
@@ -882,6 +884,7 @@ $(function(){
       var switchery = new Switchery(html);
     });
     redrawSwitch('id_enable_logging');
+    redrawSwitch('id_redis_use_local');
     $("#id_kafka_options").tagsinput({
                     freeInput: true,
                     typeaheadjs: {
