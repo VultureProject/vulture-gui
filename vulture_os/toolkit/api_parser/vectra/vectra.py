@@ -123,36 +123,26 @@ class VectraParser(ApiParser):
             raise VectraAPIError(err)
 
 
-    def get_data_from_entity_api(self, query = {}):
-        results = list()
-        # Ensure initial query object is not modified by the function
-        internal_query = deepcopy(query)
-        types = [
-            "account",
-            "host"
-        ]
-        for type_value in types:
-            logger.info(f"[{__parser__}]:get_data_from_entity_api: Executing Entity {type_value} API task.", extra={'frontend': str(self.frontend)})
-            internal_query.update({"type": type_value})
-            response = self.__execute_query(internal_query, "api/v3.3/events/entity_scoring")
-
-            results.extend(response.get("events", []))
-            while "remaining_count" in response and "next_checkpoint" in response and response["remaining_count"] != 0:
-                internal_query.update({"from": response["next_checkpoint"]})
-                response = self.__execute_query(internal_query, "/api/v3.3/events/entity_scoring")
-                results.extend(response.get("events", []))
-
-        return results
-
-
-    def get_logs(self, since: datetime, to: datetime):
+    def get_data_from_entity_api(self, since: datetime, to: datetime, type: str):
         results = list()
         query = {"event_timestamp_gte": since.strftime("%Y-%m-%dT%H:%M:%SZ"), "event_timestamp_lte": to.strftime("%Y-%m-%dT%H:%M:%SZ")}
-        for endpoint in ["api/v3.3/events/detections"]:
-            response = self.__execute_query(query, endpoint)
+        logger.info(f"[{__parser__}]:get_data_from_entity_api: Executing Entity {type} API task.", extra={'frontend': str(self.frontend)})
+        query.update({"type": type})
+        response = self.__execute_query(query, "api/v3.3/events/entity_scoring")
+        results.extend(response.get("events", []))
+        while "remaining_count" in response and "next_checkpoint" in response and response["remaining_count"] != 0:
+            query.update({"from": response["next_checkpoint"]})
+            response = self.__execute_query(query, "/api/v3.3/events/entity_scoring")
             results.extend(response.get("events", []))
-        results.extend(self.get_data_from_entity_api(query))
+
         return results
+
+
+    def get_logs(self, since: datetime, to: datetime, kind: str):
+        query = {"event_timestamp_gte": since.strftime("%Y-%m-%dT%H:%M:%SZ"), "event_timestamp_lte": to.strftime("%Y-%m-%dT%H:%M:%SZ")}
+        endpoint = f"api/v3.3/events/{kind}"
+        response = self.__execute_query(query, endpoint)
+        return response.get("events", [])
 
     def __execute_query(self, query, endpoint, timeout=20):
         self._connect()
@@ -209,21 +199,49 @@ class VectraParser(ApiParser):
     def execute(self):
         try:
             ## GET LOGS ##
-            since = self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
+            since = self.frontend.last_api_call or (timezone.now() - timedelta(days=2))
             to = min(timezone.now(), since + timedelta(hours=24))
 
             logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
-            results = self.get_logs(since, to)
+            kinds = ["detections"]
+            results = list()
+            logs = list()
+            for kind in kinds:
+                since = self.last_collected_timestamps.get(f"vectra_{kind}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
+                results = self.get_logs(since, to, kind)
+                if results:
+                    self.last_collected_timestamps[f"vectra_{kind}"] = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
+                    logs.extend(results)
+                else:
+                    if to == since + timedelta(hours=24):
+                        self.last_collected_timestamps[f"vectra_{kind}"] = self.last_collected_timestamps[f"vectra_{kind}"] +timedelta(hours=1)
+
+            ## GET DATA FROM ENTITIES ##
+            types = [
+                "account",
+                "host"
+            ]
+            for type in types:
+                since = self.last_collected_timestamps.get(f"vectra_{type}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
+                results = self.get_data_from_entity_api(since, to, type)
+                if results:
+                    self.last_collected_timestamps[f"vectra_{type}"] = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
+                    logs.extend(results)
+                else:
+                    if to == since + timedelta(hours=24):
+                        self.last_collected_timestamps[f"vectra_{type}"] = self.last_collected_timestamps[f"vectra_{type}"] +timedelta(hours=1)
+
+                logs.extend(results)
+
             self.update_lock()
 
             # Send those lines to Rsyslog
-            self.write_to_file([self.format_log(log) for log in results])
+            self.write_to_file([self.format_log(log) for log in logs])
 
             # And update lock after sending lines to Rsyslog
             self.update_lock()
-            if results:
-                self.frontend.last_api_call = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(milliseconds=1)
-                self.frontend.save(update_fields=['last_api_call'])
+
+            
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
