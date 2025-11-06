@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [GUI] [NETIF] Show CARP information for addresses imported from rc.conf (support for externally managed CARP)
 ### Fixed
-- [API_PARSER] [VECTRA] Update the last_api_call with the timestamp of the last event to avoid missing log
+- [API_PARSER] [VECTRA] Use separate timestamps for log kinds to avoid missing log
 - [SCRIPTS] [REFRESH_NIC] Correctly parse complex rc.conf ifconfig entries
 - [MIDDLEWARE] [OS] Wrongly report that node is not bootstrapped
 - [GUI] Multiple requests sent on task lists toggle
