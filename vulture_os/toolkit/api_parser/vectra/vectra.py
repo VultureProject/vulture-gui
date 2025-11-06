@@ -126,9 +126,12 @@ class VectraParser(ApiParser):
 
     def get_data_from_entity_api(self, since: datetime, to: datetime, entity_type: str):
         results = list()
-        query = {"event_timestamp_gte": since.strftime("%Y-%m-%dT%H:%M:%SZ"), "event_timestamp_lte": to.strftime("%Y-%m-%dT%H:%M:%SZ")}
+        query = {
+            "event_timestamp_gte": since.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "event_timestamp_lte": to.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "type": entity_type,
+        }
         logger.info(f"[{__parser__}]:get_data_from_entity_api: Executing Entity {entity_type} API task.", extra={'frontend': str(self.frontend)})
-        query.update({"type": entity_type})
         response = self.__execute_query(query, "api/v3.3/events/entity_scoring")
         results.extend(response.get("events", []))
         while "remaining_count" in response and "next_checkpoint" in response and response["remaining_count"] != 0:
@@ -140,7 +143,10 @@ class VectraParser(ApiParser):
 
 
     def get_logs(self, since: datetime, to: datetime, kind: str):
-        query = {"event_timestamp_gte": since.strftime("%Y-%m-%dT%H:%M:%SZ"), "event_timestamp_lte": to.strftime("%Y-%m-%dT%H:%M:%SZ")}
+        query = {
+            "event_timestamp_gte": since.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "event_timestamp_lte": to.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
         endpoint = f"api/v3.3/events/{kind}"
         response = self.__execute_query(query, endpoint)
         return response.get("events", [])
@@ -183,7 +189,7 @@ class VectraParser(ApiParser):
         try:
             since = timezone.now() - timedelta(hours=24)
             to = timezone.now()
-            result = self.get_logs(since, to, "detections")
+            result = self.get_logs(since, to, self.KINDS[0])
 
             return {
                 "status": True,
@@ -199,44 +205,76 @@ class VectraParser(ApiParser):
 
     def execute(self):
         ## GET LOGS ##
-        kinds = self.KINDS
         results = list()
         logs = list()
-        for kind in kinds:
+        for kind in self.KINDS:
+
+            since = self.last_collected_timestamps.get(f"vectra_kind_{kind}") or \
+                    self.frontend.last_api_call or \
+                    (timezone.now() - timedelta(days=1))
+            to = min(timezone.now(), since + timedelta(hours=24))
+
             try:
-                since = self.last_collected_timestamps.get(f"vectra_kind_{kind}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
-                to = min(timezone.now(), since + timedelta(hours=24))
-                logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}]:execute: getting '{kind}' logs from {since} to {to}",
+                            extra={'frontend': str(self.frontend)})
                 results = self.get_logs(since, to, kind)
+
                 if results:
-                    new_timestamp = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
-                    logger.info(f"[{__parser__}][execute] :: Successfully got {len(results)} '{kind}' logs, updating last_collected_timestamps['vectra_kind_{kind}'] -> {new_timestamp}", extra={'frontend': str(self.frontend)})
+                    new_timestamp = datetime.fromisoformat(
+                        results[-1]["event_timestamp"].replace("Z", "+00:00")
+                    ) + timedelta(seconds=1)
+
+                    logger.info(f"[{__parser__}][execute] :: Successfully got {len(results)} '{kind}' logs, "
+                                f"updating last_collected_timestamps['vectra_kind_{kind}'] -> {new_timestamp}",
+                                extra={'frontend': str(self.frontend)})
+
                     self.last_collected_timestamps[f"vectra_kind_{kind}"] = new_timestamp
                     logs.extend(results)
-                else:
-                    if to == since + timedelta(hours=24):
-                        self.last_collected_timestamps[f"vectra_kind_{kind}"] = self.last_collected_timestamps[f"vectra_kind_{kind}"] +timedelta(hours=1)
+                elif since < timezone.now() - timedelta(hours=24):
+                    self.last_collected_timestamps[f"vectra_kind_{kind}"] += timedelta(hours=1)
+                self.update_lock()
+
+            except (ValueError, TypeError) as e:
+                logger.error(f"[{__parser__}]:execute: Could not parse 'event_timestamp' value: {e}",
+                             extra={'frontend': str(self.frontend)})
             except Exception as e:
-                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:execute: unexpected error {e}",
+                             extra={'frontend': str(self.frontend)})
 
         ## GET DATA FROM ENTITIES ##
-        entity_types = self.ENTITY_TYPES
-        for entity_type in entity_types:
-            since = self.last_collected_timestamps.get(f"vectra_entity_type_{entity_type}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
+        for entity_type in self.ENTITY_TYPES:
+
+            since = self.last_collected_timestamps.get(f"vectra_entity_type_{entity_type}") or \
+                    self.frontend.last_api_call or \
+                    (timezone.now() - timedelta(days=1))
+            to = min(timezone.now(), since + timedelta(hours=24))
+
             try:
+                logger.info(f"[{__parser__}]:execute: getting '{entity_type}' logs from {since} to {to}",
+                            extra={'frontend': str(self.frontend)})
                 results = self.get_data_from_entity_api(since, to, entity_type)
+
                 if results:
-                    new_timestamp = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
-                    logger.info(f"[{__parser__}][execute] :: Successfully got {len(results)} '{entity_type}' logs, updating last_collected_timestamps['vectra_entity_type_{entity_type}'] -> {new_timestamp}", extra={'frontend': str(self.frontend)})
+                    new_timestamp = datetime.fromisoformat(
+                        results[-1]["event_timestamp"].replace("Z", "+00:00")
+                    ) + timedelta(seconds=1)
+
+                    logger.info(f"[{__parser__}][execute] :: Successfully got {len(results)} '{entity_type}' logs, "
+                                f"updating last_collected_timestamps['vectra_entity_type_{entity_type}'] "
+                                f"-> {new_timestamp}",
+                                extra={'frontend': str(self.frontend)})
+
                     self.last_collected_timestamps[f"vectra_entity_type_{entity_type}"] = new_timestamp
                     logs.extend(results)
                 elif since < timezone.now() - timedelta(hours=24):
-                    self.last_collected_timestamps[f"vectra_entity_type_{entity_type}"] = self.last_collected_timestamps[f"vectra_entity_type_{entity_type}"] +timedelta(hours=1)
+                    self.last_collected_timestamps[f"vectra_entity_type_{entity_type}"] += timedelta(hours=1)
                 self.update_lock()
-                logs.extend(results)
-                self.update_lock()
+            except (ValueError, TypeError) as e:
+                logger.error(f"[{__parser__}]:execute: Could not parse 'event_timestamp' value: {e}",
+                             extra={'frontend': str(self.frontend)})
             except Exception as e:
-                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:execute: unexpected error {e}",
+                             extra={'frontend': str(self.frontend)})
 
         # Send those lines to Rsyslog
         self.write_to_file([self.format_log(log) for log in logs])
