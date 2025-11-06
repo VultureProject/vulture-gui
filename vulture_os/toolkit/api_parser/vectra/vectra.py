@@ -28,7 +28,6 @@ import time
 
 import requests
 import json
-from copy import deepcopy
 from datetime import timedelta, datetime
 from django.utils import timezone
 from django.conf import settings
@@ -49,6 +48,8 @@ class VectraParser(ApiParser):
         'Accept': 'application/json'
     }
     TOKEN_ENDPOINT = "oauth2/token"
+    KINDS = ["detections"]
+    ENTITY_TYPES = ["account", "host"]
 
     def __init__(self, data):
         super().__init__(data)
@@ -123,11 +124,11 @@ class VectraParser(ApiParser):
             raise VectraAPIError(err)
 
 
-    def get_data_from_entity_api(self, since: datetime, to: datetime, type: str):
+    def get_data_from_entity_api(self, since: datetime, to: datetime, entity_type: str):
         results = list()
         query = {"event_timestamp_gte": since.strftime("%Y-%m-%dT%H:%M:%SZ"), "event_timestamp_lte": to.strftime("%Y-%m-%dT%H:%M:%SZ")}
-        logger.info(f"[{__parser__}]:get_data_from_entity_api: Executing Entity {type} API task.", extra={'frontend': str(self.frontend)})
-        query.update({"type": type})
+        logger.info(f"[{__parser__}]:get_data_from_entity_api: Executing Entity {entity_type} API task.", extra={'frontend': str(self.frontend)})
+        query.update({"type": entity_type})
         response = self.__execute_query(query, "api/v3.3/events/entity_scoring")
         results.extend(response.get("events", []))
         while "remaining_count" in response and "next_checkpoint" in response and response["remaining_count"] != 0:
@@ -182,7 +183,7 @@ class VectraParser(ApiParser):
         try:
             since = timezone.now() - timedelta(hours=24)
             to = timezone.now()
-            result = self.get_logs(since, to)
+            result = self.get_logs(since, to, "detections")
 
             return {
                 "status": True,
@@ -197,55 +198,50 @@ class VectraParser(ApiParser):
 
 
     def execute(self):
-        try:
-            ## GET LOGS ##
-            since = self.frontend.last_api_call or (timezone.now() - timedelta(days=2))
-            to = min(timezone.now(), since + timedelta(hours=24))
-
-            logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
-            kinds = ["detections"]
-            results = list()
-            logs = list()
-            for kind in kinds:
+        ## GET LOGS ##
+        kinds = self.KINDS
+        results = list()
+        logs = list()
+        for kind in kinds:
+            try:
                 since = self.last_collected_timestamps.get(f"vectra_{kind}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
+                to = min(timezone.now(), since + timedelta(hours=24))
+                logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
                 results = self.get_logs(since, to, kind)
                 if results:
                     new_timestamp = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
-                    logger.info(f"[{__parser__}][execute] :: Successfully gets {len(results)} '{kind}' logs, updating last_collected_timestamps['vectra_{kind}'] -> {new_timestamp}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}][execute] :: Successfully got {len(results)} '{kind}' logs, updating last_collected_timestamps['vectra_{kind}'] -> {new_timestamp}", extra={'frontend': str(self.frontend)})
                     self.last_collected_timestamps[f"vectra_{kind}"] = new_timestamp
                     logs.extend(results)
                 else:
                     if to == since + timedelta(hours=24):
                         self.last_collected_timestamps[f"vectra_{kind}"] = self.last_collected_timestamps[f"vectra_{kind}"] +timedelta(hours=1)
+            except Exception as e:
+                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
-            ## GET DATA FROM ENTITIES ##
-            types = [
-                "account",
-                "host"
-            ]
-            for type in types:
-                since = self.last_collected_timestamps.get(f"vectra_{type}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
-                results = self.get_data_from_entity_api(since, to, type)
+        ## GET DATA FROM ENTITIES ##
+        entity_types = self.ENTITY_TYPES
+        for entity_type in entity_types:
+            since = self.last_collected_timestamps.get(f"vectra_{entity_type}") or self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
+            try:
+                results = self.get_data_from_entity_api(since, to, entity_type)
                 if results:
                     new_timestamp = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(seconds=1)
-                    logger.info(f"[{__parser__}][execute] :: Successfully gets {len(results)} '{kind}' logs, updating last_collected_timestamps['vectra_{kind}'] -> {new_timestamp}", extra={'frontend': str(self.frontend)})
-                    self.last_collected_timestamps[f"vectra_{type}"] = new_timestamp
+                    logger.info(f"[{__parser__}][execute] :: Successfully got {len(results)} '{entity_type}' logs, updating last_collected_timestamps['vectra_{entity_type}'] -> {new_timestamp}", extra={'frontend': str(self.frontend)})
+                    self.last_collected_timestamps[f"vectra_{entity_type}"] = new_timestamp
                     logs.extend(results)
-                else:
-                    if to == since + timedelta(hours=24):
-                        self.last_collected_timestamps[f"vectra_{type}"] = self.last_collected_timestamps[f"vectra_{type}"] +timedelta(hours=1)
-
+                elif since < timezone.now() - timedelta(hours=24):
+                    self.last_collected_timestamps[f"vectra_{entity_type}"] = self.last_collected_timestamps[f"vectra_{entity_type}"] +timedelta(hours=1)
+                self.update_lock()
                 logs.extend(results)
+                self.update_lock()
+            except Exception as e:
+                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
-            self.update_lock()
+        # Send those lines to Rsyslog
+        self.write_to_file([self.format_log(log) for log in logs])
 
-            # Send those lines to Rsyslog
-            self.write_to_file([self.format_log(log) for log in logs])
+        # And update lock after sending lines to Rsyslog
+        self.update_lock()
 
-            # And update lock after sending lines to Rsyslog
-            self.update_lock()
-
-            
-        except Exception as e:
-            logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
