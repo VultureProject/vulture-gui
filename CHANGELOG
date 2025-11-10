@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.34.0] - 2025-11-10
 ### Added
 - [API_PARSER] [CNAPP_WIZ] New collector
 - [SCRIPTS] [REFRESH_NIC] Support CARP configuration import from rc.conf
