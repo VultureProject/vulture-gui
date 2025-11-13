@@ -72,6 +72,9 @@ def cluster_create(admin_user=None, admin_password=None):
     RC_NETWORK_CONF = "network"
     node, new_node = Node.objects.get_or_create(
         name=settings.HOSTNAME,
+        internet_ip="10.0.2.15",
+        backends_outgoing_ip="127.0.0.6", 
+        logom_outgoing_ip="10.0.2.15", 
         management_ip=get_management_ip()
     )
 
@@ -150,7 +153,7 @@ def cluster_create(admin_user=None, admin_password=None):
         system_config.public_token = get_random_string(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
     if not system_config.redis_password:
         system_config.redis_password = get_random_string(64, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
-    system_config.set_logs_ttl()
+    #system_config.set_logs_ttl()
     system_config.save()
 
     # regenerate PF configuration to account for new system configuration
