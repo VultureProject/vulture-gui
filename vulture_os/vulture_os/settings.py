@@ -61,10 +61,10 @@ except ImportError:
     SECRET_KEY = set_key(SETTINGS_DIR)
 
 # Applying custom patches to code
-try:
-    from toolkit.patches import *
-except ImportError:
-    pass
+# try:
+#     from toolkit.patches import *
+# except ImportError:
+#     pass
 
 LOG_LEVEL = env.str("LOG_LEVEL", "INFO")
 
