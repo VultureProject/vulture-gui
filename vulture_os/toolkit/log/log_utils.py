@@ -23,7 +23,7 @@ __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Database handler for logging'
 
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 from django.conf import settings
 from django.utils import timezone
 import logging
@@ -47,7 +47,7 @@ class DatabaseHandler(logging.StreamHandler):
         self.database = "logs"
         self.collection = "internal"
 
-        self.mongo = MongoBase()
+        self.postgres = PostgresBase()
 
     def emit(self, record):
         """
@@ -59,7 +59,7 @@ class DatabaseHandler(logging.StreamHandler):
             return
         try:
 
-            return self.mongo.insert(self.database, self.collection, {
+            return self.postgres.insert(self.database, self.collection, {
                 'timestamp': timezone.now(),
                 'log_level': record.levelname,
                 'filename': record.filename,

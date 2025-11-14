@@ -42,7 +42,7 @@ from system.cluster.views import COMMAND_LIST, cluster_edit
 from system.cluster.models import Cluster
 from system.pki.models import X509Certificate
 from toolkit.network.network import is_valid_ip, is_valid_hostname
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 from services.frontend.models import Frontend
 from workflow.models import Workflow
 
@@ -140,14 +140,14 @@ def cluster_add(request):
         })
 
     """ Add NEW MongoDB node into the REPLICASET, as a pending member """
-    mongo = MongoBase()
+    postgres = PostgresBase()
     status, message = None, None
-    if mongo.connect_with_retries(retries=10, timeout=2):
+    if postgres.connect_with_retries(retries=10, timeout=2):
         cpt = 0
         while not message:
             try:
                 logger.debug("Adding {} to replicaset".format(new_node_name))
-                status, message = mongo.repl_add(new_node_name + ':9091')
+                status, message = postgres.repl_add(new_node_name + ':9091')
             except Exception as e:
                 logger.error("Cannot connect to replica for the moment : {}".format(e))
                 cpt += 1
@@ -172,7 +172,7 @@ def cluster_add(request):
 
         """ Update uri of internal Log Forwarder """
         logfwd = LogOMMongoDB.objects.get()
-        logfwd.uristr = mongo.get_replicaset_uri()
+        logfwd.uristr = postgres.get_replicaset_uri()
         logfwd.save()
 
         """ Save certificates on new node """

@@ -36,7 +36,7 @@ django.setup()
 from re import compile as re_compile
 
 from system.cluster.models import Cluster
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
@@ -48,10 +48,10 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            mongodb = MongoBase()
-            assert mongodb.connect_primary(), "Could not conect to the primary"
-            assert mongodb.db, "No valid database to work on"
-            rctx_coll = mongodb.db['vulture']['applications_reputationcontext']
+            postgres = PostgresBase()
+            assert postgres.connect_primary(), "Could not conect to the primary"
+            assert postgres.db, "No valid database to work on"
+            rctx_coll = postgres.db['vulture']['applications_reputationcontext']
             pattern = re_compile(r"^name(_[0-9]+)?$")
             for index_name, index_options in rctx_coll.index_information().items():
                 if pattern.match(index_name) and index_options.get('unique', False):

@@ -33,7 +33,7 @@ from system.cluster.models import Cluster, Node
 from system.pki.models import X509Certificate, TLSProfile
 from system.users.models import User
 from toolkit.network.network import get_management_ip
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 from toolkit.redis.redis_base import RedisBase, SentinelBase
 from toolkit.system.secret_key import set_key
 from toolkit.system.rc import get_rc_config
@@ -264,12 +264,12 @@ def cluster_join(master_hostname, master_ip, secret_key):
         logger.error("Error at API Request Cluster Info: {} Invalid API KEY ?".format(e), exc_info=1)
         return False
 
-    mongo = MongoBase()
+    postgres = PostgresBase()
     try:
         logger.info("[+] Checking MongoDB compatibility")
         """ Check mongo version compatibility """
-        if mongo.get_version() != cluster_infos['data'][master_hostname]['mongo_version']:
-            raise Exception(f"Error: MongoDB versions are incompatible {mongo.get_version()} vs {cluster_infos['data'][master_hostname]['mongo_version']}")
+        if postgres.get_version() != cluster_infos['data'][master_hostname]['mongo_version']:
+            raise Exception(f"Error: MongoDB versions are incompatible {postgres.get_version()} vs {cluster_infos['data'][master_hostname]['mongo_version']}")
 
         logger.info("[-] OK!")
 
@@ -362,7 +362,7 @@ def cluster_join(master_hostname, master_ip, secret_key):
         => We need to destroy replicaset & restart mongoDB
     """
     logger.info("[+] replDestroy: Restarting Mongodb with new certificates")
-    mongo.repl_destroy()
+    postgres.repl_destroy()
     logger.info("[+] Ok!")
 
     """ Ask primary to join us on our management IP """

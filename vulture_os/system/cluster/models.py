@@ -27,9 +27,9 @@ from system.config.models import Config
 
 from toolkit.network.network import is_valid_ip4, is_valid_ip6, is_valid_hostname, is_loopback
 from toolkit.network.route import get_route_interface
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 from toolkit.redis.redis_base import RedisBase
-from toolkit.mongodb.mongo_base import parse_uristr
+from toolkit.mongodb.postgres_base import parse_uristr
 
 from django.db.models import Q
 from django.db.utils import DatabaseError
@@ -255,7 +255,7 @@ class Node(models.Model):
         Check if the current Node is a member of mongoDB
         :return: True / False, or None in case of a failure
         """
-        c = MongoBase()
+        c = PostgresBase()
         if c.connect():
             c.connect_primary()
             config = c.db.admin.command("replSetGetConfig")['config']
@@ -269,7 +269,7 @@ class Node(models.Model):
         Check if the current Node is master or not
         :return: True / False, or None in case of a failure
         """
-        c = MongoBase()
+        c = PostgresBase()
         ok = c.connect()
         if ok:
             primary_node = c.get_primary()
@@ -289,7 +289,7 @@ class Node(models.Model):
         Check state of the current Node
         :return: state returned by mongo
         """
-        c = MongoBase()
+        c = PostgresBase()
         if c.connect():
             members = c.repl_state()
             for member in members:
@@ -303,7 +303,7 @@ class Node(models.Model):
         Get version of mongo on the current Node
         :return: string of version number returned by mongo
         """
-        c = MongoBase()
+        c = PostgresBase()
         if c.connect():
             return c.get_version()
         return ""

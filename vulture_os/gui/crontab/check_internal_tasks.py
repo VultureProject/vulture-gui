@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Job for documentation update'
 
 from system.cluster.models import MessageQueue, Cluster
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 from django.utils import timezone
 from django.conf import settings
 import datetime
@@ -57,7 +57,7 @@ def check_internal_tasks():
 
         for n in node_to_remove:
             logger.info('[REMOVING DEAD NODE FROM CLUSTER] Node: {}'.format(n.name))
-            c = MongoBase()
+            c = PostgresBase()
             c.connect_primary()
             c.repl_remove(n.name + ":9091")
 

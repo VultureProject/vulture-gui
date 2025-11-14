@@ -30,7 +30,7 @@ from django.db import models
 # Django project imports
 from authentication.ldap.models import LDAPRepository
 from system.tenants.models import Tenants
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 
 # Required exceptions imports
 from services.exceptions import ServiceExit
@@ -91,19 +91,19 @@ class Config(models.Model):
              by setting MongoDB indexes on PF, messageQueues and Internal logs
         """
         # Connect to mongodb
-        mongo = MongoBase()
-        mongo.connect()
+        postgres = PostgresBase()
+        postgres.connect()
         # Call the current node, it will connect to primary automatically
-        res, mess = mongo.set_index_ttl("logs", "pf", "time", self.logs_ttl)
+        res, mess = postgres.set_index_ttl("logs", "pf", "time", self.logs_ttl)
         if not res:
             return res, mess
-        res, mess = mongo.set_index_ttl("logs", "internal", "timestamp", self.logs_ttl)
+        res, mess = postgres.set_index_ttl("logs", "internal", "timestamp", self.logs_ttl)
         if not res:
             return res, mess
-        res, mess = mongo.set_index_ttl("vulture", "system_messagequeue", "modified", self.logs_ttl)
+        res, mess = postgres.set_index_ttl("vulture", "system_messagequeue", "modified", self.logs_ttl)
         if not res:
             return res, mess
-        res, mess = mongo.set_index_ttl("vulture", "system_messagequeue", "date_add", self.logs_ttl)
+        res, mess = postgres.set_index_ttl("vulture", "system_messagequeue", "date_add", self.logs_ttl)
         if not res:
             return res, mess
         return True, ""

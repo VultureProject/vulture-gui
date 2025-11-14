@@ -26,7 +26,7 @@ __doc__ = 'Access Control views'
 from django.http import JsonResponse
 from django.http.response import HttpResponseNotFound
 from django.utils.crypto import get_random_string
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 from django.utils.translation import gettext as _
 from django.shortcuts import render
 from django.conf import settings
@@ -51,7 +51,7 @@ def access_control_get(request):
         log_id = request.POST.get('log_id')
 
         if log_id:
-            client = MongoBase()
+            client = PostgresBase()
             log_line = client.execute_request("logs", "haproxy", {'_id': ObjectId(log_id)}, first=True)
             log_line['_id'] = str(log_line['_id'])
 

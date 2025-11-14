@@ -23,7 +23,7 @@ from applications.logfwd.models import LogOMMongoDB
 from django.db.models import Q
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster, Node
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 
 sys.path.append("/home/vlt-os/vulture_os/")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         new_hostname = sys.argv[2]
 
     # MongoDB - rename of node
-    c = MongoBase()
+    c = PostgresBase()
     # Connect to the current renamed node
     c.connect(node=new_hostname+":9091", primary=False)
     c.connect(node=new_hostname+":9091", primary=False)

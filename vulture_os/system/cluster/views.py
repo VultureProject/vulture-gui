@@ -26,7 +26,7 @@ __doc__ = 'Cluster View'
 from django.http import (HttpResponseForbidden, HttpResponseRedirect, JsonResponse, HttpResponseBadRequest)
 from django.conf import settings
 from system.cluster.form import NodeForm
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 from django.shortcuts import render
 from services.pf.pf import PFService
 from system.cluster.models import Cluster, Node
@@ -56,7 +56,7 @@ def cluster_stepdown(request, object_id, api=False):
             return JsonResponse({'error': _("Object does not exist.")}, status=404)
         return HttpResponseForbidden("Injection detected")
 
-    c = MongoBase()
+    c = PostgresBase()
     c.connect()
 
     # If the asked node is not primary, return error
@@ -67,7 +67,7 @@ def cluster_stepdown(request, object_id, api=False):
 
     status, message = c.repl_set_step_down()  # Automagically connect to the primary node
 
-    c = MongoBase()
+    c = PostgresBase()
     c.connect()
 
     return JsonResponse({'status': status, 'message': message})
@@ -85,7 +85,7 @@ def cluster_remove(request, object_id, api=False):
     except ObjectDoesNotExist:
         return HttpResponseForbidden("Injection detected")
 
-    c = MongoBase()
+    c = PostgresBase()
     c.connect()
 
     # Automagically connect to the primary node
@@ -106,7 +106,7 @@ def cluster_join(request, object_id, api=False):
     except ObjectDoesNotExist:
         return HttpResponseForbidden("Injection detected")
 
-    c = MongoBase()
+    c = PostgresBase()
     c.connect()
 
     # Automagically connect to the primary node

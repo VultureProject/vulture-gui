@@ -37,7 +37,7 @@ from services.frontend.models import Listener, Frontend
 from system.cluster.models import Cluster, Node
 from system.pki.models import TLSProfile
 from system.users.models import User
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 from toolkit.redis.redis_base import RedisBase, SentinelBase
 
 # Required exceptions imports
@@ -131,7 +131,7 @@ class DeleteNode(DeleteView):
                 return HttpResponseForbidden("Injection detected")
 
             """ Before Deleting the node we need to remove it from mongoDB """
-            c = MongoBase()
+            c = PostgresBase()
             c.connect_primary()
             c.repl_remove(node_name + ":9091")
 
