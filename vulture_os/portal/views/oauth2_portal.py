@@ -36,7 +36,6 @@ from portal.system.redis_sessions    import REDISBase
 from workflow.models import Workflow
 
 # Required exceptions imports
-from bson.errors                     import InvalidId
 from django.core.exceptions          import ValidationError
 from django.utils.datastructures     import MultiValueDictKeyError
 from ldap                            import LDAPError
@@ -83,7 +82,7 @@ def log_in(request):
         logger.error("OAUTH2::log_in: Unable to connect to Redis server : {}".format(str(e)))
         return HttpResponseServerError()
 
-    except (Workflow.DoesNotExist, InvalidId, ValidationError) as e:
+    except (Workflow.DoesNotExist, ValidationError) as e: # InvalidId
         logger.error("OAUTH2::log_in: Workflow with id '{}' not found : {}".format(request.POST.get('app_id', None), str(e)))
 
     except AssertionError as e:

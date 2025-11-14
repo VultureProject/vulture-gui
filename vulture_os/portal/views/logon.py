@@ -46,7 +46,6 @@ from portal.system.redis_sessions import REDISBase, REDISPortalSession, RedisOpe
 from portal.views.responses          import error_response, HttpResponseTemporaryRedirect
 
 # Required exceptions imports
-from bson.errors                     import InvalidId
 from django.core.exceptions          import ValidationError
 from django.utils.datastructures     import MultiValueDictKeyError
 from ldap                            import LDAPError
@@ -648,7 +647,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             return HttpResponseRedirect("")
 
         # If redis_session.keys['application_id'] does not exists : FORBIDDEN
-        except (Workflow.DoesNotExist, ValidationError, InvalidId):
+        except (Workflow.DoesNotExist, ValidationError): #, InvalidId):
             logger.error("PORTAL::log_in: Application with id '{}' not found"
                          .format(authentication.redis_session.keys.get('application_id')))
             return HttpResponseForbidden()
@@ -770,7 +769,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             return authentication.ask_credentials_response(public_token=token_name, request=request,
                                                            error="Portal cookie expired")
 
-        except (Workflow.DoesNotExist, ValidationError, InvalidId) as e:
+        except (Workflow.DoesNotExist, ValidationError) as e:#, InvalidId) as e:
             """ Invalid POST 'vulture_two_factors_authentication' value """
             logger.error("PORTAL::log_in: Double-authentication failure for username {} : {}"
                          .format(authentication.credentials[0], str(e)))
@@ -903,8 +902,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                                                fields=e.fields_missing)
 
             # If KerberosBackend object cannot be retrieved from mongo with the backend_id that the user is authenticated on
-            except InvalidId:
-                logger.error("PORTAL::log_in: The user is authenticated on a not Kerberos backend, cannot do SSOForward")
+            # except InvalidId:
+            #     logger.error("PORTAL::log_in: The user is authenticated on a not Kerberos backend, cannot do SSOForward")
 
             except (RequestsConnectionError,OpenSSLError) as e:
                 logger.error("PORTAL::log_in: ConnectionError while trying to SSO to backend : ")

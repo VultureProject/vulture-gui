@@ -46,7 +46,6 @@ from portal.system.portal_helper import response_with_portalCookie, getPortalSes
 from portal.system.redis_sessions import REDISAppSession
 from system.sso_forward import doSSOForward_POST, doSSOForward_BASIC, doSSOForward_Action
 
-from bson.objectid import ObjectId
 from base64 import b64encode
 
 def log_in(request):
@@ -91,7 +90,7 @@ def log_in(request):
         logger.error(error)
         return HttpResponseForbidden()
 
-    app = Application.objects.with_id(ObjectId(app_id))
+    app = Application.objects.with_id(app_id)
     if app is None:
         logger.info ("PORTAL::Learning: Application with id '" + str (app_id) + "' not found !")
         return HttpResponseForbidden()

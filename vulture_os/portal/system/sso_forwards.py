@@ -37,12 +37,10 @@ from system.pki.models                          import PROTOCOLS_TO_INT, CERT_PA
 from toolkit.http.utils                         import parse_html
 
 # Required exceptions imports
-from bson.errors                      import InvalidId
 from .exceptions                      import CredentialsMissingError
 
 # Extern modules imports
 from base64                           import b64encode
-from bson                             import ObjectId
 from json                             import loads as json_loads
 from re                               import search as re_search
 from ssl                              import SSLContext, CERT_REQUIRED, CERT_NONE
@@ -407,9 +405,9 @@ class SSOForwardKERBEROS(SSOForward):
 
         redis_session = kwargs['redis_session']
 
-        kerberos_repo = KerberosRepository.objects.with_id(ObjectId(self.backend_id))
+        kerberos_repo = KerberosRepository.objects.with_id(self.backend_id)
         if not kerberos_repo:
-            raise InvalidId("")
+            raise RuntimeError("Invalid Object ID")
 
         kerberos_TGT  = kerberos_repo.get_backend().create_tgt(self.backend_id, credentials['kerberos_username'], credentials['kerberos_password'], "HTTP/"+self.application.app_krb_service)
 

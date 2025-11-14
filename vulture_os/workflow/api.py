@@ -24,13 +24,11 @@ __doc__ = 'Workflow API'
 
 
 # Django system imports
-from bson.objectid import ObjectId
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from darwin.access_control.models import AccessControl
-from bson.errors import InvalidId
 from django.views import View
 
 # Django project imports
@@ -64,7 +62,7 @@ def write_portal_template(node_logger, workflow_id):
 
 def format_acl_from_api(tmp_acl, order, before_policy):
     try:
-        acl = AccessControl.objects.get(pk=ObjectId(tmp_acl['id']))
+        acl = AccessControl.objects.get(pk=tmp_acl['id'])
         action_satisfy = int(tmp_acl['action_satisfy'])
         action_not_satisfy = int(tmp_acl['action_not_satisfy'])
         redirect_url_satisfy = tmp_acl.get('redirect_url_satisfy')
@@ -107,7 +105,7 @@ def format_acl_from_api(tmp_acl, order, before_policy):
 
         return True, workflow_acl
 
-    except (AccessControl.DoesNotExist, InvalidId) as e:
+    except (AccessControl.DoesNotExist) as e: #InvalidId) as e:
         logger.critical(e, exc_info=1)
         return False, JsonResponse({
             'error': _('ACL with id {} does not exist'.format(tmp_acl['id']))

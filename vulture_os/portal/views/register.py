@@ -43,7 +43,6 @@ from portal.system.redis_sessions    import REDISBase
 from workflow.models import Workflow
 
 # Required exceptions imports
-from bson.errors                     import InvalidId
 from django.core.exceptions          import ValidationError
 from ldap                            import LDAPError
 from portal.system.exceptions        import RedirectionNeededError, UserAlreadyExistsError, CredentialsError
@@ -283,7 +282,7 @@ def registration(request, token_name, proxy_app_id=None):
         logger.error("REGISTER::init: Unable to connect to Redis server : {}".format(str(e)))
         return HttpResponseServerError()
 
-    except (Workflow.DoesNotExist, ValidationError, InvalidId):
+    except (Workflow.DoesNotExist, ValidationError): #, InvalidId):
         logger.error("REGISTER::init: Workflow with id '{}' not found".format(proxy_app_id))
         return HttpResponseForbidden()
 

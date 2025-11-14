@@ -31,7 +31,6 @@ from django.template.loader import render_to_string
 
 from services.haproxy.haproxy import test_haproxy_conf
 
-from bson import ObjectId
 from hashlib import sha1
 import logging
 from os.path import join as path_join
@@ -39,6 +38,8 @@ import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
+
+import random
 
 NAME_CHOICES = {
     'hdr': [
@@ -120,8 +121,7 @@ JINJA_TEST_TEMPLATE = "haproxy_test.conf"
 
 
 class AccessControl(models.Model):
-    # _id = models.ObjectIdField(default=ObjectId)
-    _id = models.IntegerField()
+    _id = models.IntegerField(default=random.randint(100, 655350))
 
     name = models.SlugField(
         max_length=255,

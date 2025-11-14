@@ -40,6 +40,7 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
+import random
 
 
 SOURCE_ATTRS_CHOICES = (
@@ -77,7 +78,7 @@ REPO_ATTR_ASSIGNATOR_CHOICES = (
 
 class RepoAttribute(models.Model):
     # Needed to patch Djongo ArrayField error
-    _id = models.IntegerField(default=0)
+    _id = models.IntegerField(default=random.randint(100, 655350))
     condition_var_kind = models.TextField(
         default=REPO_ATTR_SOURCE_CHOICES[0][0],
         choices=REPO_ATTR_SOURCE_CHOICES,

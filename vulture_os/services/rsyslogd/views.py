@@ -33,9 +33,6 @@ from services.haproxy.form import HAProxyForm
 from services.haproxy.models import HAProxySettings
 from system.cluster.models import Node
 
-# Required exceptions imports
-from bson.errors import InvalidId
-
 # Logger configuration imports
 import logging
 
@@ -49,8 +46,8 @@ def haproxy_edit(request, object_id=None):
         try:
             haproxy_model = HAProxySettings.objects.get(pk=object_id)
             if not haproxy_model:
-                raise InvalidId()
-        except InvalidId:
+                raise RuntimeError("Invalid Object ID")
+        except RuntimeError:
             return HttpResponseForbidden("Injection detected")
 
     form = HAProxyForm(request.POST or None, instance=haproxy_model, error_class=DivErrorList)
@@ -72,8 +69,8 @@ def haproxy_clone(request, object_id):
     try:
         haproxy_model = HAProxySettings.objects.get(pk=object_id)
         if not haproxy_model:
-            raise InvalidId()
-    except InvalidId:
+            raise RuntimeError("Invalid Object ID")
+    except RuntimeError:
         return HttpResponseForbidden("Injection detected")
     except HAProxySettings.DoesNotExist:
         return HttpResponseRedirect('/services/haproxy/')

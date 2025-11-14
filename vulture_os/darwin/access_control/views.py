@@ -37,7 +37,6 @@ from services.exceptions import ServiceTestConfigError
 from applications.backend.models import Backend
 from system.cluster.models import Cluster
 from workflow.models import Workflow
-from bson import ObjectId
 import logging
 import json
 
@@ -52,7 +51,7 @@ def access_control_get(request):
 
         if log_id:
             client = PostgresBase()
-            log_line = client.execute_request("logs", "haproxy", {'_id': ObjectId(log_id)}, first=True)
+            log_line = client.execute_request("logs", "haproxy", {'_id': log_id}, first=True)
             log_line['_id'] = str(log_line['_id'])
 
             return JsonResponse({
@@ -63,7 +62,7 @@ def access_control_get(request):
         pk = request.POST.get('pk')
         if pk:
             try:
-                acl = AccessControl.objects.get(pk=ObjectId(pk)).to_template()
+                acl = AccessControl.objects.get(pk=pk).to_template()
             except AccessControl.DoesNotExist:
                 return JsonResponse({
                     'status': False,
@@ -93,7 +92,7 @@ def access_control_edit(request, object_id=None, api=None):
         access_control = None
         if object_id:
             try:
-                access_control = AccessControl.objects.get(pk=ObjectId(object_id))
+                access_control = AccessControl.objects.get(pk=object_id)
             except AccessControl.DoesNotExist:
                 if api:
                     return JsonResponse({'error': _("Object does not exist.")}, status=404)
@@ -213,7 +212,7 @@ def access_control_clone(request):
     try:
         pk = request.POST.get('pk')
 
-        access_control = AccessControl.objects.get(pk=ObjectId(pk))
+        access_control = AccessControl.objects.get(pk=pk)
         access_control.pk = None
         access_control.name = "Clone of {} {}".format(access_control.name, get_random_string(length=4))
         access_control.save()

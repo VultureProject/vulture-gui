@@ -42,7 +42,6 @@ from system.cluster.models import Cluster
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 
-from bson import ObjectId
 
 # Logger configuration imports
 import logging
@@ -151,7 +150,7 @@ class DeleteAccessControl(DeleteView):
 
     # get, post and used_by methods herited from mother class
     def get(self, request, object_id, **kwargs):
-        return super().get(request, ObjectId(object_id), **kwargs)
+        return super().get(request, object_id, **kwargs)
 
     def post(self, request, object_id, **kwargs):
-        return super().post(request, ObjectId(object_id), **kwargs)
+        return super().post(request, object_id, **kwargs)

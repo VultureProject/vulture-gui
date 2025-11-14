@@ -45,7 +45,6 @@ from services.frontend.models import Frontend
 from applications.backend.models import Backend
 
 # Extern modules imports
-from bson import ObjectId
 import validators
 import json
 
@@ -177,7 +176,7 @@ def save_workflow(request, workflow_obj, object_id=None):
                 workflow_obj.backend = backend
 
             elif step['data']['type'] == "acl":
-                access_control = AccessControl.objects.get(pk=ObjectId(step['data']['object_id']))
+                access_control = AccessControl.objects.get(pk=step['data']['object_id'])
 
                 workflow_acl = WorkflowACL(
                     access_control=access_control,
