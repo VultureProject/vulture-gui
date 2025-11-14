@@ -231,7 +231,7 @@ class VectraParser(ApiParser):
                     self.last_collected_timestamps[f"vectra_kind_{kind}"] = new_timestamp
                     logs.extend(results)
                 elif since < timezone.now() - timedelta(hours=24):
-                    self.last_collected_timestamps[f"vectra_kind_{kind}"] += timedelta(hours=1)
+                    self.last_collected_timestamps[f"vectra_kind_{kind}"] = since + timedelta(hours=1)
                 self.update_lock()
 
             except (ValueError, TypeError) as e:
@@ -267,7 +267,7 @@ class VectraParser(ApiParser):
                     self.last_collected_timestamps[f"vectra_entity_type_{entity_type}"] = new_timestamp
                     logs.extend(results)
                 elif since < timezone.now() - timedelta(hours=24):
-                    self.last_collected_timestamps[f"vectra_entity_type_{entity_type}"] += timedelta(hours=1)
+                    self.last_collected_timestamps[f"vectra_entity_type_{entity_type}"] = since + timedelta(hours=1)
                 self.update_lock()
             except (ValueError, TypeError) as e:
                 logger.error(f"[{__parser__}]:execute: Could not parse 'event_timestamp' value: {e}",
