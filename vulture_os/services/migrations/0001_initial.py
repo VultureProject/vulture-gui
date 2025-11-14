@@ -3,7 +3,6 @@
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -27,7 +26,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('enabled', models.BooleanField(default=True)),
-                ('rule', djongo.models.fields.JSONField(default={})),
+                ('rule', models.JSONField(default={})),
                 ('type_rule', models.TextField(default='blacklist')),
             ],
         ),
@@ -43,7 +42,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('enabled', models.BooleanField(default=True, help_text='Enable the frontend')),
                 ('name', models.TextField(default='Listener', help_text='Name of HAProxy frontend', unique=True)),
-                ('tags', djongo.models.fields.JSONField(default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default=''))),
+                ('tags', models.JSONField(default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default=''))),
                 ('mode', models.TextField(choices=[('tcp', 'TCP'), ('http', 'HTTP'), ('log', 'LOG'), ('impcap', 'IMPCAP')], default='tcp', help_text='Listening mode')),
                 ('timeout_connect', models.PositiveIntegerField(default=2000, help_text='HTTP request Timeout', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(20000)], verbose_name='Timeout')),
                 ('timeout_client', models.PositiveIntegerField(default=2000, help_text='HTTP request Timeout', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(50000)], verbose_name='Timeout')),
@@ -57,9 +56,9 @@ class Migration(migrations.Migration):
                 ('log_level', models.TextField(choices=[('info', 'Info'), ('debug', 'Debug')], default='warning', help_text='Log level')),
                 ('log_condition', models.TextField(default='', help_text='Conditional configuration of log forwarders')),
                 ('stock_logs_locally', models.BooleanField(default=False, help_text='Keep logs on system.')),
-                ('configuration', djongo.models.fields.JSONField(default={})),
+                ('configuration', models.JSONField(default={})),
                 ('ruleset', models.TextField(default='haproxy', help_text='RuleSet type to use by rsyslog to send output stream')),
-                ('status', djongo.models.fields.JSONField(default={})),
+                ('status', models.JSONField(default={})),
                 ('listening_mode', models.TextField(choices=[('udp', 'UDP'), ('tcp', 'TCP'), ('tcp,udp', 'TCP & UDP'), ('relp', 'RELP (TCP)')], default='tcp', help_text='TCP mode = HAProxy, UDP mode = Rsyslog')),
                 ('custom_haproxy_conf', models.TextField(default='', help_text='Custom HAProxy configuration directives.')),
                 ('enable_cache', models.BooleanField(default=False, help_text='Enable cache')),
@@ -97,7 +96,7 @@ class Migration(migrations.Migration):
                 ('rsyslog_port', models.PositiveIntegerField(default=10000)),
                 ('frontend', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='services.Frontend')),
                 ('network_address', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='system.NetworkAddress')),
-                ('tls_profiles', djongo.models.fields.ArrayReferenceField(default=[], on_delete=django.db.models.deletion.SET_DEFAULT, to='system.TLSProfile')),
+                ('tls_profiles', models.ManyToManyField(default=[], to='system.TLSProfile')),
             ],
         ),
         migrations.CreateModel(
@@ -118,8 +117,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('stock_logs_locally', models.BooleanField(default=True, help_text='Stock logs as raw locally.')),
-                ('log_forwarders', djongo.models.fields.ArrayReferenceField(help_text='Send access logs to log forwarders', null=True, on_delete=djongo.models.fields.ArrayReferenceField._on_delete, to='applications.LogOM', verbose_name='Send logs to')),
-            ],
+                ('log_forwarders', models.ManyToManyField(help_text='Send access logs to log forwarders', null=True, to='applications.LogOM', verbose_name='Send logs to')),            ],
         ),
         migrations.CreateModel(
             name='RsyslogSettings',
@@ -151,7 +149,7 @@ class Migration(migrations.Migration):
                 ('ipsec_rightsubnet', models.TextField(default='')),
                 ('status', models.TextField(default='WAITING')),
                 ('statusall', models.TextField(default='')),
-                ('tunnels_status', djongo.models.fields.JSONField(default={})),
+                ('tunnels_status', models.JSONField(default={})),
                 ('tunnels_up', models.PositiveIntegerField(default=0)),
                 ('tunnels_connecting', models.PositiveIntegerField(default=0)),
                 ('node', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='system.Node')),

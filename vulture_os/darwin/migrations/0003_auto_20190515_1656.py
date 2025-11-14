@@ -3,7 +3,6 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import django.db.models.fields
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -18,7 +17,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('zone', models.TextField()),
-                ('ids', djongo.models.fields.JSONField(default=[], verbose_name=django.db.models.fields.IntegerField)),
+                ('ids', models.JSONField(default=[], verbose_name=django.db.models.fields.IntegerField)),
                 ('key', models.TextField()),
                 ('value', models.TextField()),
                 ('url', models.TextField()),
@@ -31,7 +30,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.TextField(unique=True)),
                 ('raw_rules', models.TextField()),
-                ('rules', djongo.models.fields.ArrayReferenceField(on_delete=django.db.models.deletion.CASCADE, to='darwin.DefenderRule')),
+                ('rules', models.ManyToManyField(to='darwin.DefenderRule')),
             ],
         ),
         migrations.AddField(

@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.utils.timezone
-import djongo.models.fields
 
 def add_default_beyondtrust_pra_api_token(apps, schema_editor):
     frontend_model = apps.get_model("services", "frontend")
@@ -24,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='beyondtrust_pra_api_token',
-            field=djongo.models.fields.JSONField(default=dict),
+            field=models.JSONField(default=dict),
         ),
         migrations.AddField(
             model_name='frontend',

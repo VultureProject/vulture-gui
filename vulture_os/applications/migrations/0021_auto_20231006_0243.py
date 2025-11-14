@@ -3,7 +3,6 @@
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 kafka_params = {}
 
@@ -90,12 +89,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="logomkafka",
             name="confParam",
-            field=djongo.models.fields.JSONField(blank=True, default=list),
+            field=models.JSONField(blank=True, default=list),
         ),
         migrations.AddField(
             model_name="logomkafka",
             name="topicConfParam",
-            field=djongo.models.fields.JSONField(blank=True, default=list),
+            field=models.JSONField(blank=True, default=list),
         ),
         migrations.RunPython(restore_kafka_params, save_kafka_params),
     ]

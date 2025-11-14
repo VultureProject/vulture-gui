@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -41,6 +40,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='listener',
             name='tls_profiles',
-            field=djongo.models.fields.ArrayReferenceField(default=[], null=True, on_delete=django.db.models.deletion.PROTECT, to='system.TLSProfile'),
+            field=models.ManyToManyField(default=[], null=True, to='system.TLSProfile'),
         ),
     ]

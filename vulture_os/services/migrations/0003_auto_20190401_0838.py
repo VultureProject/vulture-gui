@@ -2,7 +2,6 @@
 
 import django.core.validators
 from django.db import migrations, models
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -35,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='netdatasettings',
             name='backend_host_tags',
-            field=djongo.models.fields.JSONField(default=[], help_text=' Defines tags that should be appended on all metrics for the given host.', verbose_name='List of tags'),
+            field=models.JSONField(default=[], help_text=' Defines tags that should be appended on all metrics for the given host.', verbose_name='List of tags'),
         ),
         migrations.AddField(
             model_name='netdatasettings',

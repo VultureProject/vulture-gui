@@ -3,7 +3,6 @@
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -39,7 +38,7 @@ class Migration(migrations.Migration):
                 ('enabled', models.BooleanField(default=True)),
                 ('nb_thread', models.PositiveIntegerField(default=5)),
                 ('log_level', models.TextField(choices=[('ERROR', 'Error'), ('INFO', 'Informational'), ('DEBUG', 'Debug')], default='ERROR')),
-                ('status', djongo.models.fields.JSONField(default={})),
+                ('status', models.JSONField(default={})),
                 ('threshold', models.PositiveIntegerField(default=80, help_text='Score from which the request will be blocked.', validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)], verbose_name='Block threshold')),
                 ('filter', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='darwin.DarwinFilter')),
                 ('policy', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='darwin.DarwinPolicy')),
@@ -50,7 +49,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('type_logs', models.TextField()),
-                ('displayed_columns', djongo.models.fields.JSONField()),
+                ('displayed_columns', models.JSONField()),
                 ('nb_lines', models.IntegerField(default=25)),
                 ('font_size', models.IntegerField(default=12)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='system.User')),
@@ -62,7 +61,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('type_logs', models.TextField()),
                 ('name', models.TextField()),
-                ('search', djongo.models.fields.JSONField()),
+                ('search', models.JSONField()),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='system.User')),
             ],
         ),

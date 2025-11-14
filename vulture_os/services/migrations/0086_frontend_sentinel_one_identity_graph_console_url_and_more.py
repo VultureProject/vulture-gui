@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.utils.timezone
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -40,7 +39,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='ubika_namespaces',
-            field=djongo.models.fields.JSONField(default=[], help_text='Ubika namespaces to fetch', verbose_name='Ubika namespaces to fetch'),
+            field=models.JSONField(default=[], help_text='Ubika namespaces to fetch', verbose_name='Ubika namespaces to fetch'),
         ),
         migrations.AddField(
             model_name='frontend',

@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -38,7 +37,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='workflow',
             name='workflow_json',
-            field=djongo.models.fields.JSONField(default=[]),
+            field=models.JSONField(default=[]),
         ),
         migrations.AlterField(
             model_name='workflow',

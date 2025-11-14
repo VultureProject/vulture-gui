@@ -4,20 +4,19 @@ import darwin.policy.models
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
-from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.mongodb.postgres_base import PostgresBase
 
 
 def set_enrichment_tags(apps, schema_editor):
-    mongo = MongoBase()
-    if not mongo.connect():
+    postgres = PostgresBase()
+    if not postgres.connect():
         print("[ERROR] could not connect to mongo to update data !!")
         return
-    if not mongo.connect_primary():
+    if not postgres.connect_primary():
         print("[ERROR] could not connect to mongo primary, please reload migration")
         return
 
-    mongo.update_many('vulture', 'darwin_filterpolicy', {}, {"$set": {"enrichment_tags": []}})
+    postgres.update_many('vulture', 'darwin_filterpolicy', {}, {"$set": {"enrichment_tags": []}})
 
 
 
@@ -63,7 +62,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='enrichment_tags',
-            field=djongo.models.fields.JSONField(blank=True, default=list(), help_text='The tag to use as enrichment value for this filter, if none is set the filter type is used'),
+            field=models.JSONField(blank=True, default=list(), help_text='The tag to use as enrichment value for this filter, if none is set the filter type is used'),
         ),
         migrations.AddField(
             model_name='filterpolicy',
@@ -92,7 +91,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='config',
-            field=djongo.models.fields.JSONField(blank=True, default={}, help_text='A dictionary containing all specific parameters of this filter'),
+            field=models.JSONField(blank=True, default={}, help_text='A dictionary containing all specific parameters of this filter'),
         ),
         migrations.AlterField(
             model_name='filterpolicy',
@@ -121,7 +120,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='mmdarwin_parameters',
-            field=djongo.models.fields.JSONField(blank=True, default=[], help_text='!!! ADVANCED FEATURE !!! the list of rsyslog fields to take when executing the custom call to Darwin (syntax is Rsyslog ', validators=[darwin.policy.models.validate_mmdarwin_parameters]),
+            field=models.JSONField(blank=True, default=[], help_text='!!! ADVANCED FEATURE !!! the list of rsyslog fields to take when executing the custom call to Darwin (syntax is Rsyslog ', validators=[darwin.policy.models.validate_mmdarwin_parameters]),
         ),
         migrations.AlterField(
             model_name='filterpolicy',
@@ -150,7 +149,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='status',
-            field=djongo.models.fields.JSONField(default={}, help_text="The statuses of the filter on each cluster's node"),
+            field=models.JSONField(default={}, help_text="The statuses of the filter on each cluster's node"),
         ),
         migrations.AlterField(
             model_name='filterpolicy',
@@ -160,7 +159,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='inspectionpolicy',
             name='rules',
-            field=djongo.models.fields.ArrayReferenceField(help_text='rules in policy', null=True, on_delete=django.db.models.deletion.PROTECT, to='darwin.InspectionRule'),
+            field=models.ManyToManyField(help_text='rules in policy', null=True, to='darwin.InspectionRule'),
+
+            # field=djongo.models.fields.ArrayReferenceField(help_text='rules in policy', null=True, on_delete=django.db.models.deletion.PROTECT, to='darwin.InspectionRule'),
         ),
         migrations.AddField(
             model_name='darwinbuffering',

@@ -2,7 +2,6 @@
 
 import django.core.validators
 from django.db import migrations, models
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -21,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='log_forwarders_parse_failure',
-            field=djongo.models.fields.ArrayReferenceField(help_text='Log forwarders used in log_condition', null=True, on_delete=djongo.models.fields.ArrayReferenceField._on_delete, related_name='frontend_failure_set', to='applications.LogOM'),
+            field=models.ManyToManyField(help_text='Log forwarders used in log_condition', null=True, related_name='frontend_failure_set', to='applications.LogOM'),
         ),
         migrations.AddField(
             model_name='frontend',
@@ -31,7 +30,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='frontend',
             name='log_forwarders',
-            field=djongo.models.fields.ArrayReferenceField(help_text='Log forwarders used in log_condition', null=True, on_delete=djongo.models.fields.ArrayReferenceField._on_delete, related_name='frontend_set', to='applications.LogOM'),
+            field=models.ManyToManyField(help_text='Log forwarders used in log_condition', null=True, related_name='frontend_set', to='applications.LogOM'),
         ),
         migrations.AlterField(
             model_name='frontend',

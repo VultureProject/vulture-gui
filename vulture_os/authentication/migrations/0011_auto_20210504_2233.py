@@ -3,7 +3,6 @@
 import django
 import authentication.user_scope.models
 from django.db import migrations, models
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -26,7 +25,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='userauthentication',
             name='repo_attributes',
-            field=djongo.models.fields.ArrayField(default=None, help_text='Repo attributes whitelist, for re-use in SSO and ACLs', model_container=authentication.user_scope.models.RepoAttribute, model_form_class=authentication.user_scope.models.RepoAttributeForm, null=True, verbose_name='Create user scope'),
+            field=models.JSONField(default=[], help_text='Repo attributes whitelist, for re-use in SSO and ACLs',
+                                #    model_container=authentication.user_scope.models.RepoAttribute, model_form_class=authentication.user_scope.models.RepoAttributeForm,
+                                   null=True, verbose_name='Create user scope'),
         ),
         migrations.CreateModel(
             name='TOTPProfile',

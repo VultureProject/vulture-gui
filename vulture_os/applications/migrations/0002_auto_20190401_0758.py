@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -24,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='backend',
             name='headers',
-            field=djongo.models.fields.ArrayReferenceField(help_text='Header rules', null=True, on_delete=django.db.models.deletion.CASCADE, to='toolkit.Header'),
+            field=models.ManyToManyField(help_text='Header rules', null=True, to='toolkit.Header'),
         ),
         migrations.AlterUniqueTogether(
             name='server',

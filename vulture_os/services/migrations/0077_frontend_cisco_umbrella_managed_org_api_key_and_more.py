@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.utils.timezone
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -20,12 +19,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='cisco_umbrella_managed_org_customers_id',
-            field=djongo.models.fields.JSONField(default=[], help_text='Cisco Umbrella customer ids', verbose_name='Cisco Umbrella customer ids'),
+            field=models.JSONField(default=[], help_text='Cisco Umbrella customer ids', verbose_name='Cisco Umbrella customer ids'),
         ),
         migrations.AddField(
             model_name='frontend',
             name='cisco_umbrella_managed_org_customers_tokens',
-            field=djongo.models.fields.JSONField(default=dict),
+            field=models.JSONField(default=dict),
         ),
         migrations.AddField(
             model_name='frontend',

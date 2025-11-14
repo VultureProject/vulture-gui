@@ -3,7 +3,6 @@
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -24,7 +23,7 @@ class Migration(migrations.Migration):
                 ('timeout_connect', models.PositiveIntegerField(default=2000, help_text='HTTP request Timeout', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(20000)], verbose_name='Timeout')),
                 ('timeout_server', models.PositiveIntegerField(default=2000, help_text='HTTP request Timeout', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(50000)], verbose_name='Timeout')),
                 ('configuration', models.TextField(default='{}')),
-                ('status', djongo.models.fields.JSONField(default={})),
+                ('status', models.JSONField(default={})),
                 ('custom_haproxy_conf', models.TextField(default='', help_text='Custom HAProxy configuration directives.')),
                 ('accept_invalid_http_response', models.BooleanField(default=False, help_text='Enable relaxing of HTTP response parsing', verbose_name='Accept invalid HTTP response')),
                 ('http_forwardfor_header', models.TextField(blank=True, help_text='Insertion of the X-Forwarded-For header', null=True, verbose_name='Send source ip in ')),
@@ -33,14 +32,14 @@ class Migration(migrations.Migration):
                 ('http_health_check_method', models.TextField(choices=[('GET', 'GET'), ('POST', 'POST'), ('PUT', 'PUT'), ('PATCH', 'PATCH'), ('DELETE', 'DELETE')], default='GET', help_text='HTTP method used', verbose_name='Method')),
                 ('http_health_check_uri', models.TextField(blank=True, default='/', help_text='URI referenced', null=True, verbose_name='URI')),
                 ('http_health_check_version', models.TextField(choices=[('HTTP/1.0\\r\\n', 'HTTP/1.0'), ('HTTP/1.1\\r\\n', 'HTTP/1.1')], default='HTTP/1.0\\r\\n', help_text='HTTP version', verbose_name='Version')),
-                ('http_health_check_headers', djongo.models.fields.JSONField(default={}, help_text='HTTP Health Check Headers', verbose_name='HTTP Health Check Headers')),
+                ('http_health_check_headers', models.JSONField(default={}, help_text='HTTP Health Check Headers', verbose_name='HTTP Health Check Headers')),
                 ('http_health_check_expect_match', models.TextField(choices=[('status', 'Status code is'), ('rstatus', 'Status code match regex'), ('string', 'Response content contains'), ('rstring', 'Response content match regex'), ('! status', 'Status code different'), ('! rstatus', 'Status code does not match regex'), ('! string', 'Response content does not contain'), ('! rstring', 'Response content does not match regex')], default='status', help_text='Type of match to expect', null=True, verbose_name='HTTP Health Check expected')),
                 ('http_health_check_expect_pattern', models.TextField(default='200', help_text='Type of pattern to match to expect', verbose_name='HTTP Health Check expected pattern')),
                 ('enable_http_keep_alive', models.BooleanField(default=True, help_text='Enable HTTP keep-alive', verbose_name='HTTP Keep alive')),
                 ('http_keep_alive_timeout', models.PositiveIntegerField(default=60, help_text='HTTP request Timeout', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(20000)], verbose_name='Timeout')),
                 ('balancing_mode', models.TextField(choices=[('roundrobin', 'RoundRobin'), ('static-rr', 'Static RoundRobin'), ('leastconn', 'Least Conn'), ('first', 'First server'), ('source', 'Source IP based'), ('uri', 'URI based'), ('url_param', 'URL param based'), ('hdr', 'Header based'), ('rdp-cookie', 'Cookie based')], default='roundrobin', help_text='Balancing mode between servers', verbose_name='Balancing mode')),
                 ('balancing_param', models.TextField(default='', help_text='Balancing param for balancing mode', null=True, verbose_name='Balancing parameter')),
-                ('tags', djongo.models.fields.JSONField(default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default=''))),
+                ('tags', models.JSONField(default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default=''))),
             ],
         ),
         migrations.CreateModel(
@@ -81,7 +80,7 @@ class Migration(migrations.Migration):
                 ('error_password_change_ok', models.TextField(default='', help_text='Your password has been changed', null=True)),
                 ('error_password_change_ko', models.TextField(default='', help_text='Error when trying to change your password', null=True)),
                 ('error_email_sent', models.TextField(default='', help_text='An email has been sent to you with instruction to reset your password', null=True)),
-                ('images', djongo.models.fields.JSONField(default=[], help_text='Images you can use in your templates', verbose_name=models.ImageField(null=True, upload_to=''))),
+                ('images', models.JSONField(default=[], help_text='Images you can use in your templates', verbose_name=models.ImageField(null=True, upload_to=''))),
                 ('email_register_subject', models.TextField(default='', help_text='Email subject for registration', null=True)),
                 ('email_register_from', models.TextField(default='', help_text='Email content for registration', null=True)),
                 ('email_register_body', models.TextField(default='', help_text='Email sender for registration', null=True)),
@@ -118,11 +117,11 @@ class Migration(migrations.Migration):
                 ('url', models.URLField(help_text='URL to retrieve the database from', verbose_name='Database URL')),
                 ('verify_cert', models.BooleanField(default=True, help_text='Verify certificate to prevent connexion to self-signed certificates.', verbose_name='Verify server certificate')),
                 ('post_data', models.TextField(default='', help_text='Body to send if method is POST', null=True, verbose_name='POST body')),
-                ('custom_headers', djongo.models.fields.JSONField(default={}, help_text='Headers to send while retrieving url', verbose_name='Custom headers')),
+                ('custom_headers', models.JSONField(default={}, help_text='Headers to send while retrieving url', verbose_name='Custom headers')),
                 ('auth_type', models.TextField(choices=[('', 'No authentication'), ('basic', 'Basic'), ('digest', 'Digest')], default='', help_text='Authentication type used to retrieve url', verbose_name='Authentication')),
                 ('user', models.SlugField(default=None, help_text='Username to use for authentication', null=True, verbose_name='Username')),
                 ('password', models.TextField(default=None, help_text='Password to use for authentication', null=True, verbose_name='Password')),
-                ('tags', djongo.models.fields.JSONField(default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default=''))),
+                ('tags', models.JSONField(default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default=''))),
                 ('content', models.BinaryField(default='')),
             ],
         ),

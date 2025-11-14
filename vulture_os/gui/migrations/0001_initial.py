@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -64,6 +63,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='monitor',
             name='services',
-            field=djongo.models.fields.ArrayReferenceField(default=[], on_delete=djongo.models.fields.ArrayReferenceField._on_delete, to='gui.ServiceStatus'),
+            field=models.ManyToManyField(default=[], to='gui.ServiceStatus'),
         ),
     ]

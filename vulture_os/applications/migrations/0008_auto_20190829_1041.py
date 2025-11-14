@@ -2,7 +2,6 @@
 
 import django.core.validators
 from django.db import migrations, models
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -19,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='parser',
             name='tags',
-            field=djongo.models.fields.JSONField(blank=True, default=[], help_text='Tags to set on this object for search', verbose_name='Tags'),
+            field=models.JSONField(blank=True, default=[], help_text='Tags to set on this object for search', verbose_name='Tags'),
         ),
         migrations.AlterField(
             model_name='server',

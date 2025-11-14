@@ -3,20 +3,19 @@
 import bson.objectid
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
-from toolkit.mongodb.mongo_base import MongoBase
-
+from toolkit.mongodb.postgres_base import PostgresBase
+import random
 
 def remove_session_and_logs_filters(apps, schema_editor):
     # Manually delete all Darwin filters to prevent migration issue, they will be re-created in loaddata
-    m = MongoBase()
-    m.connect_primary()
+    p = PostgresBase()
+    p.connect_primary()
     # If the node is not yet installed, no need to drop collections
-    if m.db and m.db['vulture'] is not None:
-        coll = m.db['vulture']['darwin_filterpolicy']
+    if p.db and p.db['vulture'] is not None:
+        coll = p.db['vulture']['darwin_filterpolicy']
         if coll is not None:
             coll.delete_many({})
-        coll = m.db['vulture']['darwin_darwinfilter']
+        coll = p.db['vulture']['darwin_darwinfilter']
         if coll is not None:
             coll.delete_many({})
 
@@ -96,8 +95,10 @@ def initial_access_control(apps, schema_editor):
 
     for acl in acls:
         AccessControl.objects.create(
+            _id=random.randint(0,2000000000),
             name=acl['name'],
             enabled=acl['enabled'],
+            acls=acl['acls'],
             rules=acl['rules']
         )
 
@@ -112,11 +113,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AccessControl',
             fields=[
-                ('_id', djongo.models.fields.ObjectIdField(auto_created=True, default=bson.objectid.ObjectId, primary_key=True, serialize=False)),
+                ('_id', models.IntegerField(auto_created=True, unique=True, default=random.randint(0,20000000000000000000000), primary_key=True, serialize=False)),
                 ('name', models.SlugField(help_text='Friendly name', max_length=255, unique=True, verbose_name='Friendly name')),
                 ('enabled', models.BooleanField(default=True)),
                 ('acls', models.TextField(default='')),
-                ('rules', djongo.models.fields.JSONField(default=[])),
+                ('rules', models.JSONField(default=[])),
             ],
         ),
         migrations.RunPython(initial_access_control),
@@ -139,7 +140,7 @@ class Migration(migrations.Migration):
                 ('expiration_date', models.DateTimeField(auto_now_add=True)),
                 ('rule_id', models.IntegerField()),
                 ('rule_key', models.TextField(default='')),
-                ('data', djongo.models.fields.JSONField(default={})),
+                ('data', models.JSONField(default={})),
             ],
         ),
         migrations.CreateModel(
@@ -197,7 +198,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='config',
-            field=djongo.models.fields.JSONField(default={}),
+            field=models.JSONField(default={}),
         ),
         migrations.AddField(
             model_name='filterpolicy',
@@ -207,7 +208,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='mmdarwin_parameters',
-            field=djongo.models.fields.JSONField(default=[]),
+            field=models.JSONField(default=[]),
         ),
         migrations.AddField(
             model_name='filterpolicy',
@@ -232,7 +233,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='inspectionpolicy',
             name='rules',
-            field=djongo.models.fields.ArrayReferenceField(help_text='rules in policy', null=True, on_delete=django.db.models.deletion.CASCADE, to='darwin.InspectionRule'),
+            field=models.ManyToManyField(help_text='rules in policy', null=True, to='darwin.InspectionRule'),
+            # field=djongo.models.fields.ArrayReferenceField(help_text='rules in policy', null=True, on_delete=django.db.models.deletion.CASCADE, to='darwin.InspectionRule'),
         ),
         migrations.RunPython(remove_session_and_logs_filters)
     ]

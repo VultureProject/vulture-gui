@@ -3,7 +3,6 @@
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -21,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='darwin_policies',
-            field=djongo.models.fields.ArrayReferenceField(help_text='Darwin policies to use', null=True, on_delete=django.db.models.deletion.PROTECT, related_name='frontend_set', to='darwin.DarwinPolicy'),
+            field=models.ManyToManyField(help_text='Darwin policies to use', null=True, related_name='frontend_set', to='darwin.DarwinPolicy'),
         ),
         migrations.AlterField(
             model_name='frontend',

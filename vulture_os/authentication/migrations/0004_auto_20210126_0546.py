@@ -3,7 +3,6 @@
 import authentication.user_scope.models
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 import toolkit.system.hashes
 
 
@@ -47,7 +46,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('enabled', models.BooleanField(default=True)),
                 ('name', models.TextField(help_text='Friendly name', unique=True, verbose_name='Friendly name')),
-                ('rules', djongo.models.fields.JSONField(default=[])),
+                ('rules', models.JSONField(default=[])),
             ],
         ),
         migrations.CreateModel(
@@ -145,8 +144,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='userauthentication',
             name='repo_attributes',
-            field=djongo.models.fields.ArrayField(default=[], help_text='Repo attributes whitelist, for re-use in SSO and ACLs', 
-            model_container=authentication.user_scope.models.RepoAttribute, model_form_class=authentication.user_scope.models.RepoAttributeForm, verbose_name='Create user scope'),
+            field=models.JSONField(default=[], help_text='Repo attributes whitelist, for re-use in SSO and ACLs', 
+            # model_container=authentication.user_scope.models.RepoAttribute, model_form_class=authentication.user_scope.models.RepoAttributeForm,
+            verbose_name='Create user scope'),
         ),
         migrations.AddField(
             model_name='userauthentication',

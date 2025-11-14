@@ -2,7 +2,6 @@
 
 import django.core.validators
 from django.db import migrations, models
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -30,7 +29,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='apex_timestamp',
-            field=djongo.models.fields.JSONField(default=dict),
+            field=models.JSONField(default=dict),
         ),
         migrations.AddField(
             model_name='frontend',

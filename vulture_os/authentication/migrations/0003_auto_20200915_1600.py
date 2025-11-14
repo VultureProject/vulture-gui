@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 import toolkit.system.hashes
 
 
@@ -72,12 +71,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='userauthentication',
             name='oauth_redirect_uris',
-            field=djongo.models.fields.JSONField(default=['https://myapp.com/oauth2/callback'], help_text='Use one line per allowed URI', verbose_name=models.CharField()),
+            field=models.JSONField(default=['https://myapp.com/oauth2/callback'], help_text='Use one line per allowed URI', verbose_name=models.CharField()),
         ),
         migrations.AddField(
             model_name='userauthentication',
             name='repositories',
-            field=djongo.models.fields.ArrayReferenceField(default=[], help_text='Repositories to use to authenticate users (tested in order)', on_delete=django.db.models.deletion.PROTECT, to='authentication.BaseRepository', verbose_name='Authentication repositories'),
+            field=models.ManyToManyField(default=[], help_text='Repositories to use to authenticate users (tested in order)', to='authentication.BaseRepository', verbose_name='Authentication repositories'),
         ),
         migrations.AlterField(
             model_name='userauthentication',

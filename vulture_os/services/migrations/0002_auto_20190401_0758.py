@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import djongo.models.fields
 
 
 class Migration(migrations.Migration):
@@ -33,8 +32,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='headers',
-            field=djongo.models.fields.ArrayReferenceField(help_text='Header rules', null=True, on_delete=django.db.models.deletion.CASCADE, to='toolkit.Header'),
-        ),
+            field=models.ManyToManyField(help_text='Header rules', null=True, to='toolkit.Header'),        ),
         migrations.AddField(
             model_name='frontend',
             name='impcap_darwin_dns_filter',
@@ -48,7 +46,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='log_forwarders',
-            field=djongo.models.fields.ArrayReferenceField(help_text='Log forwarders used in log_condition', null=True, on_delete=djongo.models.fields.ArrayReferenceField._on_delete, to='applications.LogOM'),
+            field=models.ManyToManyField(help_text='Log forwarders used in log_condition', null=True, to='applications.LogOM'),
         ),
         migrations.AddField(
             model_name='frontend',
