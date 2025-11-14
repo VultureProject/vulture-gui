@@ -163,19 +163,12 @@ WSGI_APPLICATION = 'vulture_os.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'vulture',
-        "CLIENT": {
-            'host': env.str('MONGODB_HOST', HOSTNAME),
-            'port': env.int('MONGODB_PORT', 9091),
-            'serverSelectionTimeoutMS': 5000,
-            'REPLICASET': 'Vulture',
-            'SSL': env.bool('MONGODB_SSL', True),
-            'tlsCertificateKeyFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CERT_FILE', 'pki/node.pem')),
-            'tlsCAFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CA_FILE', 'pki/ca.pem')),
-            'tlsAllowInvalidHostnames': True,
-            'READPREFERENCE': "primaryPreferred"
-        },
+        'USER': 'postgres',
+        'PASSWORD': '',
+        'HOST': env.str('POSTGRES_HOST', HOSTNAME),
+        'PORT': env.int('POSTGRES_PORT', 5432),
     }
 }
 
