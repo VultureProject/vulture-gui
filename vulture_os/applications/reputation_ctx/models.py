@@ -26,7 +26,7 @@ __doc__ = 'Frontends & Listeners model classes'
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 
 # Django project imports
 from toolkit.network.network import get_proxy
@@ -162,7 +162,7 @@ class ReputationContext(models.Model):
     enable_hour_download = models.BooleanField(default=True)
 
     """ Use DjongoManager to use mongo_find() & Co """
-    objects = models.DjongoManager()
+    # objects = models.DjongoManager()
 
     def save(self, *args, **kwargs):
         """ Override mother fonction to prevent save of content attribute in MongoDB 

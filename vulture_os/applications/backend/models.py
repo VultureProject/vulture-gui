@@ -28,7 +28,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 
 # Django project imports
 from services.haproxy.haproxy import hot_action_backend, test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
@@ -168,11 +168,11 @@ class Backend(models.Model):
         default={}
     )
     """ Headers """
-    headers = models.ArrayReferenceField(
+    headers = models.ManyToManyField(
         Header,
         null=True,
         blank=False,
-        on_delete=models.CASCADE,
+        # on_delete=models.CASCADE,
         help_text=_("Header rules")
     )
     """ Custom HAProxy Backend directives """
