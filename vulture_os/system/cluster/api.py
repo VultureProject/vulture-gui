@@ -147,7 +147,7 @@ def cluster_add(request):
         while not message:
             try:
                 logger.debug("Adding {} to replicaset".format(new_node_name))
-                status, message = postgres.repl_add(new_node_name + ':9091')
+                status, message = postgres.repl_add(new_node_name + ':5432')
             except Exception as e:
                 logger.error("Cannot connect to replica for the moment : {}".format(e))
                 cpt += 1

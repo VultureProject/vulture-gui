@@ -60,7 +60,7 @@ def cluster_stepdown(request, object_id, api=False):
     c.connect()
 
     # If the asked node is not primary, return error
-    if c.get_primary() != node_model.name + ":9091":
+    if c.get_primary() != node_model.name + ":5432":
         return JsonResponse({'status': False, 'error': _("Cannot step down a non-primary node.")}, status=400)
     if Node.objects.count() < 2:
         return JsonResponse({'status': False, 'error': _("Cannot step down a node outside a cluster")}, status=400)
@@ -89,7 +89,7 @@ def cluster_remove(request, object_id, api=False):
     c.connect()
 
     # Automagically connect to the primary node
-    status, message = c.repl_remove(node_model.name + ":9091")
+    status, message = c.repl_remove(node_model.name + ":5432")
 
     return JsonResponse({'status': status, 'message': message})
 
@@ -110,7 +110,7 @@ def cluster_join(request, object_id, api=False):
     c.connect()
 
     # Automagically connect to the primary node
-    status, message = c.repl_add(node_model.name + ':9091')
+    status, message = c.repl_add(node_model.name + ':5432')
 
     return JsonResponse({'status': status, 'message': message})
 

@@ -59,7 +59,7 @@ def check_internal_tasks():
             logger.info('[REMOVING DEAD NODE FROM CLUSTER] Node: {}'.format(n.name))
             c = PostgresBase()
             c.connect_primary()
-            c.repl_remove(n.name + ":9091")
+            c.repl_remove(n.name + ":5432")
 
     except Exception as e:
         logger.error("Crontab::check_internal_tasks: {}".format(e), exc_info=1)

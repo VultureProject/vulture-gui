@@ -52,8 +52,8 @@ if __name__ == "__main__":
     # MongoDB - rename of node
     c = PostgresBase()
     # Connect to the current renamed node
-    c.connect(node=new_hostname+":9091", primary=False)
-    c.connect(node=new_hostname+":9091", primary=False)
+    c.connect(node=new_hostname+":5432", primary=False)
+    c.connect(node=new_hostname+":5432", primary=False)
     print("Connected to {}".format(new_hostname))
     # Automagically connect to the primary node
     res = c.repl_rename(old_hostname, new_hostname)

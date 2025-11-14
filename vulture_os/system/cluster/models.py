@@ -276,7 +276,7 @@ class Node(models.Model):
         else:
             return None
 
-        if ok and primary_node == self.name + ':9091':
+        if ok and primary_node == self.name + ':5432':
             return True
         elif ok:
             return False
@@ -293,7 +293,7 @@ class Node(models.Model):
         if c.connect():
             members = c.repl_state()
             for member in members:
-                if member['name'] == self.name + ':9091':
+                if member['name'] == self.name + ':5432':
                     return member.get('stateStr')
         return "UNKNOWN"
 

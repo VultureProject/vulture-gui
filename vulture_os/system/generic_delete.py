@@ -133,7 +133,7 @@ class DeleteNode(DeleteView):
             """ Before Deleting the node we need to remove it from mongoDB """
             c = PostgresBase()
             c.connect_primary()
-            c.repl_remove(node_name + ":9091")
+            c.repl_remove(node_name + ":5432")
 
             """ Before Deleting the node we need to remove it from Redis """
             c = SentinelBase(obj_inst.management_ip, 26379)

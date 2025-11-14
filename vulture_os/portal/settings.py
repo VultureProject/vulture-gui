@@ -140,8 +140,6 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 CACERT_DIR = os_path.join(DBS_PATH, 'mongodb/')
-MONGODBPORT = 9091
-MONGODBARBPORT = 9092
 REDISIP = env.str('REDIS_HOST', '127.0.0.1')
 REDISPORT = env.int('REDIS_PORT', 6379)
 OS = "FreeBSD"
