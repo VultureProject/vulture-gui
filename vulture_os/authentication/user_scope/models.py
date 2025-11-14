@@ -26,14 +26,12 @@ __doc__ = 'LDAP Repository model'
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 
 # Django project imports
 from django.forms import (ModelForm, Select,
                           TextInput)
 
-# Extern modules imports
-from bson import ObjectId
 
 # Required exceptions imports
 
@@ -79,7 +77,7 @@ REPO_ATTR_ASSIGNATOR_CHOICES = (
 
 class RepoAttribute(models.Model):
     # Needed to patch Djongo ArrayField error
-    _id = models.ObjectIdField(default=ObjectId)
+    _id = models.IntegerField(default=0)
     condition_var_kind = models.TextField(
         default=REPO_ATTR_SOURCE_CHOICES[0][0],
         choices=REPO_ATTR_SOURCE_CHOICES,
@@ -243,16 +241,16 @@ class UserScope(models.Model):
         verbose_name=_("Name"),
         help_text=_("Custom object name")
     )
-    repo_attributes = models.ArrayField(
-        model_container=RepoAttribute,
-        model_form_class=RepoAttributeForm,
+    repo_attributes = models.JSONField(
+        # model_container=RepoAttribute,
+        # model_form_class=RepoAttributeForm,
         verbose_name=_('Create user scope'),
         null=True,
-        default=None,
+        default=[],
         help_text=_("Repo attributes whitelist, for re-use in SSO and ACLs")
     )
 
-    objects = models.DjongoManager()
+    # objects = models.DjongoManager()
 
     def __str__(self):
         return "{} ({})".format(str(self.name), [r['action_var_name'] for r in self.repo_attributes])

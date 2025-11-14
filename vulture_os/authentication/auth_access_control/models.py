@@ -26,7 +26,7 @@ __doc__ = 'User Access Control model'
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 
 import logging
 import re

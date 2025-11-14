@@ -23,7 +23,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Base Repository API'
 
 # Django system imports
-from bson import ObjectId
 from django.conf import settings
 from django.views import View
 from django.http import JsonResponse
@@ -48,7 +47,7 @@ class BaseRepositoryAPIv1(View):
         try:
             fields = request.GET.getlist('fields') or None
             if object_id:
-                repo = BaseRepository.objects.get(pk=ObjectId(object_id)).to_dict(fields=fields)
+                repo = BaseRepository.objects.get(pk=object_id).to_dict(fields=fields)
             elif request.GET.get('name'):
                 repo = BaseRepository.objects.get(name=request.GET['name']).to_dict(fields=fields)
             else:

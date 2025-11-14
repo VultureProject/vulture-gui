@@ -23,7 +23,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'OTP API'
 
 # Django system imports
-from bson import ObjectId
 from django.conf import settings
 from django.views import View
 from django.http import JsonResponse
@@ -49,7 +48,7 @@ class OTPAPIv1(View):
         try:
             fields = request.GET.getlist('fields') or None
             if object_id:
-                otp = OTPRepository.objects.get(pk=ObjectId(object_id)).to_dict(fields=fields)
+                otp = OTPRepository.objects.get(pk=object_id).to_dict(fields=fields)
             elif request.GET.get('name'):
                 otp = OTPRepository.objects.get(name=request.GET['name'].replace(' ', '_')).to_dict(fields=fields)
             else:
@@ -115,7 +114,7 @@ class OTPAPIv1(View):
     @api_need_key("cluster_api_key")
     def delete(self, request, object_id):
         try:
-            obj = OTPRepository.objects.get(pk=ObjectId(object_id))
+            obj = OTPRepository.objects.get(pk=object_id)
             obj.delete()
 
             return JsonResponse({

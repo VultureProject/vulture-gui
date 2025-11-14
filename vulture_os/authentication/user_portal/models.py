@@ -28,7 +28,7 @@ from django.core.validators import MinValueValidator
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 
 # Django project imports
 from authentication.portal_template.models import PortalTemplate
@@ -169,12 +169,12 @@ class UserAuthentication(models.Model):
         verbose_name=_("Track anonymous connections"),
         help_text=_("If disable, Vulture won\'t give a cookie to anonymous users")
     )
-    repositories = models.ArrayReferenceField(
+    repositories = models.ManyToManyField(
         BaseRepository,
         default=[],
         verbose_name=_('Authentication repositories'),
         help_text=_("Repositories to use to authenticate users (tested in order)"),
-        on_delete=models.PROTECT,
+        # on_delete=models.PROTECT,
     )
     auth_type = models.TextField(
         default=AUTH_TYPE_CHOICES[0][0],
@@ -425,7 +425,7 @@ class UserAuthentication(models.Model):
         help_text=_("Take client's cookies while executing SSO requests")
     )
 
-    objects = models.DjongoManager()
+    # objects = models.DjongoManager()
 
     def __str__(self):
         return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])

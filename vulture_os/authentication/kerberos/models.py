@@ -26,7 +26,7 @@ __doc__ = 'LDAP Repository model'
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 
 # Django project imports
 from authentication.base_repository import BaseRepository
