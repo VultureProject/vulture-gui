@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 import random
 
 def remove_session_and_logs_filters(apps, schema_editor):

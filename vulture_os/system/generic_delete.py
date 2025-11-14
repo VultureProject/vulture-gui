@@ -37,7 +37,7 @@ from services.frontend.models import Listener, Frontend
 from system.cluster.models import Cluster, Node
 from system.pki.models import TLSProfile
 from system.users.models import User
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 from toolkit.redis.redis_base import RedisBase, SentinelBase
 
 # Required exceptions imports

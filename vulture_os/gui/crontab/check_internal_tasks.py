@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Job for documentation update'
 
 from system.cluster.models import MessageQueue, Cluster
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 from django.utils import timezone
 from django.conf import settings
 import datetime

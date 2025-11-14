@@ -42,7 +42,7 @@ from system.cluster.views import COMMAND_LIST, cluster_edit
 from system.cluster.models import Cluster
 from system.pki.models import X509Certificate
 from toolkit.network.network import is_valid_ip, is_valid_hostname
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 from services.frontend.models import Frontend
 from workflow.models import Workflow
 

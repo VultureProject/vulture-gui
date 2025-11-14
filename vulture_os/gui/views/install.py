@@ -33,7 +33,7 @@ from system.cluster.models import Cluster, Node
 from system.pki.models import X509Certificate, TLSProfile
 from system.users.models import User
 from toolkit.network.network import get_management_ip
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 from toolkit.redis.redis_base import RedisBase, SentinelBase
 from toolkit.system.secret_key import set_key
 from toolkit.system.rc import get_rc_config

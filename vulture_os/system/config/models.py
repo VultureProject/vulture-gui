@@ -30,7 +30,7 @@ from django.db import models
 # Django project imports
 from authentication.ldap.models import LDAPRepository
 from system.tenants.models import Tenants
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 
 # Required exceptions imports
 from services.exceptions import ServiceExit

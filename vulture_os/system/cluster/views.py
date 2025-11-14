@@ -26,7 +26,7 @@ __doc__ = 'Cluster View'
 from django.http import (HttpResponseForbidden, HttpResponseRedirect, JsonResponse, HttpResponseBadRequest)
 from django.conf import settings
 from system.cluster.form import NodeForm
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 from django.shortcuts import render
 from services.pf.pf import PFService
 from system.cluster.models import Cluster, Node

@@ -27,9 +27,9 @@ from system.config.models import Config
 
 from toolkit.network.network import is_valid_ip4, is_valid_ip6, is_valid_hostname, is_loopback
 from toolkit.network.route import get_route_interface
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 from toolkit.redis.redis_base import RedisBase
-from toolkit.mongodb.postgres_base import parse_uristr
+from toolkit.postgresql.postgres_base import parse_uristr
 
 from django.db.models import Q
 from django.db.utils import DatabaseError

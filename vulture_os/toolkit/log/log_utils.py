@@ -23,7 +23,7 @@ __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Database handler for logging'
 
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 from django.conf import settings
 from django.utils import timezone
 import logging

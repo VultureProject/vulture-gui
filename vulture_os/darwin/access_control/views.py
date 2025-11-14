@@ -26,7 +26,7 @@ __doc__ = 'Access Control views'
 from django.http import JsonResponse
 from django.http.response import HttpResponseNotFound
 from django.utils.crypto import get_random_string
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 from django.utils.translation import gettext as _
 from django.shortcuts import render
 from django.conf import settings

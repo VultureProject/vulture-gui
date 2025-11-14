@@ -36,7 +36,7 @@ django.setup()
 from re import compile as re_compile
 
 from system.cluster.models import Cluster
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)

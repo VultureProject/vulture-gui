@@ -4,7 +4,7 @@ import darwin.policy.models
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 
 
 def set_enrichment_tags(apps, schema_editor):

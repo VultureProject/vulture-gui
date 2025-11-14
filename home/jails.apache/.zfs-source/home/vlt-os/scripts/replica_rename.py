@@ -23,7 +23,7 @@ from applications.logfwd.models import LogOMMongoDB
 from django.db.models import Q
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster, Node
-from toolkit.mongodb.postgres_base import PostgresBase
+from toolkit.postgresql.postgres_base import PostgresBase
 
 sys.path.append("/home/vlt-os/vulture_os/")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
