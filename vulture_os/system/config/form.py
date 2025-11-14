@@ -71,8 +71,8 @@ class ConfigForm(ModelForm):
             'ssh_authorized_key': Textarea(attrs={'class': 'form-control'}),
             'rsa_encryption_key': Textarea(attrs={'class': 'form-control'}),
             'logs_ttl': NumberInput(attrs={'class': 'form-control'}),
-            'internal_tenants': Select(choices=Tenants.objects.all(),attrs={'class': 'form-control select2'}),
-            'ldap_repository': Select(choices=LDAPRepository.objects.all(),attrs={'class': 'form-control select2'}),
+            'internal_tenants': Select(choices=[],attrs={'class': 'form-control select2'}),
+            'ldap_repository': Select(choices=[],attrs={'class': 'form-control select2'}),
         }
 
     def __init__(self, *args, **kwargs):

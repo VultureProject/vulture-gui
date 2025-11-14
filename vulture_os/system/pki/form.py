@@ -109,7 +109,7 @@ class TLSProfileForm(ModelForm):
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
-            'x509_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': 'form-control select2'}),
+            'x509_certificate': Select(choices=[], attrs={'class': 'form-control select2'}),
             'compatibility': Select(choices=BROWSER_CHOICES, attrs={'class': 'form-control select2'}),
             'protocols': SelectMultiple(choices=PROTOCOL_CHOICES, attrs={'class': 'form-control select2'}),
             'cipher_suite': Textarea(attrs={'class': 'form-control'}),

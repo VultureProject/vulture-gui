@@ -63,7 +63,7 @@ class UserForm(UserCreationForm):
     )
 
     groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(),
+        queryset=None,
         required=False,
         widget=forms.SelectMultiple(attrs={
             'class': 'select2'
@@ -139,7 +139,7 @@ class ChangeUserForm(UserChangeForm):
     )
 
     groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(),
+        queryset=None,
         required=False,
         widget=forms.SelectMultiple(attrs={
             'class': 'select2'
@@ -194,7 +194,7 @@ class UserLDAPForm(UserCreationForm):
     )
 
     groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(),
+        queryset=None,
         required=False,
         widget=forms.SelectMultiple(attrs={
             'class': 'select2'
@@ -241,7 +241,7 @@ class ChangeUserLDAPForm(UserChangeForm):
     )
 
     groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(),
+        queryset=None,
         required=False,
         widget=forms.SelectMultiple(attrs={
             'class': 'select2'
