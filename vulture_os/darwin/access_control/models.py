@@ -26,7 +26,7 @@ __doc__ = 'Access Control model'
 # Django system imports
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-from djongo import models
+from django.db import models
 from django.template.loader import render_to_string
 
 from services.haproxy.haproxy import test_haproxy_conf
@@ -120,7 +120,8 @@ JINJA_TEST_TEMPLATE = "haproxy_test.conf"
 
 
 class AccessControl(models.Model):
-    _id = models.ObjectIdField(default=ObjectId)
+    # _id = models.ObjectIdField(default=ObjectId)
+    _id = models.IntegerField()
 
     name = models.SlugField(
         max_length=255,
