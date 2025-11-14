@@ -31,7 +31,7 @@ from django.template import Context, Template as JinjaTemplate
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 
 # Django project imports
 from applications.logfwd.models import LogOM, LogOMMongoDB
@@ -236,9 +236,8 @@ class Frontend(RsyslogQueue, models.Model):
     )
     """ *** DARWIN OPTIONS *** """
     """ Darwin policy """
-    darwin_policies = models.ArrayReferenceField(
+    darwin_policies = models.ManyToManyField(
         to=DarwinPolicy,
-        on_delete=models.PROTECT,
         null=True,
         blank=False,
         related_name="frontend_set",
@@ -306,7 +305,7 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Log level"),
     )
     """ Log forwarders used by this Frontend """
-    log_forwarders = models.ArrayReferenceField(
+    log_forwarders = models.ManyToManyField(
         to=LogOM,
         null=True,
         blank=False,
@@ -314,7 +313,7 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Log forwarders used in log_condition")
     )
     """ Log forwarders used by this Frontend """
-    log_forwarders_parse_failure = models.ArrayReferenceField(
+    log_forwarders_parse_failure = models.ManyToManyField(
         to=LogOM,
         null=True,
         blank=False,
@@ -407,11 +406,10 @@ class Frontend(RsyslogQueue, models.Model):
     )
     """ *** HTTP OPTIONS *** """
     """ Log forwarder - File """
-    headers = models.ArrayReferenceField(
+    headers = models.ManyToManyField(
         Header,
         null=True,
         blank=False,
-        on_delete=models.CASCADE,
         help_text=_("Header rules")
     )
     """ Custom HAProxy Frontend directives """
@@ -2564,11 +2562,10 @@ class Listener(models.Model):
         on_delete=models.CASCADE
     )
     """ TLSProfile to use when listening """
-    tls_profiles = models.ArrayReferenceField(
+    tls_profiles = models.ManyToManyField(
         TLSProfile,
         null=True,
         default=[],
-        on_delete=models.PROTECT
     )
     """ List of ip to allow traffic from, or 'any' """
     whitelist_ips = models.TextField(

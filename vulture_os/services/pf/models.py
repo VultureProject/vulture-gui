@@ -25,7 +25,7 @@ __doc__ = 'PF settings model'
 
 # Django system imports
 from django.conf import settings
-from djongo import models
+from django.db import models
 
 # Django project imports
 from applications.reputation_ctx.models import DATABASES_PATH

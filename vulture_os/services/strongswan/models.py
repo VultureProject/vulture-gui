@@ -25,7 +25,7 @@ __doc__ = 'Frontends & Listeners model classes'
 # Django system imports
 from django.conf import settings
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 
 # Django project imports
 from system.cluster.models import Node
