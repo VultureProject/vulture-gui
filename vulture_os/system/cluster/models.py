@@ -38,7 +38,7 @@ from django.utils.module_loading import import_string
 from django.utils import timezone
 from django.conf import settings
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 import subprocess
 import ipaddress
 from iptools.ipv4 import netmask2prefix
@@ -118,7 +118,7 @@ class Node(models.Model):
     scanner_ip = models.ForeignKey(to="NetworkAddress", null=True, on_delete=models.SET_NULL,
                                    help_text=_("NAT IP used for scanner"),
                                    verbose_name=_("Scanner IP"))
-    pstats_forwarders = models.ArrayReferenceField(to="applications.LogOM",
+    pstats_forwarders = models.ManyToManyField(to="applications.LogOM",
                                                    null=True,
                                                    blank=False,
                                                    verbose_name=_("Send rsyslog pstats logs to"),
@@ -987,7 +987,7 @@ class NetworkAddress(models.Model):
     )
 
     # Needed to make alambiquate mongodb queries
-    objects = models.DjongoManager()
+    # objects = models.DjongoManager()
 
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)

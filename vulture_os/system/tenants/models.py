@@ -24,7 +24,7 @@ __doc__ = 'Perimeter Configuration main models'
 
 from django.conf import settings
 from django.forms.models import model_to_dict
-from djongo import models
+from django.db import models
 from applications.reputation_ctx.models import ReputationContext
 from django.utils.translation import gettext_lazy as _
 
@@ -50,7 +50,7 @@ class Tenants(models.Model):
     )
 
     """ Use DjongoManager to use mongo_find() & Co """
-    objects = models.DjongoManager()
+    # objects = models.DjongoManager()
 
     def __str__(self):
         return "Tenants config {}".format(self.name)

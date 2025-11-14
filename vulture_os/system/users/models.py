@@ -26,7 +26,7 @@ __doc__ = 'Override Django User model'
 # Django system imports
 from django.conf import settings
 from django.contrib.auth import models as auth_models
-from djongo import models
+from django.db import models
 
 # Django project imports
 
