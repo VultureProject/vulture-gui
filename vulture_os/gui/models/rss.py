@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Model RSS'
 
 from django.contrib.humanize.templatetags.humanize import naturalday
-from djongo import models
+from django.db import models
 
 
 class RSS(models.Model):

@@ -25,7 +25,7 @@ __doc__ = 'Monitoring models'
 
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from system.cluster.models import Node
-from djongo import models
+from django.db import models
 
 
 class ServiceStatus(models.Model):
@@ -37,7 +37,7 @@ class ServiceStatus(models.Model):
 class Monitor(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
     date = models.DateTimeField()
-    services = models.ArrayReferenceField(
+    services = models.ManyToManyField(
         to=ServiceStatus,
         default=[]
     )
