@@ -39,7 +39,7 @@ from workflow.models import Workflow
 from django.core.exceptions          import ValidationError
 from django.utils.datastructures     import MultiValueDictKeyError
 from ldap                            import LDAPError
-from pymongo.errors                  import PyMongoError
+from psycopg.errors                  import PlpgsqlError
 from redis                           import ConnectionError as RedisConnectionError
 from portal.system.exceptions        import ACLError, TokenNotFoundError
 from toolkit.auth.exceptions import AuthenticationError
@@ -94,7 +94,7 @@ def log_in(request):
     except ACLError as e:
         logger.error("OAUTH2::log_in: ACLError while trying to authenticate user '{}' : {}".format(request.POST.get('username',None), e))
 
-    except (PyMongoError, LDAPError) as e:
+    except (PlpgsqlError, LDAPError) as e:
         logger.error("OAUTH2::log_in: Repository driver Error while trying to authenticate user '{}' : {}".format(request.POST.get('username',None), e))
 
     except (MultiValueDictKeyError, AttributeError, KeyError) as e:

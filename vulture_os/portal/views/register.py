@@ -46,7 +46,7 @@ from workflow.models import Workflow
 from django.core.exceptions          import ValidationError
 from ldap                            import LDAPError
 from portal.system.exceptions        import RedirectionNeededError, UserAlreadyExistsError, CredentialsError
-from pymongo.errors                  import PyMongoError
+from psycopg.errors                  import PlpgsqlError
 from redis                           import ConnectionError as RedisConnectionError
 from smtplib                         import SMTPException
 from toolkit.auth.exceptions import UserNotFound
@@ -317,7 +317,7 @@ def registration(request, token_name, proxy_app_id=None):
     except SMTPException as e:
         return registration.ask_credentials_response(request, registrk, str(e))
 
-    except (LDAPError, PyMongoError) as e:
+    except (LDAPError, PlpgsqlError) as e:
         logger.error("REGISTER::step2: Error contacting the database : ")
         logger.exception(e)
         return registration.ask_credentials_response(request, registrk, "Error contacting the database <br> <b> Please contact your administrator </b>")

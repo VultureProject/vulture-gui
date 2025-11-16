@@ -47,7 +47,7 @@ from django.core.exceptions          import ObjectDoesNotExist
 from ldap                            import LDAPError
 from portal.system.exceptions        import PasswordEmptyError, PasswordMatchError, RedirectionNeededError, TokenNotFoundError
 from portal.views.responses          import error_response
-from pymongo.errors                  import PyMongoError
+from psycopg.errors                  import PlpgsqlError
 from redis                           import ConnectionError as RedisConnectionError
 from smtplib                         import SMTPException
 
@@ -140,7 +140,7 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         logger.error("SELF::self: AssertionError while trying to create Authentication : '{}'".format(e))
         return error_response(portal, error="Invalid link")
 
-    except (LDAPError, PyMongoError) as e:
+    except (LDAPError, PlpgsqlError) as e:
         logger.error("SELF::self: Failed to update password :")
         logger.exception(e)
         return Action.ask_credentials_response(request, action, "<b> Database error </b> <br> Please contact your administrator")
