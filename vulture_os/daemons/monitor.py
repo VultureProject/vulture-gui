@@ -87,6 +87,8 @@ def monitor():
         node=node
     )
     mon.services_id = set()
+    mon.id = 0
+    mon.save()
 
     for service in [HaproxyService, PFService,
                     StrongswanService, OpenvpnService, RsyslogService, FilebeatService]:
