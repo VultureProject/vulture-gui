@@ -237,7 +237,6 @@ class Migration(migrations.Migration):
             model_name='inspectionpolicy',
             name='rules',
             field=models.ManyToManyField(help_text='rules in policy', null=True, to='darwin.InspectionRule'),
-            # field=djongo.models.fields.ArrayReferenceField(help_text='rules in policy', null=True, on_delete=django.db.models.deletion.CASCADE, to='darwin.InspectionRule'),
         ),
         migrations.RunPython(remove_session_and_logs_filters)
     ]
