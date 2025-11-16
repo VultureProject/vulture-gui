@@ -191,10 +191,10 @@ def cluster_create(admin_user=None, admin_password=None):
     sentinel.sentinel_set_cluster_password(system_config.redis_password)
 
     """ Update uri of internal Log Forwarder """
-    logfwd = LogOMMongoDB.objects.get()
-    logfwd.uristr = "mongodb://{}:9091/?replicaset=Vulture&ssl=true".format(settings.HOSTNAME)
-    logfwd.x509_certificate = node_cert
-    logfwd.save()
+    # logfwd = LogOMMongoDB.objects.get()
+    # logfwd.uristr = "mongodb://{}:9091/?replicaset=Vulture&ssl=true".format(settings.HOSTNAME)
+    # logfwd.x509_certificate = node_cert
+    # logfwd.save()
 
     """ Create default TLSProfile """
     tls_profile = TLSProfile(name="Default TLS profile", x509_certificate=node_cert)  # All vars by default
@@ -216,7 +216,7 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request("services.haproxy.haproxy.reload_service")
 
     logger.debug("API call to reload whole darwin configuration")
-    DarwinPolicy.update_buffering()
+    # DarwinPolicy.update_buffering()
     node.api_request("services.darwin.darwin.reload_all")
 
     logger.debug("API call to configure Logrotate")
