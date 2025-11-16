@@ -38,7 +38,8 @@ logger = logging.getLogger('system')
 
 class NodeForm(ModelForm):
     scanner_ip = ModelChoiceField(
-        queryset=None,
+        queryset=NetworkAddress.objects.filter(nic__node__name=settings.HOSTNAME,
+                                               carp_vhid=0).only(*NetworkAddress.str_attrs()),
         widget=Select(attrs={'class': 'form-control select2'}),
         required=False,
         empty_label="No scanner"

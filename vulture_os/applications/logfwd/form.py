@@ -232,7 +232,7 @@ class LogOMFWDForm(LogOMForm):
 
 class LogOMElasticSearchForm(LogOMForm):
     tls_profile = ModelChoiceField(
-        queryset=None,
+        queryset=TLSProfile.objects.all(),
         required=False,
         widget=Select(attrs={'class': 'form-control select2'}),
         label=LogOMElasticSearch.tls_profile.field.verbose_name,
@@ -270,7 +270,7 @@ class LogOMElasticSearchForm(LogOMForm):
 
 class LogOMMongoDBForm(LogOMForm):
     x509_certificate = ModelChoiceField(
-        queryset=None,
+        queryset=X509Certificate.objects.filter(is_ca=False).only(*(X509Certificate.str_attrs())),
         required=False,
         widget=Select(attrs={'class': 'select2'}),
         empty_label="No SSL"
@@ -388,7 +388,7 @@ class LogOMKafkaForm(LogOMForm):
 
 class LogOMSentinelForm(LogOMForm):
     tls_profile = ModelChoiceField(
-        queryset=None,
+        queryset=TLSProfile.objects.all(),
         required=False,
         widget=Select(attrs={'class': 'form-control select2'}),
         label=LogOMSentinel.tls_profile.field.verbose_name,

@@ -212,7 +212,7 @@ class ServerForm(ModelForm):
             'mode': HiddenInput(attrs={'class': 'form-control'}),
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
-            'tls_profile': Select(choices=[], attrs={'class': 'form-control select2'}),
+            'tls_profile': Select(choices=TLSProfile.objects.all(), attrs={'class': 'form-control select2'}),
             'weight': NumberInput(attrs={'class': 'form-control'}),
             'source': TextInput(attrs={'class': 'form-control'})
         }
