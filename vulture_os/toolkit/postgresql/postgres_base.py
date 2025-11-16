@@ -41,7 +41,6 @@ logger = logging.getLogger('system')
 def parse_uristr(uristr):
     """ Parse uristr and returns list of tuples (ip|host, port) """
     result = []
-    # PostgreSQL URI format: postgresql://[user[:password]@][host][:port][/dbname]
     uristr = uristr.replace("postgresql://", "").replace("postgres://", "")
 
     # Remove credentials if present
@@ -91,14 +90,39 @@ class PostgresBase:
         logger.info("Could not connect to Node, connecting to local")
         return PostgresBase.get_local_uri()
 
+    def database_exists(self, db_name: str) -> bool:
+        if not self.conn:
+            self.connect()
+
+        with self.conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM pg_database WHERE datname = %s",
+                (db_name,)
+            )
+            return cur.fetchone() is not None
+
+    def table_exists(self, table_name, schema='public'):
+        if not self.conn:
+            self.connect()
+
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.tables
+                    WHERE table_schema = %s
+                    AND table_name = %s
+                )
+            """, (schema, table_name))
+
+            result = cur.fetchone()[0]
+            return result
+
     def execute_aggregation(self, database, collection, agg):
         """
         Execute aggregation-like query in PostgreSQL.
         Since PostgreSQL doesn't have direct aggregation pipelines like MongoDB,
         this will translate to SQL with GROUP BY, window functions, etc.
-
-        Note: This function would need custom implementation based on your aggregation needs.
-        For now, it attempts to execute raw SQL if agg is a string, or returns empty list.
         """
         try:
             if not self.conn:
@@ -124,7 +148,7 @@ class PostgresBase:
 
     def execute_request(self, database, collection, query, start=None, length=None, sorting=None, type_sorting=None, first=None):
         """
-        Execute a query on PostgreSQL table (collection).
+        Execute a query on PostgreSQL table (MongoDB collection).
         Query should be a dict that gets translated to SQL WHERE conditions.
         """
         try:
@@ -306,7 +330,7 @@ class PostgresBase:
             logger.critical(e, exc_info=1)
             return False
 
-    def connect_with_retries(self, retries, node=None, primary=True, timeout=2):
+    def connect_with_retries(self, retries=3, node=None, primary=True, timeout=2):
         """Connect to PostgreSQL with retry logic"""
         connection_ok = False
         tries = 1
