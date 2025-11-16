@@ -10,13 +10,13 @@ from toolkit.postgresql.postgres_base import PostgresBase
 def set_enrichment_tags(apps, schema_editor):
     postgres = PostgresBase()
     if not postgres.connect():
-        print("[ERROR] could not connect to mongo to update data !!")
+        print("[ERROR] could not connect to postgres to update data !!")
         return
     if not postgres.connect_primary():
-        print("[ERROR] could not connect to mongo primary, please reload migration")
+        print("[ERROR] could not connect to postgres primary, please reload migration")
         return
 
-    postgres.update_many('vulture', 'darwin_filterpolicy', {}, {"$set": {"enrichment_tags": []}})
+    # postgres.update_many('vulture', 'darwin_filterpolicy', {}, {"$set": {"enrichment_tags": []}})
 
 
 

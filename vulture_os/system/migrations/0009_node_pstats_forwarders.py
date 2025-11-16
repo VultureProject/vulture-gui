@@ -2,6 +2,45 @@
 
 from django.db import migrations, models
 from system.cluster.models import Cluster
+from toolkit.postgresql.postgres_base import PostgresBase
+
+
+def fill_system_node_columns(apps, schema_editor):
+    p = PostgresBase()
+    p.connect_primary()
+
+    # If the node is not yet installed, no need to drop constraints
+    if not p.conn:
+        return
+
+    try:
+        # Check if the database and table exist
+        if not p.database_exists('vulture'):
+            print("Database 'vulture' does not exist, skipping columns adding")
+            return
+        with p.conn.cursor() as cursor:
+            cursor.execute("SET search_path TO vulture")
+
+        if not p.table_exists('system_node'):
+            print("Table 'system_node' does not exist, skipping columns adding")
+            return
+
+        cursor.execute("ALTER TABLE system_node ADD COLUMN pf_custom_param_config TEXT")
+        cursor.execute("ALTER TABLE system_node ADD COLUMN pf_custom_nat_config TEXT")
+        cursor.execute("ALTER TABLE system_node ADD COLUMN pf_custom_rdr_config TEXT")
+        cursor.execute("ALTER TABLE system_node ADD COLUMN backends_outgoing_ip INET")
+        cursor.execute("ALTER TABLE system_node ADD COLUMN logom_outgoing_ip INET")
+        cursor.execute("ALTER TABLE system_node ADD COLUMN _vstate TEXT;")
+        cursor.execute("ALTER TABLE system_node ADD COLUMN heartbeat TIMESTAMP WITH TIME ZONE;")
+
+    except Exception as e:
+        if p.conn:
+            p.conn.rollback()
+
+        import logging
+        logger = logging.getLogger('system')
+        logger.error(f"Failed to remove server target/port uniqueness constraint: {e}", exc_info=1)
+
 
 
 def forwards_func(apps, schema_editor):
@@ -28,6 +67,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(fill_system_node_columns, migrations.RunPython.noop),
         migrations.AddField(
             model_name='node',
             name='pstats_forwarders',
