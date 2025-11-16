@@ -3,21 +3,100 @@
 from django.db import migrations
 from toolkit.postgresql.postgres_base import PostgresBase
 
-def remove_server_target_port_unicity_constraint2(apps, schema_editor):
+
+def remove_server_target_port_unicity_constraint(apps, schema_editor):
+    """
+    Remove the unique constraint on (target, port) columns in applications_server table
+    """
     p = PostgresBase()
     p.connect_primary()
-    # If the node is not yet installed, no need to drop collections
-    if p.db and p.db['vulture'] is not None:
-        coll = p.db['vulture']['applications_server']
-        if coll is not None:
-            for index in coll.list_indexes():
-                # filter on unicity indexes
-                if index.get("unique", False):
-                    keys = list(index.get('key', {}).keys())
-                    # filter on unicity indexes concerning 'target' and 'port' fields
-                    if "target" in keys and "port" in keys:
-                        print(f"Removing index {index.get('name')} in column 'applications_server'")
-                        coll.drop_index(index['name'])
+
+    # If the node is not yet installed, no need to drop constraints
+    if not p.conn:
+        return
+
+    try:
+        # Check if the database and table exist
+        if not p.database_exists('vulture'):
+            print("Database 'vulture' does not exist, skipping constraint removal")
+            return
+
+        if not p.table_exists('applications_server', schema='public'):
+            print("Table 'applications_server' does not exist, skipping constraint removal")
+            return
+
+        with p.conn.cursor() as cursor:
+            cursor.execute("SET search_path TO vulture")
+            cursor.execute("""
+                SELECT 
+                    i.relname as index_name,
+                    ix.indisunique as is_unique,
+                    array_agg(a.attname ORDER BY a.attnum) as column_names
+                FROM 
+                    pg_class t,
+                    pg_class i,
+                    pg_index ix,
+                    pg_attribute a
+                WHERE 
+                    t.oid = ix.indrelid
+                    AND i.oid = ix.indexrelid
+                    AND a.attrelid = t.oid
+                    AND a.attnum = ANY(ix.indkey)
+                    AND t.relkind = 'r'
+                    AND t.relname = 'applications_server'
+                GROUP BY 
+                    i.relname, ix.indisunique
+                HAVING 
+                    array_agg(a.attname ORDER BY a.attname) = ARRAY['port', 'target']::text[]
+            """)
+
+            indexes_to_drop = cursor.fetchall()
+
+            for index_name, is_unique, columns in indexes_to_drop:
+                print(f"Removing index/constraint '{index_name}' on columns {columns} in table 'applications_server'")
+
+                # Drop the index or constraint
+                cursor.execute(f"DROP INDEX IF EXISTS {index_name} CASCADE")
+
+            # Also check for any unique constraints (which might not show up as indexes)
+            cursor.execute("""
+                SELECT 
+                    con.conname as constraint_name
+                FROM 
+                    pg_constraint con
+                    JOIN pg_class rel ON rel.oid = con.conrelid
+                    JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+                WHERE 
+                    rel.relname = 'applications_server'
+                    AND con.contype = 'u'  -- unique constraint
+                    AND EXISTS (
+                        SELECT 1
+                        FROM unnest(con.conkey) AS col(attnum)
+                        JOIN pg_attribute a ON a.attrelid = rel.oid AND a.attnum = col.attnum
+                        GROUP BY con.conname
+                        HAVING array_agg(a.attname ORDER BY a.attname) = ARRAY['port', 'target']::text[]
+                    )
+            """)
+            
+            constraints_to_drop = cursor.fetchall()
+
+            for (constraint_name,) in constraints_to_drop:
+                print(f"Removing unique constraint '{constraint_name}' in table 'applications_server'")
+                cursor.execute(f"ALTER TABLE applications_server DROP CONSTRAINT IF EXISTS {constraint_name}")
+
+            # Commit the changes
+            p.conn.commit()
+            print("Successfully removed target/port uniqueness constraints from applications_server table")
+
+    except Exception as e:
+        if p.conn:
+            p.conn.rollback()
+        print(f"Error removing constraints: {e}")
+        # Depending on your migration strategy, you might want to raise or log this
+        import logging
+        logger = logging.getLogger('system')
+        logger.error(f"Failed to remove server target/port uniqueness constraint: {e}", exc_info=1)
+
 
 
 class Migration(migrations.Migration):
@@ -27,5 +106,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_server_target_port_unicity_constraint2, migrations.RunPython.noop),
+        migrations.RunPython(remove_server_target_port_unicity_constraint, migrations.RunPython.noop),
     ]

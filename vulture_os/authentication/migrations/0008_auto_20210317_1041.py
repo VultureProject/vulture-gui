@@ -5,28 +5,98 @@ from toolkit.postgresql.postgres_base import PostgresBase
 
 
 def update_repo_attributes(apps, schema_editor):
-    # Manually delete all Darwin filters to prevent migration issue, they will be re-created in loaddata
+    """
+    Update repo_attributes structure in authentication_userauthentication table
+    Migration function from MongoDB to PostgreSQL
+    """
     p = PostgresBase()
     p.connect_primary()
-    # If the node is not yet installed, no need to drop collections
-    if p.db and p.db['vulture'] is not None:
-        coll = p.db['vulture']['authentication_userauthentication']
-        if coll is not None:
-            for portal in coll.find():
-                repo_attributes = [
-                    {
-                        'condition_var_kind': "constant",
-                        'condition_var_name': "1",
-                        'condition_criterion': "equals",
-                        'condition_match': "1",
-                        'action_var_name': r['key'],
-                        'action_var_kind': r['source_attr'],
-                        'action_var': r['key']
-                    }
-                    for r in portal.get('repo_attributes', [])
-                ]
-                coll.update_one({'id': portal['id']}, {'$set': {'repo_attributes': repo_attributes}})
-                print("Portal {} updated".format(portal['name']))
+    
+    # If the node is not yet installed, no need to process
+    if not p.conn:
+        return
+
+    try:
+        # Check if the database and table exist
+        if not p.database_exists('vulture'):
+            print("Database 'vulture' does not exist, skipping repo_attributes update")
+            return
+
+        if not p.table_exists('authentication_userauthentication', schema='public'):
+            print("Table 'authentication_userauthentication' does not exist, skipping repo_attributes update")
+            return
+
+        with p.conn.cursor() as cursor:
+            # Set the search path to the vulture schema
+            cursor.execute("SET search_path TO vulture, public")
+            
+            # Fetch all portal records
+            cursor.execute("""
+                SELECT id, name, repo_attributes
+                FROM authentication_userauthentication
+                WHERE repo_attributes IS NOT NULL
+            """)
+
+            portals = cursor.fetchall()
+
+            for portal in portals:
+                portal_id = portal['id']
+                portal_name = portal['name']
+                existing_repo_attributes = portal['repo_attributes']
+
+                # Parse repo_attributes if it's stored as JSON/JSONB
+                if isinstance(existing_repo_attributes, str):
+                    import json
+                    try:
+                        existing_repo_attributes = json.loads(existing_repo_attributes)
+                    except json.JSONDecodeError:
+                        print(f"Could not parse repo_attributes for portal {portal_name}, skipping")
+                        continue
+
+                # Transform the repo_attributes structure
+                new_repo_attributes = []
+                if existing_repo_attributes and isinstance(existing_repo_attributes, list):
+                    for r in existing_repo_attributes:
+                        if isinstance(r, dict) and 'key' in r and 'source_attr' in r:
+                            new_repo_attributes.append({
+                                'condition_var_kind': "constant",
+                                'condition_var_name': "1",
+                                'condition_criterion': "equals",
+                                'condition_match': "1",
+                                'action_var_name': r['key'],
+                                'action_var_kind': r['source_attr'],
+                                'action_var': r['key']
+                            })
+
+                # Update the record with new structure
+                if new_repo_attributes:
+                    # Convert to JSON for storage in JSONB column
+                    import json
+                    new_repo_attributes_json = json.dumps(new_repo_attributes)
+
+                    cursor.execute("""
+                        UPDATE authentication_userauthentication
+                        SET repo_attributes = %s::jsonb
+                        WHERE id = %s
+                    """, (new_repo_attributes_json, portal_id))
+
+                    print(f"Portal {portal_name} updated")
+                else:
+                    print(f"Portal {portal_name} has no valid repo_attributes to update")
+
+            # Commit the changes
+            p.conn.commit()
+            print(f"Successfully updated repo_attributes for {len(portals)} portals")
+
+    except Exception as e:
+        if p.conn:
+            p.conn.rollback()
+        print(f"Error updating repo_attributes: {e}")
+        # Depending on your migration strategy, you might want to raise or log this
+        import logging
+        logger = logging.getLogger('system')
+        logger.error(f"Failed to update repo_attributes: {e}", exc_info=1)
+
 
 class Migration(migrations.Migration):
 

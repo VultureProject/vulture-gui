@@ -10,13 +10,17 @@ def remove_session_and_logs_filters(apps, schema_editor):
     p = PostgresBase()
     p.connect_primary()
     # If the node is not yet installed, no need to drop collections
-    if p.db and p.db['vulture'] is not None:
-        coll = p.db['vulture']['darwin_filterpolicy']
-        if coll is not None:
-            coll.delete_many({})
-        coll = p.db['vulture']['darwin_darwinfilter']
-        if coll is not None:
-            coll.delete_many({})
+    if p.db and p.database_exists('vulture'):
+        with p.conn.cursor() as cursor:
+            cursor.execute("SET search_path TO vulture")
+
+            coll = p.table_exists('darwin_filterpolicy')
+            if coll == True:
+                cursor.execute("TRUNCATE darwin_filterpolicy CASCADE")
+
+            coll = p.table_exists('darwin_darwinfilter')
+            if coll == True:
+                cursor.execute("TRUNCATE darwin_darwinfilter CASCADE")
 
 
 def initial_access_control(apps, schema_editor):
@@ -97,7 +101,7 @@ def initial_access_control(apps, schema_editor):
             _id=random.randint(0,2000000000),
             name=acl['name'],
             enabled=acl['enabled'],
-            acls=acl['acls'],
+            # acls=acl['acls'],
             rules=acl['rules']
         )
 
