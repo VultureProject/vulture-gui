@@ -47,7 +47,7 @@ if __name__ == "__main__":
     else:
         try:
             print("Rebuilding main Haproxy configuration...")
-            node.api_request('services.rsyslogd.haproxy.configure_node')
+            node.api_request('services.haproxy.haproxy.configure_node')
 
         except Exception as e:
             print(f"Failed to reload configuration: {e}")
