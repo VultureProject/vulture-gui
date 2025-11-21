@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [GATEWATCHER_ALERTS] Avoid collect getting stuck when delay is over 24h
 
 
+## [2.34.1] - 2025-11-14
+### Fixed
+- [API_PARSER] [VECTRA] Fix key error when there is no log during 24 hours
+
+
 ## [2.34.0] - 2025-11-10
 ### Added
 - [API_PARSER] [CNAPP_WIZ] New collector
@@ -25,7 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [MIDDLEWARE] [OS] Wrongly report that node is not bootstrapped
 - [GUI] Multiple requests sent on task lists toggle
 - [FRONTEND] [GUI] Wrongly display redis settings on filebeat configuration change
-
 
 ## [2.33.1] - 2025-10-29
 ### Fixed
