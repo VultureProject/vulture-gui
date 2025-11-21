@@ -122,10 +122,19 @@ class GatewatcherAlertsParser(ApiParser):
             nb_logs += len(alerts["results"])
 
             for alert in alerts.get("results", []):
-                raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.RAW_ALERTS_ENDPOINT}/{alert['uuid']}"
-                raw_alert = self.execute_query(raw_alert_url)
-                results.append({'alert': alert, 'raw_alert': raw_alert})
-                self.update_lock()
+                try:
+                    raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.RAW_ALERTS_ENDPOINT}{alert['uuid']}"
+                    raw_alert = self.execute_query(raw_alert_url)
+                    results.append({'alert': alert, 'raw_alert': raw_alert})
+                    self.update_lock()
+                except GatewatcherAlertsAPIError as e:
+                    # we are only catching here the 404 not found error for the raw alert
+                    if "status : 404" in str(e):
+                        logger.error(f"[{__parser__}]:get_logs: Raw alert details could not be found for alert {alert['uuid']}",
+                                     extra={'frontend': str(self.frontend)})
+                        results.append({'alert': alert, 'raw_alert': None})
+                    else:
+                        raise e
 
         return results
 
@@ -165,8 +174,13 @@ class GatewatcherAlertsParser(ApiParser):
         if logs: # increment by 1ms to avoid duplication of logs
             self.frontend.last_api_call = (datetime.fromisoformat(logs[-1]["alert"]["date"].replace("Z", "+00:00")) + timedelta(milliseconds=1))
             self.frontend.save(update_fields=['last_api_call'])
-        elif to == since + timedelta(hours=24): # if no logs during last 24h
-            self.frontend.last_api_call += timedelta(hours=23, minutes=59)
-            self.frontend.save(update_fields=['last_api_call'])
+        elif since < timezone.now() - timedelta(hours=24):
+            # If no logs where retrieved during the last 24hours,
+            # move forward 1h to prevent stagnate ad vitam eternam
+            logger.info(f"[{__parser__}]:execute: Update timestamp "
+                        f"to {since + timedelta(hours=1)}",
+                        extra={'frontend': str(self.frontend)})
+            self.frontend.last_api_call = since + timedelta(hours=1)
+            self.frontend.save(update_fields=["last_api_call"])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

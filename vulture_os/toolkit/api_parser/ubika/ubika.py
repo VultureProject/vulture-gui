@@ -176,6 +176,8 @@ class UbikaParser(ApiParser):
                 url = url,
                 data = data)
 
+            self.update_lock()
+
             next_token = resp.get('spec', {}).get('nextPageToken', '')
             logger.debug(f"[{__parser__}][get_logs]: Paginate with url = {url}, last_save_token = {last_save_token}, next_token = {next_token}", extra={'frontend': str(self.frontend)})
 
