@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.34.2] - 2025-11-24
 ### Fixed
 - [API_PARSER] [UBIKA] Avoid concurrent runs of collector
 - [API_PARSER] [GATEWATCHER_ALERTS] Avoid collect getting stuck when delay is over 24h
