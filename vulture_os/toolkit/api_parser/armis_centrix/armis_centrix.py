@@ -232,6 +232,7 @@ class ArmisCentrixParser(ApiParser):
             # source.ip, destination.ip, source.mac, destination.mac
             src_ips = []
             src_macs = []
+            src_boundaries = []
             for src_endpoint in log.get("sourceEndpoints", []):
                 sip = src_endpoint.get("ip")
                 if isinstance(sip, str):
@@ -243,8 +244,14 @@ class ArmisCentrixParser(ApiParser):
                     src_macs.append(smac)
                 elif isinstance(smac, list):
                     src_macs.extend(smac)
+                sboundaries = src_endpoint.get("boundaries")
+                if isinstance(sboundaries, str):
+                    src_boundaries.append(sboundaries)
+                elif isinstance(sboundaries, list):
+                    src_boundaries.extend(sboundaries)
             dst_ips = []
             dst_macs = []
+            dst_boundaries = []
             for dst_endpoint in log.get("destinationEndpoints", []):
                 dip = dst_endpoint.get("ip")
                 if isinstance(dip, str):
@@ -256,12 +263,20 @@ class ArmisCentrixParser(ApiParser):
                     dst_macs.append(dmac)
                 elif isinstance(dmac, list):
                     dst_macs.extend(dmac)
+                dboundaries = dst_endpoint.get("boundaries")
+                if isinstance(dboundaries, str):
+                    dst_boundaries.append(dboundaries)
+                elif isinstance(dboundaries, list):
+                    dst_boundaries.extend(dboundaries)
 
             log["custom_ip-mac"] = {
                 "src_ips": src_ips or ["0.0.0.1"],
                 "src_macs": src_macs or ["00:00:00:00:00:00"],
+                "src_boundaries": src_boundaries,
                 "dst_ips": dst_ips or ["0.0.0.1"],
-                "dst_macs": dst_macs or ["00:00:00:00:00:00"]
+                "dst_macs": dst_macs or ["00:00:00:00:00:00"],
+                "dst_boundaries": dst_boundaries,
+
             }
 
             # threat.*
