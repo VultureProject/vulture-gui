@@ -71,7 +71,7 @@ class ArmisCentrixParser(ApiParser):
             logger.info(f"[{__parser__}][test] :: Running tests...", extra={'frontend': str(self.frontend)})
 
             since = timezone.now() - timedelta(days=1)
-            to    = timezone.now()
+            to    = since + timedelta(minutes=5)
 
             logs = []
             _, _, alerts = self.get_logs("alerts", since, to)
