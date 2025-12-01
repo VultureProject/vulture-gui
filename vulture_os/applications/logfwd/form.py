@@ -25,7 +25,9 @@ __doc__ = 'rsyslog dedicated form classes'
 # Django system imports
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, NumberInput, Select, URLInput
+from django.utils.translation import gettext_lazy as _
+from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, NumberInput, Select, URLInput, CharField
+from gui.utils.validators import validate_spool_directory
 
 # Django project imports
 from applications.logfwd.models import (LogOM, LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch,
@@ -82,9 +84,6 @@ class LogOMForm(ModelForm):
     def clean_name(self):
         return self.cleaned_data['name'].replace(' ', '_')
 
-    def clean_spool_directory(self):
-        return "/" + self.cleaned_data['spool_directory'].strip("/")
-
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
@@ -107,6 +106,12 @@ class LogOMForm(ModelForm):
             if cleaned_data['new_worker_minimum_messages'] > cleaned_data['queue_size']:
                 self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
+
+    def clean_spool_directory(self):
+        value = self.cleaned_data.get('spool_directory')
+        if value:
+            validate_spool_directory(value)
+        return "/" + self.cleaned_data['spool_directory'].strip("/")
 
 
 class LogOMFileForm(LogOMForm):

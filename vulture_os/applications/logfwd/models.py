@@ -33,6 +33,7 @@ from djongo import models
 # Django project imports
 from system.pki.models import X509Certificate, TLSProfile
 from toolkit.network.network import get_proxy
+from gui.utils.validators import SpoolDirectoryValidator
 from pyfaup.faup import Faup
 
 # Extern modules imports
@@ -188,12 +189,12 @@ class LogOM (models.Model):
     spool_directory = models.TextField(
         default="/var/tmp",
         null=False,
+        required=False,
+        validators=[SpoolDirectoryValidator()],
         help_text=_("Defines an existing folder to store queue files into"),
         verbose_name=_("Existing folder to store queue files to"),
-        validators=[RegexValidator(
-                regex=r"^/.*$",
-                message="Value should be a valid fullpath, beginning with a '/'"
-        )])
+    )
+
     send_as_raw = models.BooleanField(
         default=False,
         help_text=_("Send logs without any modification"),
