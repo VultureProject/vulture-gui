@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [ARMIS_CENTRIX] Add source and destination boundaries in resulting logs
+### Changed
+- [API_PARSER] [ARMIS_CENTRIX] Limit fetch quantity while testing collector
 
 
 ## [2.34.2] - 2025-11-24
