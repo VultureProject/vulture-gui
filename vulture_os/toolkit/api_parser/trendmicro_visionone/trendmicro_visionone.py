@@ -183,10 +183,10 @@ class TrendmicroVisiononeParser(ApiParser):
     @staticmethod
     def _format_logs(log):
         if log.get("detail", {}).get("objectRawDataStr",{}):
-            log["detail"]["objectRawDataStr"] = {}
+            del log["detail"]["objectRawDataStr"]
         for highlightedObject in log.get("filters", {}).get("highlightedObjects",[]):
             if highlightedObject.get("field", "") == "objectRawDataStr":
-                highlightedObject["value"] = ""
+                del highlightedObject["value"]
         return json.dumps(log)
 
     def execute(self):
