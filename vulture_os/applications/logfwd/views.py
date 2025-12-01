@@ -41,6 +41,7 @@ from gui.forms.form_utils import DivErrorList
 from services.frontend.models import Frontend
 from system.cluster.models import Node
 from toolkit.api.responses import build_response
+from services.rsyslogd.rsyslog import check_spool_directory
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -146,8 +147,19 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                                                             _("You can duplicate this log forwarder and modify it")]})
 
         elif form.is_valid():
-            # Save the form to get an id if there is not already one
             log_om = form.save(commit=False)
+
+            spool_directory = getattr(log_om, 'spool_directory', None)
+            if spool_directory:
+                try:
+                    result = check_spool_directory(spool_path=spool_directory)
+                    if not result['status']:
+                        logger.warning(
+                            f"Spool directory warning for {log_om.name}: {result['message']}"
+                        )
+                except Exception as e:
+                    logger.error(f"Failed to ensure spool directory: {e}")
+
             log_om.save()
 
             """ After saving, reload the Rsyslog conf of all Frontends that uses this LogForwarder """
