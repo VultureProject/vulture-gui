@@ -40,6 +40,16 @@ from services.exceptions import ServiceError
 from subprocess import CalledProcessError
 from system.exceptions import VultureSystemError
 
+# check_spool_directory imports
+from os.path import exists as os_path_exists
+from os import makedirs as os_makedirs
+from os import chown as os_chown
+from os import chmod as os_chmod
+from os import access as os_access
+from os import W_OK as os_W_OK
+from pwd import getpwnam as pwd_getpwnam
+from grp import getgrnam as grp_getgrnam
+
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
 from os.path import join as path_join
@@ -60,6 +70,12 @@ TIMEZONE_CONF_PATH = path_join(RSYSLOG_PATH, "02-timezones.conf")
 
 RSYSLOG_PERMS = "640"
 RSYSLOG_OWNER = "vlt-os:wheel"
+
+# check_spool_directory constants
+RSYSLOG_USER = 'rsyslog'
+RSYSLOG_GROUP = 'rsyslog'
+RSYSLOG_JAIL_PATH = '/zroot/rsyslog'
+DEFAULT_DIR_MODE = 0o750
 
 
 class RsyslogService(Service):
@@ -237,3 +253,122 @@ def delete_conf(node_logger, filename):
         # logger.exception("Failed to delete frontend filename '{}': {}".format(frontend_filename, stderr or stdout))
         raise ServiceError("'{}' : {}".format(filename, (stderr or stdout)), "rsyslogd",
                            "delete rsyslog conf file")
+
+
+def ensure_spool_directory(spool_path, owner=None, group=None, mode=None):
+    """
+    Ensure a spool directory exists and is accessible by rsyslog.
+
+    This function should be called by vultured on the host system.
+    It creates the directory (and parents) if missing, and sets
+    appropriate ownership and permissions.
+
+    Args:
+        spool_path: Absolute path to the spool directory
+        owner: Owner username (default: rsyslog)
+        group: Group name (default: rsyslog)  
+        mode: Directory permissions (default: 0o750)
+
+    Returns:
+        dict with 'status' (bool) and 'message' (str)
+
+    Raises:
+        ValueError: If path validation fails
+        OSError: If filesystem operations fail
+    """
+    owner = owner or RSYSLOG_USER
+    group = group or RSYSLOG_GROUP
+    mode = mode if mode is not None else DEFAULT_DIR_MODE
+
+    # Validate path format (should already be done by form, but double-check)
+    if not spool_path.startswith('/tmp/') and not spool_path.startswith('/var/'):
+        raise ValueError(f"Invalid spool path: must be under /tmp or /var: {spool_path}")
+
+    if '..' in spool_path:
+        raise ValueError(f"Path escape not allowed: {spool_path}")
+
+    jail_path = path_join(RSYSLOG_JAIL_PATH, spool_path.lstrip('/'))
+
+    try:
+        # Create directory with parents if needed
+        if not os_path_exists(jail_path):
+            os_makedirs(jail_path, mode=mode, exist_ok=True)
+            logger.info(f"Created spool directory: {jail_path}")
+
+        # Get uid/gid
+        try:
+            uid = pwd_getpwnam(owner).pw_uid
+        except KeyError:
+            logger.warning(f"User {owner} not found, using root")
+            uid = 0
+
+        try:
+            gid = grp_getgrnam(group).gr_gid
+        except KeyError:
+            logger.warning(f"Group {group} not found, using wheel")
+            gid = 0
+
+        # Set ownership
+        os_chown(jail_path, uid, gid)
+
+        # Set permissions
+        os_chmod(jail_path, mode)
+
+        # Verify accessibility
+        if not os_access(jail_path, os_W_OK):
+            return {
+                'status': False,
+                'message': f"Directory {jail_path} is not writable"
+            }
+
+        logger.info(f"Spool directory configured: {jail_path} (owner={owner}, group={group}, mode={oct(mode)})")
+
+        return {
+            'status': True,
+            'message': f"Spool directory ready: {spool_path}"
+        }
+
+    except PermissionError as e:
+        logger.error(f"Permission denied creating spool directory {jail_path}: {e}")
+        return {
+            'status': False,
+            'message': f"Permission denied: {e}"
+        }
+    except OSError as e:
+        logger.error(f"Failed to create spool directory {jail_path}: {e}")
+        return {
+            'status': False,
+            'message': f"OS error: {e}"
+        }
+
+
+def check_spool_directory(spool_path, owner=None, group=None, mode=None):
+    """
+    Vultured task wrapper for ensure_spool_directory.
+
+    Called internally when Frontend/LogForwarder form is validated.
+    Similar pattern to services.pf.pf.test_config.
+
+    Args:
+        spool_path: Path to check/create
+        owner: Optional owner override
+        group: Optional group override
+        mode: Optional mode override
+
+    Returns:
+        dict with status and message
+    """
+    try:
+        result = ensure_spool_directory(spool_path, owner, group, mode)
+        if result['status']:
+            logger.info(result['message'])
+        else:
+            logger.error(result['message'])
+        return result
+    except Exception as e:
+        error_msg = f"Failed to configure spool directory: {e}"
+        logger.error(error_msg)
+        return {
+            'status': False,
+            'message': error_msg
+        }
