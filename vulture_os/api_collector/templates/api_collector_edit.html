@@ -1,0 +1,34 @@
+{% load i18n %}
+
+<!-- {% include "common_api_collector_edit.html" %} -->
+
+
+<div class="col-md-12 api_collectors_row" id="collector_{{form.name}}_row">
+    {% for field in form %}
+    <div class="form-group">
+        <label class="col-sm-3 control-label">{{ field.label }}</label>
+        <div class="col-sm-5">
+            {{ field }}
+            {{ field.errors|safe }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+<!-- <div class="col-md-12 api_clients_row" id="api_harfanglab_row">
+    <div class="form-group">
+        <label class="col-sm-3 control-label">{{ form.harfanglab_host.label }}</label>
+        <div class="col-sm-5">
+            {{ form.harfanglab_host }}
+            {{ form.harfanglab_host.errors|safe }}
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-3 control-label">{{ form.harfanglab_apikey.label }}</label>
+        <div class="col-sm-5">
+            {{ form.harfanglab_apikey }}
+            {{ form.harfanglab_apikey.errors|safe }}
+        </div>
+    </div>
+</div> -->

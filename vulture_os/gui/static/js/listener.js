@@ -10,6 +10,41 @@ if (!String.prototype.endsWith) {
   };
 }
 
+function fetch_api_collector_form(){
+  PNotify.removeAll();
+  if($('#id_api_parser_type').val() == "") {
+    notify('error', gettext('Error'), gettext('Select an API Parser Type'))
+    return
+  }
+
+  var btn = this;
+  var txt = $(btn).html();
+  $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+  $(btn).prop('disabled', true);
+
+  var data = get_api_parser_data(type_);
+
+  $.post(
+    test_frontend_apiparser_uri,
+    data,
+
+    function(response){
+      $(btn).prop('disabled', false);
+      $(btn).html(txt);
+      if (!check_json_error(response)){
+        return;
+      }
+
+      $('#api_collector_div').html(response.data)
+    }
+  ).fail(function(response){
+    notify('error', response.status, response.responseText)
+
+    $(btn).prop('disabled', false);
+    $(btn).html(txt);
+  })
+}
+
 function get_api_parser_data(type_){
   var data = {
     api_parser_type: $('#id_api_parser_type').val(),
@@ -22,7 +57,7 @@ function get_api_parser_data(type_){
     data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val();
   }
 
-  $("#api_" + type_ + "_row input").each(function(){
+  $("#api_" + type_ + "collectorform_row input").each(function(){
     var name = $(this).attr('name');
     switch($(this).attr('type')){
       case "checkbox":
@@ -37,12 +72,12 @@ function get_api_parser_data(type_){
     }
   })
 
-  $('#api_'+ type_ + "_row textarea").each(function(){
+  $('#api_'+ type_ + "collectorform_row textarea").each(function(){
     var name = $(this).attr('name');
     data[name] = $(this).val();
   })
 
-  $('#api_' + type_ + "_row select").each(function(){
+  $('#api_' + type_ + "collectorform_row select").each(function(){
     var name = $(this).attr('name');
     data[name] = $(this).val();
   })
@@ -52,10 +87,19 @@ function get_api_parser_data(type_){
 
 function refresh_api_parser_type(type_){
   $('.api_clients_row').hide();
+  $('.api_collectors_row').hide();
 
   if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
+
+
+  
+
+
+
+
+
     $('#id_node').hide();
-    $('#api_' + type_ + "_row").show();
+    $('#api_' + type_ + "collectorform_row").show();
 
     if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
       $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');

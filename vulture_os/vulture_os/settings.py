@@ -16,6 +16,9 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
 
 import environ
+import importlib.util
+import sys
+from glob import glob
 from os import path as os_path
 from toolkit.network.network import get_hostname
 from toolkit.system.secret_key import set_key
@@ -384,6 +387,27 @@ LOG_SETTINGS = {
         },
     },
 }
+
+for file in glob(f"{SETTINGS_DIR}/settings_*.py"):
+    module_name = os_path.basename(file).split('.')[0]
+    # Load python code from file
+    spec = importlib.util.spec_from_file_location(module_name, file)
+    if spec and spec.loader:
+        # Load python module from loaded spec in runtime
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        # Check selected settings presence to merge into global Django settings
+        if hasattr(module, "AVAILABLE_APPS"):
+            INSTALLED_APPS.extend(module.AVAILABLE_APPS)
+        if hasattr(module, "CRONJOBS"):
+            CRONJOBS.extend(module.CRONJOBS)
+        if hasattr(module, "LOG_SETTINGS"):
+            for k,v in module.LOG_SETTINGS.items():
+                try:
+                    LOG_SETTINGS[k].update(v)
+                except KeyError:
+                    LOG_SETTINGS[k] = v
 
 TITLE = "VULTURE OS"
 VERSION = "0.1"

@@ -32,7 +32,7 @@ from redis import ReadOnlyError
 from datetime import datetime
 
 from django.conf import settings
-from services.frontend.models import Frontend
+# from services.frontend.models import Frontend
 from system.config.models import Config
 from system.pki.models import X509Certificate
 from toolkit.network.network import get_proxy
@@ -63,6 +63,7 @@ class ApiParser:
         self.evt_stop = Event()
 
         try:
+            from services.frontend.models import Frontend
             self.frontend = Frontend.objects.get(pk=self.data['id'])
             # Convert from string-representation to datetime object
             # (cannot store datetime directly, as TZ is lost on reload from mongodb with djongo/JSONField)

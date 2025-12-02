@@ -1143,8 +1143,8 @@
                           </div>
                         </div>
                       </div>
-                      <div class="api-mode">
-                        <div class="col-md-12">
+                      <div class="api-mode" id="api_collector_div">
+                        <!-- <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-3 control-label">{{ form.api_parser_verify_ssl.label }}</label>
                             <div class="col-sm-5">
@@ -1161,7 +1161,17 @@
                               {{form.api_parser_custom_certificate.errors|safe}}
                             </div>
                           </div>
-                        </div>
+                        </div> -->
+
+
+                        {{api_collectors_generic_forms}}
+
+                        {% for collector_form in api_collectors_forms %}
+                        {{collector_form}}
+                        {% endfor %}
+
+
+
                         <div class="col-md-12 api_clients_row" id="api_office_365_row">
                           <div class="form-group">
                             <label class="col-sm-3 control-label">{{ form.office365_tenant_id.label }}</label>
