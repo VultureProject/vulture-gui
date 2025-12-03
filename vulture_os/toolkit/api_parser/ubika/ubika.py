@@ -142,7 +142,7 @@ class UbikaParser(ApiParser):
                 msg = f"[{__parser__}][__execute_query]: Connection failed -- {e}"
                 logger.warning(f'{msg}', extra={'frontend': str(self.frontend)})
             except HTTPError as e:
-                if e.response and e.response.status_code == 401:
+                if e.response.status_code == 401:
                     self.ubika_access_token, self.ubika_access_expires_at = None, None
                     self.login()
                     continue
