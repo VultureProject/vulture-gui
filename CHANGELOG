@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [ARMIS_CENTRIX] Add source and destination boundaries in resulting logs
+- [FRONTEND] [FILEBEAT] Add a comment line with the associated frontend in generated configurations
 ### Changed
 - [API_PARSER] [ARMIS_CENTRIX] Limit fetch quantity while testing collector
 - [API_PARSER] [TRENDMICRO_VISIONONE] Drop too long fields
