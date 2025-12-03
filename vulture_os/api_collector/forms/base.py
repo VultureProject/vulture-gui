@@ -25,10 +25,11 @@ __doc__ = "API Collector form classes"
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, CharField
+from django.forms import ModelForm, TextInput, CheckboxInput, Select
 
 # Django project imports
 from api_collector.models.base import ApiCollector
+from system.pki.models import X509Certificate
 
 # Extern modules imports
 
@@ -46,15 +47,13 @@ class GenericApiCollectorForm(ModelForm):
 
     class Meta:
         model = ApiCollector
-        fields = ("use_proxy", "custom_proxy", "verify_ssl", "custom_certificate", "last_api_call", "last_collected_timestamps")
+        fields = ("use_proxy", "custom_proxy", "verify_ssl", "custom_certificate")
 
         widgets = {
-            'use_proxy': TextInput(attrs={'class': "form-control"}),
+            'use_proxy': CheckboxInput(attrs={'class': "js-switch"}),
             'custom_proxy': TextInput(attrs={'class': "form-control"}),
-            'verify_ssl': TextInput(attrs={'class': "form-control"}),
-            'custom_certificate': TextInput(attrs={'class': "form-control"}),
-            'last_api_call': TextInput(attrs={'class': "form-control"}),
-            'last_collected_timestamps': TextInput(attrs={'class': "form-control"})
+            'verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
+            'custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': 'form-control select2'})
         }
 
     @property

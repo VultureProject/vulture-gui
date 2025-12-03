@@ -61,20 +61,21 @@ class ServicesConfig(AppConfig):
 
     @staticmethod
     def api_collectors_forms():
-        forms = list()
-        for parser, config in ServicesConfig.get_available_api_collectors_list().items():
+        forms = dict()
+        for collector_name, config in ServicesConfig.get_available_api_collectors_list().items():
             # forms.append(config.get('form')(prefix=config.get('form')().name))
-            forms.append(config.get('form')(prefix=config.get('form')().name))
+            # forms.append(config.get('form')(prefix=f"{collector_name}collectorform"))
+            forms[collector_name] = config['form'](prefix=f"{collector_name.replace('_', '')}collectorform")
         return forms
 
     @staticmethod
-    def api_collectors_get_form(collector_name, instance=None):
+    def api_collectors_get_form(collector_name, instance=None, data=None):
         try:
             form = ServicesConfig.get_available_api_collectors_list()[collector_name]['form']
         except KeyError:
             return None
         # return form(instance=instance, prefix=form().name)
-        return form(instance=instance, prefix=f"{collector_name}collectorform")
+        return form(data, instance=instance, prefix=f"{collector_name.replace('_', '')}collectorform")
 
     @staticmethod
     def api_collectors_get_model(collector_name):

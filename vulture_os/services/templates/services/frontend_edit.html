@@ -56,6 +56,9 @@
           </div>
           {% endif %}
           <div class="panel">
+            <div class="panel-heading">
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Listeners" %}</h1>
+            </div>
             <div class="panel-body">
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
@@ -1166,7 +1169,7 @@
 
                         {{api_collectors_generic_forms}}
 
-                        {% for collector_form in api_collectors_forms %}
+                        {% for collector_name, collector_form in api_collectors_forms.items %}
                         {{collector_form}}
                         {% endfor %}
 
@@ -2693,6 +2696,7 @@
 
   var custom_actions = {{ custom_actions.as_json|default:"[]"|safe }};
 
+  var fetch_api_collector_form_uri = "{% url 'services.frontend.api_collector_form' %}";
   var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";
   var fetch_frontend_api_parser_data_uri = "{% url 'services.frontend.fetch_apiparser_data' %}";
   var api_parser_blacklist = ["cisco_meraki", "defender", "defender_atp", "gsuite_alertcenter", "mongodb",

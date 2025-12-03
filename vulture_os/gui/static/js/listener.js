@@ -10,42 +10,37 @@ if (!String.prototype.endsWith) {
   };
 }
 
-function fetch_api_collector_form(){
+function fetch_api_collector_form(type_) {
   PNotify.removeAll();
-  if($('#id_api_parser_type').val() == "") {
-    notify('error', gettext('Error'), gettext('Select an API Parser Type'))
-    return
-  }
 
-  var btn = this;
-  var txt = $(btn).html();
+  let btn = $('#test_api_parser');
+  let txt = $(btn).html();
   $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
-  $(btn).prop('disabled', true);
+  // $(btn).prop('disabled', true);
 
-  var data = get_api_parser_data(type_);
+  let data = get_api_parser_data(type_);
 
   $.post(
-    test_frontend_apiparser_uri,
+    fetch_api_collector_form_uri,
     data,
-
     function(response){
       $(btn).prop('disabled', false);
       $(btn).html(txt);
-      if (!check_json_error(response)){
+      if (!check_json_error(response)) {
         return;
       }
-
-      $('#api_collector_div').html(response.data)
+      console.log(response);
+      // $('#api_collector_div').html(response.data);
     }
   ).fail(function(response){
-    notify('error', response.status, response.responseText)
+    notify('error', response.status, response.responseText);
 
     $(btn).prop('disabled', false);
     $(btn).html(txt);
   })
 }
 
-function get_api_parser_data(type_){
+function get_api_parser_data(type_) {
   var data = {
     api_parser_type: $('#id_api_parser_type').val(),
     api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked'),
@@ -53,11 +48,12 @@ function get_api_parser_data(type_){
     api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked')
   };
 
-  if ($('#id_api_parser_verify_ssl').is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
+  if ($('#id_api_parser_verify_ssl').is(':checked') && !api_parser_blacklist.includes(type_)) {
     data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val();
   }
 
-  $("#api_" + type_ + "collectorform_row input").each(function(){
+  let collector_div_id = `#collector_${type_.replace('_', '')}collectorform_row`;
+  $(`${collector_div_id} input`).each(function(){
     var name = $(this).attr('name');
     switch($(this).attr('type')){
       case "checkbox":
@@ -72,12 +68,12 @@ function get_api_parser_data(type_){
     }
   })
 
-  $('#api_'+ type_ + "collectorform_row textarea").each(function(){
+  $(`${collector_div_id} textarea`).each(function(){
     var name = $(this).attr('name');
     data[name] = $(this).val();
   })
 
-  $('#api_' + type_ + "collectorform_row select").each(function(){
+  $(`${collector_div_id} select`).each(function(){
     var name = $(this).attr('name');
     data[name] = $(this).val();
   })
@@ -90,16 +86,9 @@ function refresh_api_parser_type(type_){
   $('.api_collectors_row').hide();
 
   if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
-
-
-  
-
-
-
-
-
     $('#id_node').hide();
-    $('#api_' + type_ + "collectorform_row").show();
+    $('#api_' + type_ + "_row").show();
+    $(`#collector_${type_.replace('_', '')}collectorform_row`).show();
 
     if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
       $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');
@@ -430,19 +419,30 @@ $(function() {
   $('#id_api_parser_use_proxy').on('change', function(e){
     if ($(this).is(':checked')) {
       $('#api_parser_custom_proxy').show();
-    } else $('#api_parser_custom_proxy').hide();
+      $(`#id_${$('#id_api_parser_type').val().replace('_', '')}collectorform-custom_proxy`).show();
+    } else {
+      $('#api_parser_custom_proxy').hide();
+      $(`#id_${$('#id_api_parser_type').val().replace('_', '')}collectorform-custom_proxy`).hide();
+    }
   }).trigger('change');
 
   $('#id_api_parser_verify_ssl').on('change', function(e){
     if ($(this).is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
       $('#api_parser_custom_certificate').show();
-    } else $('#api_parser_custom_certificate').hide();
+      $(`#id_${$('#id_api_parser_type').val().replace('_', '')}collectorform-custom_certificate`).show();
+    } else {
+      $('#api_parser_custom_certificate').hide();
+      $(`#id_${$('#id_api_parser_type').val().replace('_', '')}collectorform-custom_certificate`).hide();
+    }
   }).trigger('change');
 
   $('#id_api_parser_type').on('change', function(){
     if($(this).val() == "") {
       $('#test_api_parser').prop("disabled", true);
-    } else $('#test_api_parser').prop("disabled", false);
+    } else {
+      $('#test_api_parser').prop("disabled", false);
+      fetch_api_collector_form($(this).val());
+    }
     refresh_api_parser_type($(this).val());
     $('#id_api_parser_verify_ssl').trigger('change');
   }).trigger('change');

@@ -292,18 +292,25 @@ def frontend_edit(request, object_id=None, api=False):
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
         custom_actions_form = kwargs.get('custom_actions_form', CustomActionsForm({'custom_actions': form.initial.get("custom_actions", [])}, auto_id=False))
+        logger.info(f"[FRONTEND RENDER FORM] custom_actions_form: {custom_actions_form}")
 
         filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
         if front and front.filebeat_module and front.filebeat_config:
             filebeat_configs[front.filebeat_module]=front.filebeat_config
 
-        logger.info(f"[FRONTEND RENDER FORM] front.api_collector.all(): {front.api_collector.all()}")
+        # logger.info(f"[FRONTEND RENDER FORM] front.api_collector.all(): {front.api_collector.all()}")
         logger.info(f"[FRONTEND RENDER FORM] front.api_parser_type: {front.api_parser_type}")
+        logger.info(f"[FRONTEND RENDER FORM] front.api_collector: {front.api_collector}")
 
         # TypeError: Abstract models cannot be instantiated.
         # api_collectors_generic_form = kwargs.get('api_collectors_generic_form', apps.get_app_config("services").api_collectors_generic_form()(instance=front.api_collector.first()))
-        api_collectors_generic_form = kwargs.get('api_collectors_generic_form', apps.get_app_config("services").api_collectors_generic_form())
-        api_collectors_forms = kwargs.get('api_collectors_forms', apps.get_app_config("services").api_collectors_forms())
+        api_collectors_forms = apps.get_app_config("services").api_collectors_forms()
+        logger.info(f"[FRONTEND RENDER FORM] api_collectors_forms.keys(): {api_collectors_forms.keys()}")
+
+        if front:
+            api_collectors_forms[front.api_parser_type] = kwargs.get('api_collector_form', apps.get_app_config("services").api_collectors_get_form(front.api_parser_type, front.api_collector))
+            logger.info(f"[FRONTEND RENDER FORM] api_collectors_forms[front.api_parser_type]: {api_collectors_forms[front.api_parser_type]}")
+
 
         return render(request, 'services/frontend_edit.html',
                       {'form': form, 'listeners': listener_form_list, 'listener_form': ListenerForm(),
@@ -314,7 +321,7 @@ def frontend_edit(request, object_id=None, api=False):
                        'custom_actions': custom_actions_form,
                        'condition_line_form': RsyslogConditionForm(auto_id=False),
                        'filebeat_module_config': filebeat_configs,
-                       'api_collectors_generic_form': api_collectors_generic_form,
+                       'api_collectors_generic_form': apps.get_app_config("services").api_collectors_generic_form(),
                        'api_collectors_forms': api_collectors_forms,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 
@@ -433,33 +440,25 @@ def frontend_edit(request, object_id=None, api=False):
         if not custom_actions_form.is_valid():
             form.add_error("custom_actions", custom_actions_form.errors.get("custom_actions", []) if api else custom_actions_form.errors.as_data().get("custom_actions", []))
 
-
-
-        # try:
-        #     if api and hasattr(request, "JSON"):
-        #         listener_ids = request.JSON.get('listeners', [])
-        #         assert isinstance(listener_ids, list), "Listeners field must be a list."
-        #     else:
-        #         listener_ids = json_loads(request.POST.get('listeners', "[]"))
-        # except Exception as e:
-        #     return render_form(frontend, save_error=["Error in Listeners field : {}".format(e),
-        #                                              str.join('', format_exception(*exc_info()))])
-
-
-
         # api_collectors_generic_form = CustomActionsForm({'custom_actions': form.data.get("custom_actions", [])}, auto_id=False)
         # if not custom_actions_form.is_valid():
         #     form.add_error("custom_actions", custom_actions_form.errors.get("custom_actions", []) if api else custom_actions_form.errors.as_data().get("custom_actions", []))
 
-        api_collectors_forms = apps.get_app_config("services").api_collectors_forms()({form.data.get("api_collector_fields", [])})
-        if not api_collectors_forms.is_valid():
-            form.add_error("api_collector_fields", api_collectors_forms.errors.as_json() if api else api_collectors_forms.errors.as_data().values())
-        api_collectors_forms.save(commit=False)
+        if hasattr(request, "JSON") and api:
+            api_collector_form = apps.get_app_config("services").api_collectors_get_form(form.data.get("api_parser_type"), frontend.api_collector, data=request.JSON or empty)
+        else:
+            api_collector_form = apps.get_app_config("services").api_collectors_get_form(form.data.get("api_parser_type"), frontend.api_collector, data=request.POST or empty)
+
+        if not api_collector_form.is_valid():
+            form.add_error(None, api_collector_form.errors.as_json() if api else api_collector_form.errors.as_data().values())
+        api_collector_obj = api_collector_form.save(commit=False)
+        # api_collector_form.use_proxy = api_collectors_generic_form.cleaned_data.get('use_proxy')
 
         old_nodes = frontend.get_nodes() if frontend else []
         old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.has_rsyslog_conf else ""
         old_filebeat_filename = frontend.get_filebeat_base_filename() if frontend and frontend.has_filebeat_conf else ""
         old_haproxy_filename = frontend.get_base_filename() if frontend and frontend.has_haproxy_conf else ""
+        old_api_collector = frontend.api_collector
 
         # Frontend used by workflow type change check
         if object_id and "mode" in form.changed_data:
@@ -474,8 +473,7 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
-                api_collectors_generic_form=api_collectors_generic_form,
-                api_collectors_forms=api_collectors_forms,
+                api_collector_form=api_collector_form,
             )
 
         # Save the form to get an id if there is not already one
@@ -503,8 +501,7 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
-                api_collectors_generic_form=api_collectors_generic_form,
-                api_collectors_forms=api_collectors_forms,
+                api_collector_form=api_collector_form,
                 save_error=[str(e), e.traceback]
             )
 
@@ -513,8 +510,7 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
-                api_collectors_generic_form=api_collectors_generic_form,
-                api_collectors_forms=api_collectors_forms,
+                api_collector_form=api_collector_form,
                 save_error=["No referenced error",
                         str.join('', format_exception(*exc_info()))]
             )
@@ -541,8 +537,7 @@ def frontend_edit(request, object_id=None, api=False):
                         return render_form(
                             frontend,
                             custom_actions_form=custom_actions_form,
-                            api_collectors_generic_form=api_collectors_generic_form,
-                            api_collectors_forms=api_collectors_forms,
+                            api_collector_form=api_collector_form,
                         )
 
                 frontend.log_forwarders_id = log_forwarders
@@ -588,13 +583,11 @@ def frontend_edit(request, object_id=None, api=False):
                                                          arg_field=reputationctx.arg_field,
                                                          dst_field=reputationctx.dst_field)
 
-
-
             """ Delete previous api collector """
-            listener.frontend = frontend
-            logger.debug("Saving listener {}".format(str(listener)))
-            listener.save()
-
+            old_api_collector.delete()
+            api_collector_obj.frontend = frontend
+            logger.debug(f"Saving api_collector {str(api_collector_obj)}")
+            api_collector_obj.save()
 
             new_nodes = frontend.reload_conf()
             for node in new_nodes:
@@ -669,8 +662,7 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
-                api_collectors_generic_form=api_collectors_generic_form,
-                api_collectors_forms=api_collectors_forms,
+                api_collector_form=api_collector_form,
                 save_error=[str(e), e.traceback]
             )
 
@@ -680,8 +672,7 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
-                api_collectors_generic_form=api_collectors_generic_form,
-                api_collectors_forms=api_collectors_forms,
+                api_collector_form=api_collector_form,
                 save_error=["Failed to save object in database :\n{}".format(e),
                     str.join('', format_exception(*exc_info()))]
             )
@@ -734,9 +725,9 @@ def frontend_pause(request, object_id, api=False):
 
 def frontend_api_collector_form(request):
     try:
-        type_parser = request.POST.get('api_parser_type')
+        type_parser = request.POST.get("api_parser_type")
         parser_from = apps.get_app_config("services").api_collectors_get_form(type_parser)
-        return JsonResponse()
+        return JsonResponse({"status": True, "data": str(parser_from)})
 
     except Exception as e:
         logger.error(e, exc_info=1)

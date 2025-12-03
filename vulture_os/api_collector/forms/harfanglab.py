@@ -26,10 +26,10 @@ __doc__ = "API Collector form classes"
 # Django system imports
 from django.conf import settings
 from django.forms import TextInput, PasswordInput
-from api_collector.models.harfanglab import HarfangLabCollector
 
 # Django project imports
 from api_collector.forms.base import GenericApiCollectorForm
+from api_collector.models.harfanglab import HarfangLabCollector
 
 # Extern modules imports
 
@@ -50,4 +50,4 @@ class HarfanglabCollectorForm(GenericApiCollectorForm):
         widgets = {
             'host': TextInput(attrs={'class': "form-control"}),
             'apikey': PasswordInput(attrs={'class': "form-control"})
-        }
+        } | GenericApiCollectorForm.Meta.widgets

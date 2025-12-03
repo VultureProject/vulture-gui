@@ -34,7 +34,6 @@ from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
-# from api_collector.models.base import ApiCollector
 from applications.logfwd.models import LogOM, LogOMMongoDB
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinBuffering
@@ -608,13 +607,6 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Verify SSL"),
         verbose_name=_("Verify certificate")
     )
-    # api_collector = models.ForeignKey(
-    #     to=ApiCollector,
-    #     null=True,
-    #     blank=True,
-    #     on_delete=models.CASCADE,
-    #     related_name="frontend_set",
-    # )
     api_parser_custom_certificate = models.ForeignKey(
         to=X509Certificate,
         null=True,
@@ -2277,6 +2269,11 @@ class Frontend(RsyslogQueue, models.Model):
 
         logger.debug(f"[RENDER CUSTOM ACTIONS] result : {result}")
         return result
+
+    @property
+    def api_collector(self):
+        if self.mode == "log" and self.listening_mode == "api" and self.api_parser_type:
+            return getattr(self, f"{self.api_parser_type.replace('_', '')}collector_set").first()
 
     @property
     def api_rsyslog_port(self):
