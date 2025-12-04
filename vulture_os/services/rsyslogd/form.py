@@ -110,7 +110,7 @@ class RsyslogQueueForm(ModelForm):
             if cleaned_data.get('new_worker_minimum_messages'):
                 if not cleaned_data.get('queue_size'):
                     self.add_error("queue_size", "Please specify an explicit queue size when the minimum messages to start a new worker is set")
-                if cleaned_data['new_worker_minimum_messages'] > cleaned_data['queue_size']:
+                elif cleaned_data['new_worker_minimum_messages'] > cleaned_data['queue_size']:
                     self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
 
             light_delay_mark = cleaned_data.get('light_delay_mark') or 70
