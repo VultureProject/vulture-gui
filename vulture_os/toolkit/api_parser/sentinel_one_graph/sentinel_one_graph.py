@@ -224,7 +224,7 @@ class SentinelOneGraphParser(ApiParser):
         log = response.get('data', {}).get('alert', {})
 
         # Comments
-        if log.get('noteExists'):
+        if log and log.get('noteExists'):
             comments = []
             if log_id := log.get("id"):
                 for comment in self.get_itdr_alert_comments(log_id):
