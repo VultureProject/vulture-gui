@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.34.3] - 2025-12-05
 ### Added
 - [API_PARSER] [ARMIS_CENTRIX] Add source and destination boundaries in resulting logs
 - [FRONTEND] [FILEBEAT] Add a comment line with the associated frontend in generated configurations
