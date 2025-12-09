@@ -57,6 +57,11 @@ class ProofpointTRAPAPIRateLimitError(Exception):
 
 
 class ProofpointTRAPCollector(ApiCollector):
+    HEADERS = {
+        "Content-Type": "application/json",
+        'Accept': 'application/json'
+    }
+
     # Proofpoint TRAP attributes
     host = models.TextField(
         verbose_name = _("ProofPoint TRAP host"),
@@ -70,37 +75,21 @@ class ProofpointTRAPCollector(ApiCollector):
     )
 
 
-class ProofpointTRAPParser(ApiParser):
-    HEADERS = {
-        "Content-Type": "application/json",
-        'Accept': 'application/json'
-    }
-
-    def __init__(self, data):
-        super().__init__(data)
-
-        self.proofpoint_trap_host = data["proofpoint_trap_host"]
-        if not self.proofpoint_trap_host.startswith('https://') and not self.proofpoint_trap_host.startswith('http://'):
-            self.proofpoint_trap_host = "https://" + self.proofpoint_trap_host
-
-        self.proofpoint_trap_apikey = data["proofpoint_trap_apikey"]
-
-        self.session = None
-
     def _connect(self):
         try:
-            if self.session is None:
-                self.session = requests.Session()
+            if self._session is None:
+                self._session = requests.Session()
 
                 headers = self.HEADERS
-                headers.update({'Authorization': self.proofpoint_trap_apikey})
+                headers.update({'Authorization': self.apikey})
 
-                self.session.headers.update(headers)
+                self._session.headers.update(headers)
 
             return True
 
         except Exception as err:
             raise ProofpointTRAPAPIError(err)
+
 
     def __execute_query(self, url, query=None, timeout=20):
 
@@ -109,12 +98,12 @@ class ProofpointTRAPParser(ApiParser):
         msg = "URL : " + url + " Query : " + str(query)
         logger.info(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
 
-        response = self.session.get(
+        response = self._session.get(
             url,
             params=query,
             timeout=timeout,
-            proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            proxies=self._proxies,
+            verify=self._custom_certificate_bundle or self.verify_ssl
         )
 
         # handler rate limit exceeding
@@ -125,6 +114,7 @@ class ProofpointTRAPParser(ApiParser):
                 f"Error at Proofpoint TRAP API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
         return response.json()
+
 
     def test(self):
 
@@ -145,10 +135,11 @@ class ProofpointTRAPParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, since, to):
-        alert_url = self.proofpoint_trap_host + "/api/incidents"
 
-        while not self.evt_stop.is_set():
+    def get_logs(self, since, to):
+        alert_url = self.host + "/api/incidents"
+
+        while not self._evt_stop.is_set():
 
             # Format timestamp for query
             since_formatted = since.isoformat()[:19] + 'Z'
@@ -171,9 +162,10 @@ class ProofpointTRAPParser(ApiParser):
             except ProofpointTRAPAPIRateLimitError:
                 logger.info(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...",
                     extra={'frontend': str(self.frontend)})
-                self.evt_stop.wait(10)
+                self._evt_stop.wait(10)
 
         return None, None
+
 
     def format_incidents_logs(self, incident_log):
 
@@ -188,10 +180,11 @@ class ProofpointTRAPParser(ApiParser):
             alert['users'] = incident_log['users']
             alert['score'] = incident_log['score']
             alert['hosts'] = incident_log['hosts']
-            alert['domain'] = self.proofpoint_trap_host
+            alert['domain'] = self.host
             alert['incident_details'] = incident_details
 
         return incident_log
+
 
     def format_alerts_logs(self, alert_log):
 
@@ -228,9 +221,10 @@ class ProofpointTRAPParser(ApiParser):
 
         return json.dumps(alert_log)
 
+
     def execute(self):
 
-        since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
+        since = self.last_collected_timestamps.get('default', timezone.now() - timedelta(days=30))
 
         # fetch at most 24h of logs to avoid the process running for too long
         to = min(timezone.now(), since + timedelta(hours=24))
@@ -261,10 +255,10 @@ class ProofpointTRAPParser(ApiParser):
                 self.update_lock()
 
             # update last_api_call only if logs are retrieved
-            self.frontend.last_api_call = to
-            self.frontend.save(update_fields=["last_api_call"])
+            self.last_collected_timestamps.get['default'] = to
+            self.save(update_fields=["last_collected_timestamps"])
         elif since < timezone.now() - timedelta(hours=24):
-            self.frontend.last_api_call = since + timedelta(hours=1)
-            self.frontend.save(update_fields=["last_api_call"])
+            self.last_collected_timestamps.get['default'] = since + timedelta(hours=1)
+            self.save(update_fields=["last_collected_timestamps"])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

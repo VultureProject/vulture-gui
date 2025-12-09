@@ -26,14 +26,12 @@ __parser__ = 'HARFANGLAB'
 
 # Django system imports
 from django.conf import settings
-from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from djongo import models
 
 # Django project imports
 from api_collector.models.base import ApiCollector
-from toolkit.api_parser.api_parser import ApiParser
 
 # Extern modules imports
 from datetime import timedelta
@@ -54,6 +52,15 @@ class HarfangLabAPIError(Exception):
 
 
 class HarfangLabCollector(ApiCollector):
+    VERSION = "api/version/"
+    ALERTS = "api/data/alert/alert/Alert/"
+    THREATS = "api/data/alert/alert/Threat/"
+
+    HEADERS = {
+        "Content-Type": "application/json",
+        'Accept': 'application/json'
+    }
+
     # HarfangLab attributes
     host = models.TextField(
         verbose_name = _("HarfangLab Host"),
@@ -66,55 +73,21 @@ class HarfangLabCollector(ApiCollector):
         default = "",
     )
 
-
-class HarfangLabParser(ApiParser):
-    VERSION = "api/version/"
-    ALERTS = "api/data/alert/alert/Alert/"
-    THREATS = "api/data/alert/alert/Threat/"
-    # STATUS = "api/status/"
-    # CONFIG = "api/config/"
-    # ALERT_DETAILS = "api/data/alert/alert/Alert/{id}/details/"
-    # AGENT = "api/data/endpoint/Agent/"
-    # AGENT_STATS = "api/data/endpoint/Agent/dashboard_stats/"
-    # POLICY = "api/data/endpoint/Policy/"
-
-    HEADERS = {
-        "Content-Type": "application/json",
-        'Accept': 'application/json'
-    }
-
-    _evt_stop = None
-    _socket = None
-    _redis_cli = None
-    _session = None
-    _proxies = {'proxies'}
-
-    def __init__(self, data):
-        super().__init__(data)
-
-        self.harfanglab_host = data["harfanglab_host"].rstrip("/")
-        if not self.harfanglab_host.startswith('https://'):
-            self.harfanglab_host = f"https://{self.harfanglab_host}"
-
-        self.harfanglab_apikey = data["harfanglab_apikey"]
-
-        self.session = None
-
     def _connect(self):
         try:
-            if self.session is None:
-                self.session = requests.Session()
+            if self._session is None:
+                self._session = requests.Session()
 
                 headers = self.HEADERS
-                headers.update({'Authorization': f"Token {self.harfanglab_apikey}"})
+                headers.update({'Authorization': f"Token {self.apikey}"})
 
-                self.session.headers.update(headers)
+                self._session.headers.update(headers)
 
-                response = self.session.get(
-                    f'{self.harfanglab_host}/{self.VERSION}',
+                response = self._session.get(
+                    f'{self.host}/{self.VERSION}',
                     timeout=10,
-                    proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
+                    proxies=self._proxies,
+                    verify=self._custom_certificate_bundle or self.verify_ssl
                 )
                 assert response.status_code == 200, "Error connecting to HarfangLab API"
 
@@ -129,24 +102,23 @@ class HarfangLabParser(ApiParser):
         '''
         self._connect()
 
-
         if method == "GET":
             logger.info(f"[{__parser__}]:execute_query: URL: {url} , method : GET , params: {query}", extra={'frontend': str(self.frontend)})
-            response = self.session.get(url,
+            response = self._session.get(url,
                 params=query,
                 headers=self.HEADERS,
                 timeout=timeout,
-                proxies=self.proxies,
-                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                proxies=self._proxies,
+                verify=self._custom_certificate_bundle or self.verify_ssl
             )
         elif method == "POST":
             logger.info(f"[{__parser__}]:execute_query: URL: {url} , method : POST , data: {json.dumps(query)}", extra={'frontend': str(self.frontend)})
-            response = self.session.post(url,
+            response = self._session.post(url,
                 data=json.dumps(query),
                 headers=self.HEADERS,
                 timeout=timeout,
-                proxies=self.proxies,
-                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                proxies=self._proxies,
+                verify=self._custom_certificate_bundle or self.verify_ssl
             )
         else:
             raise HarfangLabAPIError(f"Error at HarfangLab request, unknown method : {method}")
@@ -156,6 +128,7 @@ class HarfangLabParser(ApiParser):
             raise HarfangLabAPIError(f"Error at HarfangLab API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
         return response.json()
+
 
     def test(self):
         try:
@@ -172,8 +145,9 @@ class HarfangLabParser(ApiParser):
                 "error": str(e)
             }
 
+
     def get_alerts(self, since, to, index=0):
-        alert_url = f"{self.harfanglab_host}/{self.ALERTS}"
+        alert_url = f"{self.host}/{self.ALERTS}"
         # Remove miliseconds - format not supported
         since_utc = since.isoformat().split('.')[0]
         to_utc = to.isoformat().split('.')[0]
@@ -194,7 +168,7 @@ class HarfangLabParser(ApiParser):
         return self.__execute_query("GET", alert_url, payload)
 
     def get_threats(self, since, to, index=0):
-        threat_url = f"{self.harfanglab_host}/{self.THREATS}"
+        threat_url = f"{self.host}/{self.THREATS}"
         # Remove miliseconds - format not supported
         since_utc = since.isoformat().split('.')[0]
         to_utc = to.isoformat().split('.')[0]
@@ -217,7 +191,7 @@ class HarfangLabParser(ApiParser):
         return self.__execute_query("GET", threat_url, payload)
 
     def format_log(self, log, log_type):
-        log['url'] = self.harfanglab_host
+        log['url'] = self.host
         log['evt_type'] = log_type
 
         log['is_truncated_powershell'] = False
@@ -250,7 +224,7 @@ class HarfangLabParser(ApiParser):
     def execute(self):
         for log_type in ["alerts", "threats"]:
             try:
-                since = self.last_collected_timestamps.get(log_type, self.last_api_call) or (timezone.now() - timedelta(days=7))
+                since = self.last_collected_timestamps.get(log_type, timezone.now() - timedelta(days=7))
                 # Don't get the last 10 minutes of logs, as some can appear delayed at the API
                 to = min(timezone.now() - timedelta(minutes=10), since + timedelta(hours=24))
 

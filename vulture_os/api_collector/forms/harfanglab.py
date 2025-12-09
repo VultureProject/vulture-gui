@@ -49,5 +49,11 @@ class HarfanglabCollectorForm(GenericApiCollectorForm):
 
         widgets = {
             'host': TextInput(attrs={'class': "form-control"}),
-            'apikey': PasswordInput(attrs={'class': "form-control"})
+            'apikey': PasswordInput(attrs={'type': "password", 'class': "form-control"})
         } | GenericApiCollectorForm.Meta.widgets
+
+    def clean_host(self):
+        host = self.cleaned_data["host"].rstrip("/")
+        if not host.startswith('https://'):
+            host = f"https://{host}"
+        return host

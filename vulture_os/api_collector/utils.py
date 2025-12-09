@@ -14,40 +14,28 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Olivier de Régis"
+__author__ = "Théo Bertin"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Parser URLS'
+__doc__ = 'Utilities for API collectors'
 
+from json import JSONDecoder
+from datetime import datetime
 
-import logging
+# Custom JSON Decoder to decode datetime fields in JSONFields
+class JSONDatetimeDecoder(JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        super().__init__(object_hook=self.try_datetime, *args, **kwargs)
 
-from django.conf import settings
-from api_collector.models.harfanglab import HarfangLabParser
-# from api_collector.models.proofpoint_trap import ProofpointTRAPParser
-
-logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('gui')
-
-
-PARSER_LIST = {
-    "harfanglab": HarfangLabParser,
-#     "proofpoint_trap": ProofpointTRAPParser,
-}
-
-class ParserDoesNotExist(Exception):
-    pass
-
-
-def get_api_parser(parser_name):
-    try:
-        return PARSER_LIST[parser_name]
-    except KeyError:
-        raise ParserDoesNotExist("Parser {} does not exist".format(parser_name))
-
-
-def get_available_api_parser():
-    return list(PARSER_LIST.keys())
+    @staticmethod
+    def try_datetime(d):
+        ret = {}
+        for key, value in d.items():
+            try:
+                ret[key] = datetime.fromisoformat(value)
+            except (ValueError, TypeError):
+                ret[key] = value
+        return ret

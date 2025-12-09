@@ -49,5 +49,11 @@ class ProofpointTRAPCollectorForm(GenericApiCollectorForm):
 
         widgets = {
             'host': TextInput(attrs={'class': "form-control"}),
-            'apikey': PasswordInput(attrs={'class': "form-control"})
+            'apikey': PasswordInput(attrs={'type': "password", 'class': "form-control"})
         } | GenericApiCollectorForm.Meta.widgets
+
+    def clean_host(self):
+        host = self.cleaned_data["proofpoint_trap_host"]
+        if not host.startswith('https://') and not host.startswith('http://'):
+            host = "https://" + host
+        return host
