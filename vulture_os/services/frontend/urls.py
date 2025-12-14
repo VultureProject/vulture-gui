@@ -53,7 +53,7 @@ urlpatterns = [
             views.frontend_pause,
             name="services.frontend.pause"),
 
-    re_path('^services/frontend/api_collector_form/',
+    path('services/frontend/api_collector_forms/<str:collector_name>',
             views.frontend_api_collector_form,
             name="services.frontend.api_collector_form"),
 

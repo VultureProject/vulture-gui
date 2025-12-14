@@ -73,21 +73,25 @@ class ApiCollector(models.Model):
     )
     use_proxy = models.BooleanField(
         default=False,
+        blank=True,
         verbose_name=_("Use Proxy"),
         help_text=_("Use a proxy to connect to distant endpoint")
     )
     custom_proxy = models.TextField(
         default="",
+        blank=True,
         help_text=_("Custom Proxy to use when requesting logs"),
         verbose_name=_("Custom Proxy")
     )
     verify_ssl = models.BooleanField(
         default=True,
+        blank=True,
         help_text=_("Verify SSL"),
         verbose_name=_("Verify certificate")
     )
     custom_certificate = models.ForeignKey(
         to=X509Certificate,
+        blank=True,
         null=True,
         on_delete=models.SET_NULL,
         # related_name="api_collectors",
@@ -101,12 +105,11 @@ class ApiCollector(models.Model):
     )
 
     # internal/temporary attributes
-    _socket = socket(AF_INET, SOCK_STREAM)
-    _redis_cli = RedisBase()
-    _session = None
-    _proxies = {}
+    __socket__ = None
+    __redis_cli__ = None
+    __proxies__ = None
     _evt_stop = Event()
-    _custom_certificate_name = None
+    _session = None
 
 
     @property
@@ -123,6 +126,47 @@ class ApiCollector(models.Model):
             return self.custom_certificate.bundle_filename
         return None
 
+    @property
+    def _proxies(self):
+        if self.__proxies__ is None:
+            if self.use_proxy:
+                logger.info("using proxy",  extra={'frontend': 'None'})
+                if self.custom_proxy:
+                    logger.info(f"custom proxy {self.custom_proxy}",  extra={'frontend': 'None'})
+                    self.__proxies__ = self.get_custom_proxy()
+                else:
+                    self.__proxies__ = self.get_system_proxy()
+                    logger.info(f"system proxy {self.__proxies__}",  extra={'frontend': 'None'})
+            else:
+                self.__proxies__ = {}
+        return self.__proxies__
+
+    @property
+    def _redis_cli(self):
+        if self.__redis_cli__ is None:
+            self.__redis_cli__ = self.__redis_cli__ = RedisBase(
+                    node=settings.REDISIP,
+                    port=settings.REDISPORT,
+                    password=Config.objects.get().redis_password
+                )
+        return self.__redis_cli__
+
+    @property
+    def _socket(self):
+        if self.__socket__ is None:
+            if self.frontend:
+                logger.info(f"Connecting to {JAIL_ADDRESSES['rsyslog']['inet']}, port {self.frontend.api_rsyslog_port}",
+                            extra={'frontend': str(self.frontend)})
+                try:
+                    self.__socket__ = socket(AF_INET, SOCK_STREAM)
+                    self.__socket__.settimeout(30)
+                    self.__socket__.connect((JAIL_ADDRESSES['rsyslog']['inet'], self.frontend.api_rsyslog_port))
+                except Exception:
+                    self.__socket__ = None
+            else:
+                self.__socket__ = None
+        return self.__socket__
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -131,36 +175,6 @@ class ApiCollector(models.Model):
             signal(SIGINT, self._handle_stop)
             signal(SIGTERM, self._handle_stop)
 
-        self._socket.settimeout(30)
-        if self.frontend:
-            self._socket.connect((JAIL_ADDRESSES['rsyslog']['inet'], self.frontend.api_rsyslog_port))
-
-        if self.use_proxy:
-            if self.custom_proxy:
-                self._proxies = self.get_custom_proxy()
-            else:
-                self._proxies = self.get_system_proxy()
-
-        try:
-            self._redis_cli = RedisBase(
-                node=settings.REDISIP,
-                port=settings.REDISPORT,
-                password=Config.objects.get().redis_password
-            )
-            assert self.connect(), "Failed to connect to Rsyslog"
-        except (ObjectDoesNotExist, DatabaseError, AssertionError):
-            raise FailedToLoadCollector("Could not instanciate Collector")
-
-
-    def connect(self):
-        try:
-            if self.frontend:
-                self._socket.connect((JAIL_ADDRESSES['rsyslog']['inet'], self.frontend.api_rsyslog_port))
-            return True
-        except Exception as e:
-            msg = f"Failed to connect to Rsyslog : {e}"
-            logger.error(f"[{__parser__}]:connect: {msg}", extra={'frontend': str(self.frontend)})
-            return False
 
 
     def get_system_proxy(self) -> dict[str, str]:
@@ -227,11 +241,8 @@ class ApiCollector(models.Model):
             except Exception as e:
                 msg = f"Failed to send to Rsyslog : {e}"
                 logger.error(f"[{__parser__}]:write_to_file: {msg}", extra={'frontend': str(self.frontend)})
-                # Connect will block until timeout has expired (30s)
-                while not self.connect():
-                    sleep(0.05)
-                    # So refresh lock
-                    self.update_lock()
+                self.update_lock()
+                sleep(0.5)
 
 
     def _handle_stop(self, signum, frame):

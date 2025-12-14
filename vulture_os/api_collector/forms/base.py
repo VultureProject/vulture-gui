@@ -25,7 +25,7 @@ __doc__ = "API Collector form classes"
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, CheckboxInput, Select
+from django.forms import ModelForm, TextInput, CheckboxInput, Select, ModelChoiceField
 
 # Django project imports
 from api_collector.models.base import ApiCollector
@@ -45,6 +45,13 @@ logger = logging.getLogger('api_parser')
 class GenericApiCollectorForm(ModelForm):
     template_name = "api_collector_edit.html"
 
+    custom_certificate = ModelChoiceField(
+        queryset=X509Certificate.objects.all(),
+        widget=Select(attrs={'class': 'form-control select2'}),
+        required=False,
+        label=ApiCollector.custom_certificate.field.verbose_name,
+    )
+
     class Meta:
         model = ApiCollector
         fields = ("use_proxy", "custom_proxy", "verify_ssl", "custom_certificate")
@@ -53,7 +60,6 @@ class GenericApiCollectorForm(ModelForm):
             'use_proxy': CheckboxInput(attrs={'class': "js-switch"}),
             'custom_proxy': TextInput(attrs={'class': "form-control"}),
             'verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
-            'custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': 'form-control select2'})
         }
 
     @property

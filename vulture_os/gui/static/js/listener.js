@@ -10,175 +10,6 @@ if (!String.prototype.endsWith) {
   };
 }
 
-function fetch_api_collector_form(type_) {
-  PNotify.removeAll();
-
-  let btn = $('#test_api_parser');
-  let txt = $(btn).html();
-  $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
-  // $(btn).prop('disabled', true);
-
-  let data = get_api_parser_data(type_);
-
-  $.post(
-    fetch_api_collector_form_uri,
-    data,
-    function(response){
-      $(btn).prop('disabled', false);
-      $(btn).html(txt);
-      if (!check_json_error(response)) {
-        return;
-      }
-      console.log(response);
-      // $('#api_collector_div').html(response.data);
-    }
-  ).fail(function(response){
-    notify('error', response.status, response.responseText);
-
-    $(btn).prop('disabled', false);
-    $(btn).html(txt);
-  })
-}
-
-function get_api_parser_data(type_) {
-  var data = {
-    api_parser_type: $('#id_api_parser_type').val(),
-    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked'),
-    api_parser_custom_proxy: $('#id_api_parser_custom_proxy').val(),
-    api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked')
-  };
-
-  if ($('#id_api_parser_verify_ssl').is(':checked') && !api_parser_blacklist.includes(type_)) {
-    data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val();
-  }
-
-  let collector_div_id = `#collector_${type_.replace('_', '')}collectorform_row`;
-  $(`${collector_div_id} input`).each(function(){
-    var name = $(this).attr('name');
-    switch($(this).attr('type')){
-      case "checkbox":
-        data[name] = $(this).is(':checked');
-        break;
-      case "text":
-        data[name] = $(this).val();
-        break;
-      case "password":
-        data[name] = $(this).val();
-        break;
-    }
-  })
-
-  $(`${collector_div_id} textarea`).each(function(){
-    var name = $(this).attr('name');
-    data[name] = $(this).val();
-  })
-
-  $(`${collector_div_id} select`).each(function(){
-    var name = $(this).attr('name');
-    data[name] = $(this).val();
-  })
-
-  return data;
-}
-
-function refresh_api_parser_type(type_){
-  $('.api_clients_row').hide();
-  $('.api_collectors_row').hide();
-
-  if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
-    $('#id_node').hide();
-    $('#api_' + type_ + "_row").show();
-    $(`#collector_${type_.replace('_', '')}collectorform_row`).show();
-
-    if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
-      $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');
-    } else if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
-      $('#id_ruleset').val("api_" + type_).trigger('change');
-    } else if ($("#id_ruleset option[value='" + type_ + "-ecs']").length > 0) {
-      $('#id_ruleset').val(type_ + "-ecs").trigger('change');
-    } else if ($("#id_ruleset option[value='" + type_ + "']").length > 0) {
-      $('#id_ruleset').val(type_).trigger('change');
-    } else {
-      $('#id_ruleset').val('generic_json').trigger('change');
-    }
-  }
-
-  $('.fetch_data_api_parser').unbind('click');
-  $('.fetch_data_api_parser').on('click', function(){
-    PNotify.removeAll();
-
-    var btn = this;
-    var txt = $(btn).html();
-    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
-    $(btn).prop('disabled', true);
-
-    var target = $(this).data('target');
-    var type_target = $(this).data('type');
-
-    var data = get_api_parser_data(type_);
-
-    $('#'+target).empty();
-
-    $.post(
-      fetch_frontend_api_parser_data_uri,
-      data,
-
-      function(response){
-        $(btn).prop('disabled', false);
-        $(btn).html(txt);
-        if (!check_json_error(response))
-          return;
-
-        var data = response.data;
-        if (type_target == "select"){
-          for (var i in data)
-            $('#'+target).append(new Option(data[i], data[i]))
-        }
-      }
-    )
-  })
-
-  $('#test_api_parser').unbind('click');
-  $('#test_api_parser').on('click', function(){
-    PNotify.removeAll();
-    if($('#id_api_parser_type').val() == "") {
-      notify('error', gettext('Error'), gettext('Select an API Parser Type'))
-      return
-    }
-
-    var btn = this;
-    var txt = $(btn).html();
-    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
-    $(btn).prop('disabled', true);
-
-    var data = get_api_parser_data(type_);
-
-    $.post(
-      test_frontend_apiparser_uri,
-      data,
-
-      function(response){
-        $(btn).prop('disabled', false);
-        $(btn).html(txt);
-        if (!check_json_error(response)){
-          $('#id_api_parser_has_been_tested').val('0');
-          return;
-        }
-
-        var data = response.data;
-        $('#id_api_parser_has_been_tested').val('1');
-        $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
-        $('#modal-test-apiparser').modal('show');
-      }
-    ).fail(function(response){
-      notify('error', response.status, response.responseText)
-
-      $(btn).prop('disabled', false);
-      $(btn).html(txt);
-    })
-  })
-}
-
 /* Redraw a switch to take new properties into account */
 function redrawSwitch(id) {
   elem = document.getElementById(id);
@@ -192,6 +23,148 @@ function editing_existing_object() {
 }
 
 $(function() {
+
+  var initial_test_button_text = $('#test_api_parser').html();
+
+  function fetch_api_collector_form(type_, data) {
+    PNotify.removeAll();
+
+    let btn = $('#test_api_parser');
+    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+    $(btn).prop('disabled', true);
+
+    $.get(
+      fetch_api_collector_form_uri.replace('collector_name', type_),
+      data
+    )
+    .done(function(response){
+      //TODO ensure objects and JS is refreshed to show correctly
+      $('#api_collector_form_div').html(response);
+    })
+    .fail(function(response){
+      notify('error', response.status, "Could not load collector's details");
+    })
+    .always(function(){
+      $(btn).prop('disabled', false);
+      $(btn).html(initial_test_button_text);
+    })
+  }
+
+  function get_api_parser_data() {
+    var data = {
+      api_parser_type: $('#id_api_parser_type').val(),
+    };
+
+    $('#api_collector_form_div input').each(function(){
+      var name = $(this).attr('name');
+      switch($(this).attr('type')){
+        case "checkbox":
+          data[name] = $(this).is(':checked');
+          break;
+        default:
+          data[name] = $(this).val();
+          break;
+      }
+    })
+
+    return data;
+  }
+
+  function refresh_api_parser_type(type_){
+    $('.api_clients_row').hide();
+    $('.api_collectors_row').hide();
+
+    if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
+      $('#id_node').hide();
+      $('#api_' + type_ + "_row").show();
+      $(`#collector_${type_.replace('_', '')}collectorform_row`).show();
+
+      if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
+        $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');
+      } else if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
+        $('#id_ruleset').val("api_" + type_).trigger('change');
+      } else if ($("#id_ruleset option[value='" + type_ + "-ecs']").length > 0) {
+        $('#id_ruleset').val(type_ + "-ecs").trigger('change');
+      } else if ($("#id_ruleset option[value='" + type_ + "']").length > 0) {
+        $('#id_ruleset').val(type_).trigger('change');
+      } else {
+        $('#id_ruleset').val('generic_json').trigger('change');
+      }
+    }
+
+    $('.fetch_data_api_parser').unbind('click');
+    $('.fetch_data_api_parser').on('click', function(){
+      PNotify.removeAll();
+
+      var btn = this;
+      $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+      $(btn).prop('disabled', true);
+
+      var target = $(this).data('target');
+      var type_target = $(this).data('type');
+
+      var data = get_api_parser_data();
+
+      $('#'+target).empty();
+
+      $.post(
+        fetch_frontend_api_parser_data_uri,
+        data,
+
+        function(response){
+          $(btn).prop('disabled', false);
+          $(btn).html(initial_test_button_text);
+          if (!check_json_error(response))
+            return;
+
+          var data = response.data;
+          if (type_target == "select"){
+            for (var i in data)
+              $('#'+target).append(new Option(data[i], data[i]))
+          }
+        }
+      )
+    })
+
+    $('#test_api_parser').unbind('click');
+    $('#test_api_parser').on('click', function(){
+      PNotify.removeAll();
+      if($('#id_api_parser_type').val() == "") {
+        notify('error', gettext('Error'), gettext('Select an API Parser Type'))
+        return
+      }
+
+      var btn = this;
+      $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+      $(btn).prop('disabled', true);
+
+      var data = get_api_parser_data();
+
+      $.post(
+        test_frontend_apiparser_uri,
+        data,
+      )
+      .done(function(response){
+        if (!check_json_error(response)){
+          $('#id_api_parser_has_been_tested').val('0');
+          return;
+        }
+        var data = response.data;
+        $('#id_api_parser_has_been_tested').val('1');
+        $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
+        $('#modal-test-apiparser').modal('show');
+
+      })
+      .fail(function(response){
+        notify('error', response.status, response.responseText);
+        fetch_api_collector_form($('#id_api_parser_type').val(), data);
+      })
+      .always(function(){
+        $(btn).prop('disabled', false);
+        $(btn).html(initial_test_button_text);
+      })
+    })
+  }
 
   /* All events to refresh (re-apply) after a table is modified */
   function refresh_table_events() {
@@ -426,6 +399,15 @@ $(function() {
     }
   }).trigger('change');
 
+  //TODO add/check correct bindings to show/hide new collector fields (without impacting current fields, that stay for filebeat configuration for now)
+  $('#id_use_proxy').on('change', function(e){
+    if ($(this).is(':checked')) {
+      $(`#id_custom_proxy`).show();
+    } else {
+      $(`#id_custom_proxy`).hide();
+    }
+  }).trigger('change');
+
   $('#id_api_parser_verify_ssl').on('change', function(e){
     if ($(this).is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
       $('#api_parser_custom_certificate').show();
@@ -445,7 +427,7 @@ $(function() {
     }
     refresh_api_parser_type($(this).val());
     $('#id_api_parser_verify_ssl').trigger('change');
-  }).trigger('change');
+  });
 
 
   /* Refresh http sub-class attributes show/hide */

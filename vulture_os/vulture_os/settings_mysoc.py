@@ -32,7 +32,7 @@ LOGS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("LOGS_PATH", "var/log"))
 API_PARSER_LOGS_PATH = os_path.join(LOGS_PATH, env.str("API_PARSER_LOGS_PATH", "vulture/os/api_parser.log"))
 
 AVAILABLE_APPS = [
-    'api_collector.apps.ApiCollectorConfig',
+    'api_collector',
 ]
 
 CRONJOBS = [
