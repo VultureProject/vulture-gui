@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [API_PARSER] [SENTINEL_ONE_GRAPH] Fix error if a MITRE tactic or technique is None
+- [API_PARSER] [SENTINEL_ONE_GRAPH] Fix the error when alert is None in the result of the alert details request
 
 
 ## [2.34.3] - 2025-12-05
