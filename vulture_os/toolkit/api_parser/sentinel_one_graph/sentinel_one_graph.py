@@ -278,10 +278,11 @@ class SentinelOneGraphParser(ApiParser):
                     tactics.append(attack.get("tactic"))
                     techniques.append(attack.get("technique"))
 
-        log["mitre_technique_ids"] = list(set([x.get("uid") for x in techniques]))
-        log["mitre_technique_names"] = list(set([x.get("name") for x in techniques]))
-        log["mitre_tactic_ids"] = list(set([x.get("uid") for x in tactics]))
-        log["mitre_tactic_names"] = list(set([x.get("name") for x in tactics]))
+        log["mitre_technique_ids"] = list(set([x.get("uid") for x in techniques if x is not None]))
+        log["mitre_technique_names"] = list(set([x.get("name") for x in techniques if x is not None]))
+
+        log["mitre_tactic_ids"] = list(set([x.get("uid") for x in tactics if x is not None]))
+        log["mitre_tactic_names"] = list(set([x.get("name") for x in tactics if x is not None]))
 
         # needs_attention
         resolved = log.get('resolved')
