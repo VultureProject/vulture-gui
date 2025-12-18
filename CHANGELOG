@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [SERVICES] [FILEBEAT] Move filebeat module template to share directory
 ### Fixed
 - [API_PARSER] [MS_SENTINEL] Put back the 5 minutes delay
 - [API_PARSER] [SENTINEL_ONE_GRAPH] Fix the error when alert is None in the result of the alert details request
