@@ -27,9 +27,8 @@ __parser__ = 'GENERIC COLLECTOR'
 # Django system imports
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import DatabaseError, models
+from django.db import models
 # from djongo import models
 
 # Django project imports
@@ -89,7 +88,7 @@ class ApiCollector(models.Model):
         help_text=_("Verify SSL"),
         verbose_name=_("Verify certificate")
     )
-    custom_certificate = models.ForeignKey(
+    x509_cert = models.ForeignKey(
         to=X509Certificate,
         blank=True,
         null=True,
@@ -121,9 +120,9 @@ class ApiCollector(models.Model):
         return self.last_collected_timestamps['default']
 
     @property
-    def _custom_certificate_bundle(self):
-        if self.verify_ssl and self.custom_certificate:
-            return self.custom_certificate.bundle_filename
+    def custom_certificate(self):
+        if self.verify_ssl and self.x509_cert:
+            return self.x509_cert.bundle_filename
         return None
 
     @property
@@ -174,7 +173,6 @@ class ApiCollector(models.Model):
         if current_thread() is main_thread():
             signal(SIGINT, self._handle_stop)
             signal(SIGTERM, self._handle_stop)
-
 
 
     def get_system_proxy(self) -> dict[str, str]:
@@ -239,6 +237,7 @@ class ApiCollector(models.Model):
                 self._socket.sendall(line + b"\n")
                 cpt += 1
             except Exception as e:
+                self.__socket__ = None
                 msg = f"Failed to send to Rsyslog : {e}"
                 logger.error(f"[{__parser__}]:write_to_file: {msg}", extra={'frontend': str(self.frontend)})
                 self.update_lock()

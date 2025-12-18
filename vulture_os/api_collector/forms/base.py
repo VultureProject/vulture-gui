@@ -49,7 +49,7 @@ class GenericApiCollectorForm(ModelForm):
         queryset=X509Certificate.objects.all(),
         widget=Select(attrs={'class': 'form-control select2'}),
         required=False,
-        label=ApiCollector.custom_certificate.field.verbose_name,
+        label=ApiCollector.x509_cert.field.verbose_name,
     )
 
     class Meta:
