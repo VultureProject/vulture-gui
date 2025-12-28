@@ -247,6 +247,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [WAF_CLOUDFLARE] Avoid querying the API with data from more than a week ago
 - [API_PARSER] [CISCO_DUO] Increment time pointer by 1s at the end of a run to avoid duplicates
 - [API_PARSER] [TRENDMICRO_VISIONONE] Add retries and check for total count
+- [API_PARSER] [BEYONDTRUST_REPORTINGS] Catch invalid lines
 - [GUI] [FRONTEND] Don't show Redis mode when unnecessary
 
 
