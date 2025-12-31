@@ -33,6 +33,7 @@ from system.cluster.models import Cluster, Node
 from gui.forms.form_utils import DivErrorList
 from django.utils.translation import gettext_lazy as _
 from toolkit.api.responses import build_response
+from toolkit.network.network import is_valid_ip4, is_valid_ip6
 
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -180,7 +181,8 @@ def cluster_edit(request, object_id, api=False, update=False):
             node.api_request('toolkit.network.network.restart_routing')
 
         if ip_changed:
-            Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (node.name, node.management_ip))
+            if is_valid_ip4(node.management_ip) or is_valid_ip6(node.management_ip):
+                Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (node.name, node.management_ip))
             node.api_request('toolkit.network.network.write_management_ips')
 
         if pstats_forwarders_changed:

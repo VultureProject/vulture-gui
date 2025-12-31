@@ -2611,7 +2611,7 @@ class Listener(models.Model):
             'tls_profiles': [tls.pk for tls in self.tls_profiles.all()],
             'max_src': self.max_src,
             'max_rate': self.max_rate,
-            'addr_port': "{}:{}".format(self.network_address.ip, self.port),
+            'addr_port': str(self),
             'is_tls': self.is_tls
         }
 
@@ -2620,7 +2620,7 @@ class Listener(models.Model):
         return self.tls_profiles.count() > 0
 
     def __str__(self):
-        return "{}:{}".format(self.network_address.ip, self.port)
+        return f"{self.network_address.pf_interface}:{self.port}"
 
     @staticmethod
     def str_attrs():

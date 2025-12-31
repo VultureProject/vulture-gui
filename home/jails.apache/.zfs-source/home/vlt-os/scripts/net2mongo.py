@@ -34,7 +34,7 @@ from django.conf import settings
 django.setup()
 
 from system.cluster.models import (Cluster, NetworkInterfaceCard,
-                                NetworkAddress, NetworkAddressNIC)
+                                NetworkAddress, NetworkAddressNIC, NET_ADDR_TYPES)
 
 
 
@@ -43,7 +43,6 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('daemon')
 
 import re
-import subprocess
 
 PATTERN_IFCONFIG = re.compile('^ifconfig_(.*)="?\'?([^"\']*)"?\'?')
 PATTERN_GATEWAY = re.compile("^defaultrouter=(.*)")
@@ -89,7 +88,7 @@ def refresh_physical_NICs(node):
             d, created = NetworkInterfaceCard.objects.get_or_create(
                 dev=nic,
                 node=node)
-            if created:
+            if not created:
                 logger.debug("Node::refresh_physical_NICs: NIC {} exists in database".format(d.dev))
             else:
                 logger.info("Node::refresh_physical_NICs: Creating NIC {}".format(nic))
@@ -102,8 +101,7 @@ def parse_ifconfig_key(line, config):
     split = line.split("_")
 
     if len(split) > 3:
-        logger.error(f"Node::parse_ifconfig_key: could not parse line '{line}',"
-                        " problem is on '{tmp}' (too many '_', don't know how to read)")
+        logger.error(f"Node::parse_ifconfig_key: could not parse line '{line}', (too many '_', don't know how to read)")
         return False
 
     if "ipv6" in split:
@@ -137,10 +135,9 @@ def parse_ifconfig_key(line, config):
 def parse_ifconfig_values(line, config):
     parse_success = False
 
-    if line.upper() in ['DHCP', 'SYNCDHCP']:
+    if line.upper() in ['DHCP', 'SYNCDHCP', 'INET6 ACCEPT_RTADV']:
         logger.debug("Node::parse_ifconfig_values: interface is configured for DHCP")
-        config['dhcp'] = True
-        config['type'] = "system"
+        config['type'] = "dynamic"
         return True
 
     if config.get('ipv6'):
@@ -266,36 +263,6 @@ if __name__ == "__main__":
                 if 'nic' not in config:
                     config['nic'] = [config['name'] + config['iface_id']]
 
-                if config.get('dhcp'):
-                    try:
-                        proc = subprocess.Popen([
-                            '/usr/local/bin/sudo',
-                            '/home/vlt-os/scripts/get_dhcp_address.sh',
-                            config['nic'][0]],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        success, error = proc.communicate()
-                        if error:
-                            logger.error("Node::network_sync: {}".format(str(error)))
-                            continue
-                        else:
-                            tmp = success.rstrip().decode('utf-8')
-                            config['ip'], config['prefix_or_netmask'], gw = tmp.split(",")
-                            logger.debug("Node::network_sync: Found DHCP ip: {}".format(config['ip']))
-                            logger.debug("Node::network_sync: Found DHCP netmask/prefix: {}".format(config['prefix_or_netmask']))
-                            logger.debug("Node::network_sync: Found DHCP gateway: {}".format(gw))
-
-                        if ":" in config['ip']:
-                            config['ipv6'] = True
-                            if not defaultgateway_ipv6:
-                                defaultgateway_ipv6 = gw
-                        else:
-                            if not defaultgateway:
-                                defaultgateway = gw
-
-                    except Exception as e:
-                        logger.error("Node::network_sync: {}".format(str(e)))
-                        continue
-
             else:
                 found_gateway = parse_gateway_config(line, config)
 
@@ -318,35 +285,43 @@ if __name__ == "__main__":
                     logger.exception(e)
                     continue
 
-                if config['type'] == "system":
-                    logger.info("Node::network_sync: Handling system interface configuration...")
+                logger.info(f"Node::network_sync: Handling {config['type']}{config['iface_id']} configuration...")
+                if config['type'] in ("system", "dynamic"):
                     link = NetworkAddressNIC.objects.filter(
-                        network_address__type='system',
+                        network_address__type=config['type'],
+                        network_address__ip_version=6 if config.get('ipv6') else 4,
                         nic=interfaces[0]
                     ).first()
 
                     if not link:
                         logger.info(f"Node::network_sync: Creating new IP address on NIC {interfaces[0].dev} : "
-                                    f"{config['ip']}/{config['prefix_or_netmask']}")
+                                    f"{config.get('ip')}/{config.get('prefix_or_netmask')}")
 
+                        if config['type'] == "dynamic":
+                            addr_name = f"{this_node.name} {dict(NET_ADDR_TYPES)[config['type']]} {interfaces[0].dev}"
+                        else:
+                            addr_name = dict(NET_ADDR_TYPES)[config['type']] 
                         address = NetworkAddress(
-                            name="System",
-                            type="system",
+                            name=addr_name,
+                            type=config['type'],
                             ip=config.get('ip'),
                             prefix_or_netmask=config.get('prefix_or_netmask'),
                             fib=config.get('fib', 0)
                         )
+                        if config.get('ipv6'):
+                            address.ip_version = 6
+                        else:
+                            address.ip_version = 4
                         address.save()
                     else:
                         logger.info(f"Node::network_sync: Updating IP address on NIC {interfaces[0].dev} : "
-                                    f"{config['ip']}/{config['prefix_or_netmask']}")
+                                    f"{config.get('ip')}/{config.get('prefix_or_netmask')}")
                         address = link.network_address
                         address.ip = config.get('ip')
                         address.prefix_or_netmask = config.get('prefix_or_netmask')
                         address.fib = config.get('fib', 0)
                         address.save()
                 elif config['type'] in ['alias', 'vlan', 'lagg']:
-                    logger.info(f"Node::network_sync: Handling {config['type']}{config['iface_id']} configuration...")
                     address, created = NetworkAddress.objects.update_or_create(
                         type=config['type'],
                         iface_id=config['iface_id'],
@@ -354,12 +329,12 @@ if __name__ == "__main__":
                             'name': config['name'] + config['iface_id'],
                             'ip': config.get('ip'),
                             'prefix_or_netmask': config.get('prefix_or_netmask'),
-                            'fib': config.get('fib', 0), 
+                            'fib': config.get('fib', 0),
                             'carp_vhid': config.get('carp_vhid', 0),
                             'vlan': config.get('vlan', 0),
                             'lagg_proto': config.get('lagg_proto', ''),
                         })
-                    
+
                     logger.info("Node::network_sync: {} Network Address configuration {}".format("created" if created else "updated", address))
 
 
