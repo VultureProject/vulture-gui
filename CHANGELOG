@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [API_PARSER] [ARMIS_CENTRIX] Limit fetch quantity while testing collector
 - [API_PARSER] [TRENDMICRO_VISIONONE] Drop too long fields
+- [API_PARSER] [MS_SENTINEL] Wait when we receive a too many request error
 
 
 ## [2.34.2] - 2025-11-24

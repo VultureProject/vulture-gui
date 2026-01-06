@@ -128,6 +128,15 @@ class MSSentinelParser(ApiParser):
             proxies=self.proxies,
             verify=self.api_parser_verify_ssl
         )
+        if response.status_code == 429 and response.headers["Retry-After"]:
+            retry_after = int(response.headers["Retry-After"])
+            self.evt_stop.wait(retry_after)
+            response = self.session.post(
+                url,
+                params=params,
+                proxies=self.proxies,
+                verify=self.api_parser_verify_ssl
+            )
 
         if response.status_code != 200:
             logger.error(f"[{__parser__}]:get_incidents: Error at API Call: {response.content}",
@@ -192,6 +201,16 @@ class MSSentinelParser(ApiParser):
             proxies=self.proxies,
             verify=self.api_parser_verify_ssl
         )
+        if response.status_code == 429 and response.headers["Retry-After"]:
+            retry_after = int(response.headers["Retry-After"])
+            self.evt_stop.wait(retry_after)
+            response = self.session.post(
+                url,
+                params=params,
+                data="toto",
+                proxies=self.proxies,
+                verify=self.api_parser_verify_ssl
+            )
 
         if response.status_code == 401:
             return False, _('Authentication failed')
@@ -226,6 +245,15 @@ class MSSentinelParser(ApiParser):
             proxies=self.proxies,
             verify=self.api_parser_verify_ssl
         )
+        if response.status_code == 429 and response.headers["Retry-After"]:
+            retry_after = int(response.headers["Retry-After"])
+            self.evt_stop.wait(retry_after)
+            response = self.session.get(
+                url,
+                params=params,
+                proxies=self.proxies,
+                verify=self.api_parser_verify_ssl
+            )
 
         if response.status_code == 401:
             return False, _('Authentication failed')
