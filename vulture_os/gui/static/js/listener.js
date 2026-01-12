@@ -40,6 +40,22 @@ $(function() {
     .done(function(response){
       //TODO ensure objects and JS is refreshed to show correctly
       $('#api_collector_form_div').html(response);
+      $('#id_use_proxy').on('change', function(e){
+        if ($(this).is(':checked')) {
+          $(`#collector_custom_proxy`).show();
+        } else {
+          $(`#collector_custom_proxy`).hide();
+        }
+      }).trigger('change');
+      $('#id_verify_ssl').on('change', function(e){
+        if ($(this).is(':checked')) {
+          $(`#collector_custom_certificate`).show();
+        } else {
+          $(`#collector_custom_certificate`).hide();
+        }
+      }).trigger('change');
+      redrawSwitch("id_use_proxy");
+      redrawSwitch("id_verify_ssl");
     })
     .fail(function(response){
       notify('error', response.status, "Could not load collector's details");
@@ -392,29 +408,16 @@ $(function() {
   $('#id_api_parser_use_proxy').on('change', function(e){
     if ($(this).is(':checked')) {
       $('#api_parser_custom_proxy').show();
-      $(`#id_${$('#id_api_parser_type').val().replace('_', '')}collectorform-custom_proxy`).show();
     } else {
       $('#api_parser_custom_proxy').hide();
-      $(`#id_${$('#id_api_parser_type').val().replace('_', '')}collectorform-custom_proxy`).hide();
-    }
-  }).trigger('change');
-
-  //TODO add/check correct bindings to show/hide new collector fields (without impacting current fields, that stay for filebeat configuration for now)
-  $('#id_use_proxy').on('change', function(e){
-    if ($(this).is(':checked')) {
-      $(`#id_custom_proxy`).show();
-    } else {
-      $(`#id_custom_proxy`).hide();
     }
   }).trigger('change');
 
   $('#id_api_parser_verify_ssl').on('change', function(e){
     if ($(this).is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
       $('#api_parser_custom_certificate').show();
-      $(`#id_${$('#id_api_parser_type').val().replace('_', '')}collectorform-custom_certificate`).show();
     } else {
       $('#api_parser_custom_certificate').hide();
-      $(`#id_${$('#id_api_parser_type').val().replace('_', '')}collectorform-custom_certificate`).hide();
     }
   }).trigger('change');
 

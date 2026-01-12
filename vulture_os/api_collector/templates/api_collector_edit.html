@@ -2,7 +2,7 @@
 
 <div class="col-md-12 api_collectors_row" id="collector_{{form.name}}_row">
     {% for field in form %}
-    <div class="form-group">
+    <div class="form-group" id="collector_{{ field.name }}">
         <label class="col-sm-3 control-label">{{ field.label }}</label>
         <div class="col-sm-5">
             {{ field }}
