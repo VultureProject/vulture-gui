@@ -44,7 +44,7 @@ class ServicesConfig(AppConfig):
     name = 'services'
     
     @staticmethod
-    def get_available_api_collectors_list():
+    def get_available_api_collectors_dict():
         _api_collectors = dict()
         for config in apps.get_app_configs():
             if hasattr(config, "_api_collectors"):
@@ -52,31 +52,16 @@ class ServicesConfig(AppConfig):
         return _api_collectors
 
     @staticmethod
-    def api_collectors_generic_form():
-        _api_collectors_generic_form = None
-        for config in apps.get_app_configs():
-            if hasattr(config, "_api_collectors_generic_form"):
-                _api_collectors_generic_form = getattr(config, "_api_collectors_generic_form", {})
-        return _api_collectors_generic_form
-
-    @staticmethod
-    def api_collectors_forms():
-        forms = dict()
-        for collector_name, config in ServicesConfig.get_available_api_collectors_list().items():
-            # forms.append(config.get('form')(prefix=config.get('form')().name))
-            # forms.append(config.get('form')(prefix=f"{collector_name}collectorform"))
-            forms[collector_name] = config['form']
-        return forms
-
-    @staticmethod
     def api_collectors_get_form(collector_name, instance=None, data=None):
         try:
-            form = ServicesConfig.get_available_api_collectors_list()[collector_name]['form']
+            form = ServicesConfig.get_available_api_collectors_dict()[collector_name]['form']
         except KeyError:
             return None
-        # return form(instance=instance, prefix=form().name)
         return form(data, instance=instance)
 
     @staticmethod
     def api_collectors_get_model(collector_name):
-        return ServicesConfig.get_available_api_collectors_list()[collector_name]['model']
+        try:
+            return ServicesConfig.get_available_api_collectors_dict()[collector_name]['model']
+        except KeyError:
+            return None

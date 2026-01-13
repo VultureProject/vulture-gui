@@ -48,7 +48,7 @@ $(function() {
         }
       }).trigger('change');
       $('#id_verify_ssl').on('change', function(e){
-        if ($(this).is(':checked')) {
+        if ($(this).is(':checked') && !api_parser_blacklist.includes(type_)) {
           $(`#collector_custom_certificate`).show();
         } else {
           $(`#collector_custom_certificate`).hide();
@@ -413,6 +413,8 @@ $(function() {
     }
   }).trigger('change');
 
+  // we need to trigger it first to activate test button 
+  refresh_api_parser_type($('#id_api_parser_type').val());
   $('#id_api_parser_verify_ssl').on('change', function(e){
     if ($(this).is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
       $('#api_parser_custom_certificate').show();
@@ -426,12 +428,11 @@ $(function() {
       $('#test_api_parser').prop("disabled", true);
     } else {
       $('#test_api_parser').prop("disabled", false);
-      fetch_api_collector_form($(this).val());
+      fetch_api_collector_form($(this).val(), get_api_parser_data());
     }
     refresh_api_parser_type($(this).val());
     $('#id_api_parser_verify_ssl').trigger('change');
   });
-
 
   /* Refresh http sub-class attributes show/hide */
   function refresh_http() {

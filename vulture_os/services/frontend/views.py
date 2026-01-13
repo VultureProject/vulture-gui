@@ -443,10 +443,6 @@ def frontend_edit(request, object_id=None, api=False):
         if not custom_actions_form.is_valid():
             form.add_error("custom_actions", custom_actions_form.errors.get("custom_actions", []) if api else custom_actions_form.errors.as_data().get("custom_actions", []))
 
-        # api_collectors_generic_form = CustomActionsForm({'custom_actions': form.data.get("custom_actions", [])}, auto_id=False)
-        # if not custom_actions_form.is_valid():
-        #     form.add_error("custom_actions", custom_actions_form.errors.get("custom_actions", []) if api else custom_actions_form.errors.as_data().get("custom_actions", []))
-
         # TODO ensure logic is correct for first save, modification with new parser_type, and modification with same parser_type
         if form.data.get("mode", "") == "log" and form.data.get("listening_mode", "") == "api":
             if "api_parser_type" not in form.changed_data:
