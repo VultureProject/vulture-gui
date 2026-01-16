@@ -47,7 +47,6 @@ GUI_LOGS_PATH = os_path.join(LOGS_PATH, env.str("GUI_LOGS_PATH", "vulture/os/gui
 SERVICES_LOGS_PATH = os_path.join(LOGS_PATH, env.str("SERVICES_LOGS_PATH", "vulture/os/services.log"))
 DAEMON_LOGS_PATH = os_path.join(LOGS_PATH, env.str("DAEMON_LOGS_PATH", "vulture/os/cluster.log"))
 CRONTAB_LOGS_PATH = os_path.join(LOGS_PATH, env.str("CRONTAB_LOGS_PATH", "vulture/os/crontab.log"))
-API_PARSER_LOGS_PATH = os_path.join(LOGS_PATH, env.str("API_PARSER_LOGS_PATH", "vulture/os/api_parser.log"))
 AUTHENTICATION_LOGS_PATH = os_path.join(LOGS_PATH, env.str("AUTHENTICATION_LOGS_PATH", "vulture/os/authentication.log"))
 SYSTEM_LOGS_PATH = os_path.join(LOGS_PATH, env.str("SYSTEM_LOGS_PATH", "vulture/os/system.log"))
 
@@ -239,9 +238,6 @@ LOG_SETTINGS = {
         'simple': {
             'format': '%(levelname)s %(message)s'
         },
-        'api_parser': {
-            'format': '%(asctime)s %(module)s:%(lineno)d [%(levelname)s][%(frontend)s][PID:%(process)d] %(message)s'
-        }
     },
     'filters': {
         'require_debug_true': {
@@ -308,13 +304,6 @@ LOG_SETTINGS = {
             'filename': CRONTAB_LOGS_PATH,
             'mode': 'a'
         },
-        'api_parser': {
-            'class': 'logging.handlers.WatchedFileHandler',
-            'level': LOG_LEVEL,
-            'formatter': 'api_parser',
-            'filename': API_PARSER_LOGS_PATH,
-            'mode': 'a'
-        },
         'authentication': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
@@ -367,11 +356,6 @@ LOG_SETTINGS = {
         },
         'crontab': {
             'handlers': ('crontab', 'console'),
-            'level': LOG_LEVEL,
-            'propagate': True
-        },
-        'api_parser': {
-            'handlers': ('api_parser', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },

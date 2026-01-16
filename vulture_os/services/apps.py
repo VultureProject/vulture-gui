@@ -37,7 +37,7 @@ from django.conf import settings
 import logging
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('api_parser')
+logger = logging.getLogger('services')
 
 
 class ServicesConfig(AppConfig):
