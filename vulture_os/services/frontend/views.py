@@ -776,8 +776,9 @@ def frontend_test_apiparser(request):
 
 
 def frontend_fetch_apiparser_data(request):
+    type_collector = ""
     try:
-        type_parser = request.POST.get('api_parser_type')
+        type_collector = request.POST.get('api_parser_type')
 
         data = {}
         for k, v in request.POST.items():
@@ -786,15 +787,21 @@ def frontend_fetch_apiparser_data(request):
 
             data[k] = v
 
-        parser = ServicesConfig.api_collectors_get_model(type_parser)
-        return JsonResponse(parser.fetch_data())
+        collector = ServicesConfig.api_collectors_get_model(type_collector)
+        if collector:
+            return JsonResponse(collector.fetch_data())
+        else:
+            return JsonResponse({
+                'status': False,
+                'error': f"Unknown collector {type_collector}"
+            }, status=404)
 
     except Exception as e:
-        logger.error(e, exc_info=1)
+        logger.exception(f"Unexpected error while trying to fetch data for collector {type_collector}")
         return JsonResponse({
             'status': False,
             'error': str(e)
-        })
+        }, status=500)
 
 
 COMMAND_LIST = {
