@@ -40,22 +40,6 @@ $(function() {
     .done(function(response){
       //TODO ensure objects and JS is refreshed to show correctly
       $('#api_collector_form_div').html(response);
-      $('#id_use_proxy').on('change', function(e){
-        if ($(this).is(':checked')) {
-          $(`#collector_custom_proxy`).show();
-        } else {
-          $(`#collector_custom_proxy`).hide();
-        }
-      }).trigger('change');
-      $('#id_verify_ssl').on('change', function(e){
-        if ($(this).is(':checked') && !api_parser_blacklist.includes(type_)) {
-          $(`#collector_custom_certificate`).show();
-        } else {
-          $(`#collector_custom_certificate`).hide();
-        }
-      }).trigger('change');
-      redrawSwitch("id_use_proxy");
-      redrawSwitch("id_verify_ssl");
     })
     .fail(function(response){
       notify('error', response.status, "Could not load collector's details");
@@ -67,18 +51,23 @@ $(function() {
   }
 
   function get_api_parser_data() {
-    var data = {
+    let data = {
       api_parser_type: $('#id_api_parser_type').val(),
     };
 
-    $('#api_collector_form_div input').each(function(){
-      var name = $(this).attr('name');
+    $('#api_collector_form_div input, #api_collector_form_div select').each(function(){
+      let name = $(this).attr('name');
       switch($(this).attr('type')){
         case "checkbox":
           data[name] = $(this).is(':checked');
           break;
         default:
-          data[name] = $(this).val();
+          if (name === "custom_certificate") {
+            if (data['verify_ssl'] === true && !api_parser_blacklist.includes(data.api_parser_type))
+              data[name] = $(this).val();
+          }
+          else
+            data[name] = $(this).val();
           break;
       }
     })
@@ -87,12 +76,10 @@ $(function() {
   }
 
   function refresh_api_parser_type(type_){
-    $('.api_clients_row').hide();
     $('.api_collectors_row').hide();
 
     if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
       $('#id_node').hide();
-      $('#api_' + type_ + "_row").show();
       $(`#collector_${type_.replace('_', '')}collectorform_row`).show();
 
       if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
@@ -180,6 +167,24 @@ $(function() {
         $(btn).html(initial_test_button_text);
       })
     })
+
+    $('#id_use_proxy').on('change', function(e){
+      if ($(this).is(':checked')) {
+        $(`#collector_custom_proxy`).show();
+      } else {
+        $(`#collector_custom_proxy`).hide();
+      }
+    }).trigger('change');
+    $('#id_verify_ssl').on('change', function(e){
+      if ($(this).is(':checked') && !api_parser_blacklist.includes(type_)) {
+        $(`#collector_custom_certificate`).show();
+      } else {
+        $(`#collector_custom_certificate`).hide();
+      }
+    }).trigger('change');
+    redrawSwitch('id_use_proxy');
+    redrawSwitch('id_verify_ssl');
+    refresh_table_events();
   }
 
   /* All events to refresh (re-apply) after a table is modified */
@@ -911,10 +916,8 @@ $(function() {
 $(function(){
     var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
     elems.forEach(function(html) {
-      var switchery = new Switchery(html);
+      redrawSwitch(html.id);
     });
-    redrawSwitch('id_enable_logging');
-    redrawSwitch('id_redis_use_local');
     $("#id_kafka_options").tagsinput({
                     freeInput: true,
                     typeaheadjs: {
