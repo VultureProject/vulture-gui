@@ -62,7 +62,7 @@ $(function() {
           data[name] = $(this).is(':checked');
           break;
         default:
-          if (name === "custom_certificate") {
+          if (name === "x509_cert") {
             if (data['verify_ssl'] === true && !api_parser_blacklist.includes(data.api_parser_type))
               data[name] = $(this).val();
           }
@@ -177,9 +177,9 @@ $(function() {
     }).trigger('change');
     $('#id_verify_ssl').on('change', function(e){
       if ($(this).is(':checked') && !api_parser_blacklist.includes(type_)) {
-        $(`#collector_custom_certificate`).show();
+        $(`#collector_x509_cert`).show();
       } else {
-        $(`#collector_custom_certificate`).hide();
+        $(`#collector_x509_cert`).hide();
       }
     }).trigger('change');
     redrawSwitch('id_use_proxy');
