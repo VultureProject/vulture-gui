@@ -47,7 +47,6 @@ from services.rsyslogd.form import CustomActionsForm, RsyslogConditionForm
 from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
-from toolkit.api_parser.utils import get_api_parser
 from toolkit.network.network import parse_proxy_url
 
 # Required exceptions imports
@@ -787,7 +786,7 @@ def frontend_fetch_apiparser_data(request):
 
             data[k] = v
 
-        parser = get_api_parser(type_parser)(data)
+        parser = ServicesConfig.api_collectors_get_model(type_parser)
         return JsonResponse(parser.fetch_data())
 
     except Exception as e:

@@ -24,7 +24,6 @@ __doc__ = 'Job to fetch API Clients log'
 
 
 from django.conf import settings
-from toolkit.api_parser.utils import get_api_parser
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 from time import sleep
@@ -36,39 +35,30 @@ logger = logging.getLogger('api_parser')
 
 
 def execute_parser(frontend):
-    parser_class = get_api_parser(frontend['api_parser_type'])
-
-    # tenant_name has been introduced later in Vulture-GUI
-    # As a result, it may be nonexisting on some vulture instance whose configurations have not been updated
-    # So define a 'fake' one to prevent a KeyError
     try:
-        frontend['tenant_name']
-    except KeyError:
-        frontend['tenant_name'] = "PleaseChangeMe"
-    try:
-        parser = parser_class(frontend)
-        if not parser.can_run():
-            logger.info("API Parser {} (tenant={}): already running".format(frontend['name'], frontend['tenant_name']),
-                        extra={'frontend': str(frontend['name'])})
+        collector = frontend.api_collector
+        if not collector.can_run():
+            logger.info("API Collector {} (tenant={}): already running".format(frontend.name, frontend.tenants_config.name),
+                        extra={'frontend': str(frontend.name)})
             return
 
-        logger.info("API Parser {} (tenant={}): starting".format(frontend['name'], frontend['tenant_name']),
-                    extra={'frontend': str(frontend['name'])})
-        parser.execute()
+        logger.info("API Collector {} (tenant={}): starting".format(frontend.name, frontend.tenants_config.name),
+                    extra={'frontend': str(frontend.name)})
+        collector.execute()
         try:
-            parser.frontend.status[Cluster.get_current_node().name] = "OPEN"
+            collector.frontend.status[Cluster.get_current_node().name] = "OPEN"
         except Exception as e:
             logger.exception(e)
     except Exception as e:
-        logger.error(f"API Parser {frontend['name']} (tenant={frontend['tenant_name']}) failure : ",
-                     extra={'frontend': str(frontend['name'])})
-        logger.exception(e, extra={'frontend': str(frontend['name'])})
-        parser.frontend.status[Cluster.get_current_node().name] = "ERROR"
+        logger.error(f"API Collector {frontend.name} (tenant={frontend.tenants_config.name}) failure : ",
+                     extra={'frontend': str(frontend.name)})
+        logger.exception(e, extra={'frontend': str(frontend.name)})
+        collector.frontend.status[Cluster.get_current_node().name] = "ERROR"
     finally:
         # Delete running key in redis
-        logger.info("API Parser {} (tenant={}): ending".format(frontend['name'], frontend['tenant_name']),
-                    extra={'frontend': str(frontend['name'])})
-        parser.finish()
+        logger.info("API Collector {} (tenant={}): ending".format(frontend.name, frontend.tenants_config.name),
+                    extra={'frontend': str(frontend.name)})
+        collector.finish()
 
 def node_selected(current_node, frontend):
     """ Small routine that verify if this node has to run the collector """
@@ -99,7 +89,7 @@ def api_clients_parser():
     processes = []
     for frontend in api_clients_parser:
         if node_selected(current_node, frontend):
-            p = Process(target=execute_parser, name=frontend.name, args=(frontend.to_dict(),))
+            p = Process(target=execute_parser, name=frontend.name, args=(frontend,))
             p.start()
             processes.append(p)
 

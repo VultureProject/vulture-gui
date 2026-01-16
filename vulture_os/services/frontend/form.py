@@ -35,6 +35,7 @@ from applications.logfwd.models import LogOM
 from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
+from services.apps import ServicesConfig
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
                                       REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES,
@@ -45,7 +46,6 @@ from services.rsyslogd.form import RsyslogQueueForm
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkAddress
 from system.error_templates.models import ErrorTemplate
-from toolkit.api_parser.utils import get_available_api_parser
 from toolkit.network.network import parse_proxy_url
 from system.pki.models import TLSProfile, X509Certificate
 from system.cluster.models import Node
@@ -132,7 +132,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
         AVAILABLE_API_PARSER = [("", "--------")]
         AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
-                                     for parser in get_available_api_parser()]) #ici
+                                     for parser in ServicesConfig.api_collectors_forms().keys()])
 
         """ Darwin policy """
         self.fields['darwin_policies'] = ModelMultipleChoiceField(

@@ -52,6 +52,13 @@ class ServicesConfig(AppConfig):
         return _api_collectors
 
     @staticmethod
+    def api_collectors_forms():
+        forms = dict()
+        for collector_name, config in ServicesConfig.get_available_api_collectors_dict().items():
+            forms[collector_name] = config['form']
+        return forms
+
+    @staticmethod
     def api_collectors_get_form(collector_name, instance=None, data=None):
         try:
             form = ServicesConfig.get_available_api_collectors_dict()[collector_name]['form']
