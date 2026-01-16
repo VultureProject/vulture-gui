@@ -372,6 +372,7 @@ LOG_SETTINGS = {
     },
 }
 
+# Handle optional modules
 for file in glob(f"{SETTINGS_DIR}/settings_*.py"):
     module_name = os_path.basename(file).split('.')[0]
     # Load python code from file
@@ -382,10 +383,27 @@ for file in glob(f"{SETTINGS_DIR}/settings_*.py"):
         sys.modules[module_name] = module
         spec.loader.exec_module(module)
         # Check selected settings presence to merge into global Django settings
+
         if hasattr(module, "AVAILABLE_APPS"):
             INSTALLED_APPS.extend(module.AVAILABLE_APPS)
+
         if hasattr(module, "CRONJOBS"):
             CRONJOBS.extend(module.CRONJOBS)
+
+        if hasattr(module, "TEMPLATES"):
+            for template in module.TEMPLATES:
+                if backend := template.get('BACKEND'):
+                    for main_template in TEMPLATES:
+                        if backend == main_template.get('BACKEND'):
+                            for k,v in template.items():
+                                if isinstance(v, dict):
+                                    try:
+                                        main_template[k].update(v)
+                                    except KeyError:
+                                        main_template[k] = v
+                                if isinstance(v, list):
+                                    main_template[k].extend(v)
+
         if hasattr(module, "LOG_SETTINGS"):
             for k,v in module.LOG_SETTINGS.items():
                 try:
