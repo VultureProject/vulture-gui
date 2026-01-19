@@ -684,7 +684,7 @@ def frontend_edit(request, object_id=None, api=False):
                 frontend,
                 custom_actions_form=custom_actions_form,
                 api_collector_form=api_collector_form,
-                save_error=["Failed to save object in database :\n{}".format(e),
+                save_error=[f"Failed to save object in database :{e}",
                     str.join('', format_exception(*exc_info()))]
             )
 

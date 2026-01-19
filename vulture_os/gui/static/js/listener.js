@@ -11,8 +11,8 @@ if (!String.prototype.endsWith) {
 }
 
 /* Redraw a switch to take new properties into account */
-function redrawSwitch(id) {
-  elem = document.getElementById(id);
+function redrawSwitch(elem) {
+  if (elem === undefined) return;
   elem.removeAttribute('readonly');
   while(elem.nextElementSibling) elem.nextElementSibling.remove();
   Switchery(elem);
@@ -174,23 +174,25 @@ $(function() {
       })
     })
 
-    $('#id_use_proxy').on('change', function(e){
-      if ($(this).is(':checked')) {
-        $(`#collector_custom_proxy`).show();
-      } else {
-        $(`#collector_custom_proxy`).hide();
-      }
-    }).trigger('change');
-    $('#id_verify_ssl').on('change', function(e){
-      if ($(this).is(':checked') && !api_parser_blacklist.includes(type_)) {
-        $(`#collector_x509_cert`).show();
-      } else {
-        $(`#collector_x509_cert`).hide();
-      }
-    }).trigger('change');
-    redrawSwitch('id_use_proxy');
-    redrawSwitch('id_verify_ssl');
-    $('#id_x509_cert').select2();
+    if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
+      $('#id_use_proxy').on('change', function(e){
+        if ($(this).is(':checked')) {
+          $(`#collector_custom_proxy`).show();
+        } else {
+          $(`#collector_custom_proxy`).hide();
+        }
+      }).trigger('change');
+      $('#id_verify_ssl').on('change', function(e){
+        if ($(this).is(':checked') && !api_parser_blacklist.includes(type_)) {
+          $(`#collector_x509_cert`).show();
+        } else {
+          $(`#collector_x509_cert`).hide();
+        }
+      }).trigger('change');
+      redrawSwitch($('#id_use_proxy')[0]);
+      redrawSwitch($('#id_verify_ssl')[0]);
+      $('#id_x509_cert').select2();
+    }
   }
 
   /* All events to refresh (re-apply) after a table is modified */
@@ -225,7 +227,7 @@ $(function() {
           && $('#id_redis_password').val() === redis_local.password
         ) {
       $('#id_redis_use_local').prop('checked', true).trigger('change');
-      redrawSwitch('id_redis_use_local');
+      redrawSwitch($('#id_redis_use_local')[0]);
     }
 
     if ($("#id_redis_use_local").is(':checked')) {
@@ -587,7 +589,7 @@ $(function() {
         $('#id_enable_logging_reputation').trigger("click");
       }
     }
-    redrawSwitch('id_enable_logging');
+    redrawSwitch($('#id_enable_logging')[0]);
   }).trigger("change");
 
   $('#id_darwin_policies').on("change", function(e) {
@@ -913,7 +915,7 @@ $(function() {
 $(function(){
     var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
     elems.forEach(function(html) {
-      redrawSwitch(html.id);
+      redrawSwitch(html);
     });
     $("#id_kafka_options").tagsinput({
                     freeInput: true,
