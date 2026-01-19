@@ -114,11 +114,9 @@ $(function() {
       $.post(
         fetch_frontend_api_parser_data_uri,
         data,
-
-        function(response){
-          $(btn).prop('disabled', false);
-          $(btn).html(initial_test_button_text);
-          if (!check_json_error(response))
+      )
+      .done(function(response){
+        if (!check_json_error(response))
             return;
 
           var data = response.data;
@@ -126,8 +124,15 @@ $(function() {
             for (var i in data)
               $('#'+target).append(new Option(data[i], data[i]))
           }
-        }
-      )
+      })
+      .fail(function(response){
+        notify('error', response.status, response.responseText);
+        fetch_api_collector_form($('#id_api_parser_type').val(), data);
+      })
+      .always(function(){
+        $(btn).prop('disabled', false);
+        $(btn).html(initial_fetch_data_button_text);
+      })
     })
 
     $('#test_api_parser').unbind('click');

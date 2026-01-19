@@ -776,28 +776,31 @@ def frontend_test_apiparser(request):
 
 
 def frontend_fetch_apiparser_data(request):
-    type_collector = ""
+    collector_type = ""
     try:
-        type_collector = request.POST.get('api_parser_type')
+        collector_type = request.POST.get('api_parser_type')
+        collector_form = ServicesConfig.api_collectors_get_form(collector_name=collector_type, data=request.POST)
+        assert collector_form, f"Unknown collector {collector_type}"
 
-        data = {}
-        for k, v in request.POST.items():
-            if v in ('false', 'true'):
-                v = v == 'true'
-
-            data[k] = v
-
-        collector = ServicesConfig.api_collectors_get_model(type_collector)
-        if collector:
-            return JsonResponse(collector.fetch_data())
-        else:
+        if not collector_form.is_valid():
+            logger.error(f"Collector '{collector_type}' form errors: {collector_form.errors.as_json()}")
             return JsonResponse({
                 'status': False,
-                'error': f"Unknown collector {type_collector}"
-            }, status=404)
+                'error': "Some fields are not valid",
+                'errors': collector_form.errors.as_json(),
+            }, status=400)
+
+        collector_instance = collector_form.save(commit=False)
+        return JsonResponse(collector_instance.fetch_data())
+
+    except AssertionError as e:
+        return JsonResponse({
+            'status': False,
+            'error': str(e)
+        }, status=404)
 
     except Exception as e:
-        logger.exception(f"Unexpected error while trying to fetch data for collector {type_collector}")
+        logger.exception(f"Unexpected error while trying to fetch data for collector {collector_type}")
         return JsonResponse({
             'status': False,
             'error': str(e)
