@@ -132,7 +132,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
         AVAILABLE_API_PARSER = [("", "--------")]
         AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
-                                     for parser in ServicesConfig.api_collectors_forms().keys()])
+                                     for parser in ServicesConfig.get_available_api_collectors_dict().keys()])
 
         """ Darwin policy """
         self.fields['darwin_policies'] = ModelMultipleChoiceField(
