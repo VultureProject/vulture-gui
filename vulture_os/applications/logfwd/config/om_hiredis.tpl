@@ -37,7 +37,7 @@
             stream.outField="{{stream_outfield}}"
             stream.capacityLimit="{{stream_capacitylimit}}"
         {%- endif %}
-            Template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}_json{% endif %}"
+            Template="{% if send_as_raw %}raw_message_nolf{% else %}{{ out_template }}_json{% endif %}"
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
             queue.dequeuebatchsize="{{dequeue_size}}"
