@@ -27,6 +27,7 @@ import secrets
 import signal
 import string
 
+from datetime import timezone as dt_timezone
 from django.test import TestCase
 from django.utils import timezone
 from unittest.mock import patch, Mock
@@ -188,7 +189,7 @@ class ApiParserTestCase(TestCase):
         )
         for _, timestamp_value in collector.last_collected_timestamps.items():
             self.assertIsInstance(timestamp_value, timezone.datetime)
-            self.assertEqual(timestamp_value.tzinfo, timezone.utc)
+            self.assertEqual(timestamp_value.tzinfo, dt_timezone.utc)
 
 
     @patch('socket.socket')
