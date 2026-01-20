@@ -193,6 +193,7 @@ class CortexXDRParser(ApiParser):
             return None
 
     def format_log(self, log, kind):
+        log['observer_hostname'] = self.cortex_xdr_host
         log['kind'] = kind
 
         log_timestamp = log.get(self.event_kinds[kind]['time_field'], log.get(self.event_kinds[kind]['default_time_field']))
