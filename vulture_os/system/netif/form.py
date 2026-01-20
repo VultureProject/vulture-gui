@@ -119,7 +119,7 @@ class NetIfForm(ModelForm):
                 raise ValidationError("vlan must be 0 or an integer corresponding to VLAN ID")
         else:
             value = 0
-        
+
         return value
 
     def clean_fib(self):
