@@ -105,6 +105,7 @@ $(function() {
       PNotify.removeAll();
 
       var btn = this;
+      initial_fetch_data_button_text = $(btn).html();
       $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
       $(btn).prop('disabled', true);
 
