@@ -24,6 +24,7 @@ __doc__ = 'Access Control Form'
 
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.auth_access_control.models import OPERATOR_CHOICES
+from gui.forms.form_utils import bootstrap_tooltips
 from django.conf import settings
 from django import forms
 import logging
@@ -45,6 +46,7 @@ class AuthAccessControlForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['rules'].required = False
 
     def clean(self):

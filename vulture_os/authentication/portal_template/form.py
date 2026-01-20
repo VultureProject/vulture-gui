@@ -31,6 +31,7 @@ from django.utils.translation import gettext_lazy as _
 
 # Django project imports
 from authentication.portal_template.models import PortalTemplate
+from gui.forms.form_utils import bootstrap_tooltips
 
 # Required exceptions imports
 
@@ -114,6 +115,7 @@ class PortalTemplateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
 
 
 class TemplateImageForm(Form):

@@ -24,16 +24,20 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Backends & Servers dedicated form classes'
 
 # Django system imports
-from django.utils.translation import gettext_lazy as _
-from django.utils.crypto import get_random_string
 from django.conf import settings
 from django.forms import (ModelForm, CheckboxInput, NumberInput, SelectMultiple, TextInput)
-import validators
-import logging
+from django.utils.crypto import get_random_string
+from django.utils.translation import gettext_lazy as _
 
 # Django project imports
+from gui.forms.form_utils import bootstrap_tooltips
 from workflow.models import Workflow, CORS_METHODS
 
+# Extern modules imports
+import validators
+
+# Logger configuration imports
+import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -57,6 +61,7 @@ class WorkflowForm(ModelForm):
     def __init__(self, *args, **kwargs):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['cors_allowed_methods'].empty_label = ""
 
     # Exclude LOG Frontends

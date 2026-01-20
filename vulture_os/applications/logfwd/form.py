@@ -76,6 +76,7 @@ class LogOMForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory']:
             self.fields[field_name].required = False
 

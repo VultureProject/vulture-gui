@@ -23,39 +23,39 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Cluster main models'
 
 
-from system.config.models import Config
-
-from toolkit.network.network import is_valid_ip4, is_valid_ip6, is_valid_hostname, is_loopback
-from toolkit.network.route import get_route_interface
-from toolkit.mongodb.mongo_base import MongoBase
-from toolkit.redis.redis_base import RedisBase
-from toolkit.mongodb.mongo_base import parse_uristr
-
+# Django system imports
+from django.conf import settings
 from django.db.models import Q
 from django.db.utils import DatabaseError
-from django.utils.translation import gettext as _
-from django.utils.module_loading import import_string
-from django.utils import timezone
-from django.conf import settings
 from django.forms.models import model_to_dict
+from django.utils import timezone
+from django.utils.module_loading import import_string
+from django.utils.translation import gettext as _
 from djongo import models
-import subprocess
-import ipaddress
-from iptools.ipv4 import netmask2prefix
-import time
 
+# Django project imports
 from applications.logfwd.models import LogOM, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
+from system.config.models import Config
 from system.pki.models import X509Certificate
+from toolkit.mongodb.mongo_base import MongoBase, parse_uristr
+from toolkit.network.network import get_hostname, is_valid_ip4, is_valid_ip6, is_valid_hostname, is_loopback
+from toolkit.network.route import get_route_interface
+from toolkit.redis.redis_base import RedisBase
+
+# Required exceptions imports
 from services.exceptions import ServiceExit
 
+# Extern modules imports
+import ipaddress
+import subprocess
+import time
+from iptools.ipv4 import netmask2prefix
 from re import findall as re_findall, compile as re_compile
 
+# Logger configuration imports
 import logging
-import logging.config
-
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
-
 
 JAILS = ("apache", "mongodb", "redis", "rsyslog", "haproxy")
 
