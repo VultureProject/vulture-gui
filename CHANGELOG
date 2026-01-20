@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- [API_PARSER] Migrate collectors as external modules
+- [SETTINGS] Allow importing custom and optional modules to the Django project
+### Removed
+- [API_PARSER] Remove most of the code related to api collectors, now loaded as a separate module
+### Fixed
+- [SETTINGS] Set and use correct REDIS HOST parameter value
 
 
 ## [2.34.4] - 2025-12-17
