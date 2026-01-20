@@ -25,7 +25,12 @@ __doc__ = 'Listeners View'
 
 # Django system imports
 from django.conf import settings
-from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect)
+from django.http import (JsonResponse,
+                         HttpResponse,
+                         HttpResponseServerError,
+                         HttpResponseBadRequest,
+                         HttpResponseForbidden,
+                         HttpResponseRedirect)
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
@@ -35,13 +40,13 @@ from django.utils.translation import gettext_lazy as _
 from applications.logfwd.models import LogOM
 from darwin.policy.models import DarwinBuffering, DarwinPolicy
 from gui.forms.form_utils import DivErrorList
+from services.apps import ServicesConfig
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener, FILEBEAT_MODULE_CONFIG
 from services.rsyslogd.form import CustomActionsForm, RsyslogConditionForm
 from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
-from toolkit.api_parser.utils import get_api_parser
 from toolkit.network.network import parse_proxy_url
 
 # Required exceptions imports
@@ -245,9 +250,12 @@ def frontend_edit(request, object_id=None, api=False):
     node_listeners = dict()
     custom_actions_form = None
     darwin_buffering_needs_refresh = False
+    old_api_collector = None
+    api_collector_form = None
     if object_id:
         try:
             frontend = Frontend.objects.get(pk=object_id)
+            old_api_collector = frontend.api_collector
         except ObjectDoesNotExist:
             if api:
                 return JsonResponse({'error': _("Object does not exist.")}, status=404)
@@ -257,10 +265,21 @@ def frontend_edit(request, object_id=None, api=False):
     empty = {} if api else None
     if hasattr(request, "JSON") and api:
         validate = request.JSON.get('validate', True)
-        form = FrontendForm(request.JSON or {}, instance=frontend, error_class=DivErrorList)
+        form = FrontendForm(request.JSON or empty, instance=frontend, error_class=DivErrorList)
+        if frontend:
+            # TODO ensure form is correctly instanciated and used while loading existing Frontend on GUI
+            api_collector_form = ServicesConfig.api_collectors_get_form(
+                frontend.api_parser_type,
+                old_api_collector,
+                data=request.JSON or empty)
     else:
         validate = request.POST.get('validate', True) not in (False, "false", "False")
         form = FrontendForm(request.POST or empty, instance=frontend, error_class=DivErrorList)
+        if frontend:
+            api_collector_form = ServicesConfig.api_collectors_get_form(
+                frontend.api_parser_type,
+                old_api_collector,
+                data=request.POST or empty)
 
     def render_form(front, **kwargs):
         save_error = kwargs.get('save_error')
@@ -305,7 +324,8 @@ def frontend_edit(request, object_id=None, api=False):
                        'custom_actions': custom_actions_form,
                        'condition_line_form': RsyslogConditionForm(auto_id=False),
                        'filebeat_module_config': filebeat_configs,
-                       'object_id': (frontend.id if frontend else "") or "", **kwargs})
+                       'api_collector_form': api_collector_form,
+                       'object_id': (frontend.pk if frontend else "") or "", **kwargs})
 
     if request.method in ("POST", "PUT"):
         """ Handle JSON formatted listeners """
@@ -422,6 +442,23 @@ def frontend_edit(request, object_id=None, api=False):
         if not custom_actions_form.is_valid():
             form.add_error("custom_actions", custom_actions_form.errors.get("custom_actions", []) if api else custom_actions_form.errors.as_data().get("custom_actions", []))
 
+        if form.data.get("mode", "") == "log" and form.data.get("listening_mode", "") == "api":
+            if "api_parser_type" not in form.changed_data:
+                # No change of mode, listening_mode or collector type, object can just be modified without deletion
+                old_api_collector = None
+            else:
+                # Create a new form for the new collector type
+                api_collector_form = ServicesConfig.api_collectors_get_form(
+                    form.data.get("api_parser_type"),
+                    None,
+                    (request.JSON if api else request.POST) or empty
+                )
+
+            if not api_collector_form:
+                form.add_error(None, f"Unknown collector {form.data.get('api_parser_type')}")
+            elif not api_collector_form.is_valid():
+                form.add_error(None, api_collector_form.errors.as_json() if api else api_collector_form.errors.as_data().values())
+
         old_nodes = frontend.get_nodes() if frontend else []
         old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.has_rsyslog_conf else ""
         old_filebeat_filename = frontend.get_filebeat_base_filename() if frontend and frontend.has_filebeat_conf else ""
@@ -439,7 +476,8 @@ def frontend_edit(request, object_id=None, api=False):
             logger.error("Frontend form errors: {}".format(form.errors.as_json()))
             return render_form(
                 frontend,
-                custom_actions_form=custom_actions_form
+                custom_actions_form=custom_actions_form,
+                api_collector_form=api_collector_form,
             )
 
         # Save the form to get an id if there is not already one
@@ -467,6 +505,7 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
+                api_collector_form=api_collector_form,
                 save_error=[str(e), e.traceback]
             )
 
@@ -475,6 +514,7 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
+                api_collector_form=api_collector_form,
                 save_error=["No referenced error",
                         str.join('', format_exception(*exc_info()))]
             )
@@ -501,6 +541,7 @@ def frontend_edit(request, object_id=None, api=False):
                         return render_form(
                             frontend,
                             custom_actions_form=custom_actions_form,
+                            api_collector_form=api_collector_form,
                         )
 
                 frontend.log_forwarders_id = log_forwarders
@@ -545,6 +586,18 @@ def frontend_edit(request, object_id=None, api=False):
                                                          enabled=reputationctx.enabled,
                                                          arg_field=reputationctx.arg_field,
                                                          dst_field=reputationctx.dst_field)
+
+            """ Handle api collector changes """
+            # Having a value here means a collector was linked to this Frontend but doesn't need anymore
+            if old_api_collector:
+                old_api_collector.delete()
+            # This is set only if a collector was set up
+            if api_collector_form:
+                # Can be a previously-existing collector, or a new one
+                api_collector = api_collector_form.save(commit=False)
+                api_collector.frontend = frontend
+                logger.debug(f"Saving api_collector {str(api_collector)}")
+                api_collector.save()
 
             new_nodes = frontend.reload_conf()
             for node in new_nodes:
@@ -619,6 +672,7 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
+                api_collector_form=api_collector_form,
                 save_error=[str(e), e.traceback]
             )
 
@@ -628,7 +682,8 @@ def frontend_edit(request, object_id=None, api=False):
             return render_form(
                 frontend,
                 custom_actions_form=custom_actions_form,
-                save_error=["Failed to save object in database :\n{}".format(e),
+                api_collector_form=api_collector_form,
+                save_error=[f"Failed to save object in database :{e}",
                     str.join('', format_exception(*exc_info()))]
             )
 
@@ -678,55 +733,77 @@ def frontend_pause(request, object_id, api=False):
     return JsonResponse({'status': True, 'message': res})
 
 
-def frontend_test_apiparser(request):
+def frontend_api_collector_form(request, collector_name):
     try:
-        type_parser = request.POST.get('api_parser_type')
-
-        data = {}
-        for k, v in request.POST.items():
-            if v in ('false', 'true'):
-                v = v == "true"
-
-            data[k] = v
-
-        if data.get('api_parser_use_proxy', True) and data.get('api_parser_custom_proxy', None):
-            # parse_proxy_url will validate and return a correct url
-            proxy = parse_proxy_url(data.get('api_parser_custom_proxy', None))
-            if not proxy:
-                return JsonResponse({'status': False, 'error': "Wrong proxy format"})
-            data['api_parser_custom_proxy'] = proxy
-
-        parser = get_api_parser(type_parser)(data)
-        return JsonResponse(parser.test())
+        collector_form = ServicesConfig.api_collectors_get_form(collector_name, data=request.GET or None)
+        return HttpResponse(collector_form.render())
 
     except Exception as e:
-        logger.error(e, exc_info=1)
+        logger.exception(f"Error while getting collector '{collector_name}' form: {e}")
+        return HttpResponseServerError()
+
+
+def frontend_test_apiparser(request):
+    try:
+        collector_type = request.POST.get('api_parser_type')
+        collector_form = ServicesConfig.api_collectors_get_form(collector_name=collector_type, data=request.POST)
+        assert collector_form, f"Unknown collector {collector_type}"
+
+        if not collector_form.is_valid():
+            logger.error(f"Collector '{collector_type}' form errors: {collector_form.errors.as_json()}")
+            return JsonResponse({
+                'status': False,
+                'error': "Some fields are not valid",
+                'errors': collector_form.errors.as_json(),
+            }, status=400)
+
+        collector_instance = collector_form.save(commit=False)
+        return JsonResponse(collector_instance.test())
+
+    except AssertionError as e:
         return JsonResponse({
             'status': False,
             'error': str(e)
-        })
+        }, status=404)
+
+    except Exception as e:
+        logger.exception(e)
+        return JsonResponse({
+            'status': False,
+            'error': str(e)
+        }, status=500)
 
 
 def frontend_fetch_apiparser_data(request):
+    collector_type = ""
     try:
-        type_parser = request.POST.get('api_parser_type')
+        collector_type = request.POST.get('api_parser_type')
+        collector_form = ServicesConfig.api_collectors_get_form(collector_name=collector_type, data=request.POST)
+        assert collector_form, f"Unknown collector {collector_type}"
 
-        data = {}
-        for k, v in request.POST.items():
-            if v in ('false', 'true'):
-                v = v == 'true'
+        if not collector_form.is_valid():
+            logger.error(f"Collector '{collector_type}' form errors: {collector_form.errors.as_json()}")
+            return JsonResponse({
+                'status': False,
+                'error': "Some fields are not valid",
+                'errors': collector_form.errors.as_json(),
+            }, status=400)
 
-            data[k] = v
+        collector_instance = collector_form.save(commit=False)
+        return JsonResponse(collector_instance.fetch_data())
 
-        parser = get_api_parser(type_parser)(data)
-        return JsonResponse(parser.fetch_data())
-
-    except Exception as e:
-        logger.error(e, exc_info=1)
+    except AssertionError as e:
         return JsonResponse({
             'status': False,
             'error': str(e)
-        })
+        }, status=404)
+
+    except Exception as e:
+        logger.exception(f"Unexpected error while trying to fetch data for collector {collector_type}")
+        return JsonResponse({
+            'status': False,
+            'error': str(e)
+        }, status=500)
 
 
 COMMAND_LIST = {

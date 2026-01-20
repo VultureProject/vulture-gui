@@ -16,6 +16,9 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
 
 import environ
+import importlib.util
+import sys
+from glob import glob
 from os import path as os_path
 from toolkit.network.network import get_hostname
 from toolkit.system.secret_key import set_key
@@ -44,7 +47,6 @@ GUI_LOGS_PATH = os_path.join(LOGS_PATH, env.str("GUI_LOGS_PATH", "vulture/os/gui
 SERVICES_LOGS_PATH = os_path.join(LOGS_PATH, env.str("SERVICES_LOGS_PATH", "vulture/os/services.log"))
 DAEMON_LOGS_PATH = os_path.join(LOGS_PATH, env.str("DAEMON_LOGS_PATH", "vulture/os/cluster.log"))
 CRONTAB_LOGS_PATH = os_path.join(LOGS_PATH, env.str("CRONTAB_LOGS_PATH", "vulture/os/crontab.log"))
-API_PARSER_LOGS_PATH = os_path.join(LOGS_PATH, env.str("API_PARSER_LOGS_PATH", "vulture/os/api_parser.log"))
 AUTHENTICATION_LOGS_PATH = os_path.join(LOGS_PATH, env.str("AUTHENTICATION_LOGS_PATH", "vulture/os/authentication.log"))
 SYSTEM_LOGS_PATH = os_path.join(LOGS_PATH, env.str("SYSTEM_LOGS_PATH", "vulture/os/system.log"))
 
@@ -181,7 +183,7 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-REDISIP = env.str('REDIS_HOST', '127.0.0.1')
+REDISIP = env.str('REDIS_HOST', '127.0.0.5')
 REDISPORT = env.int('REDIS_PORT', 6379)
 
 LOGIN_URL = "/login/"
@@ -236,9 +238,6 @@ LOG_SETTINGS = {
         'simple': {
             'format': '%(levelname)s %(message)s'
         },
-        'api_parser': {
-            'format': '%(asctime)s %(module)s:%(lineno)d [%(levelname)s][%(frontend)s][PID:%(process)d] %(message)s'
-        }
     },
     'filters': {
         'require_debug_true': {
@@ -305,13 +304,6 @@ LOG_SETTINGS = {
             'filename': CRONTAB_LOGS_PATH,
             'mode': 'a'
         },
-        'api_parser': {
-            'class': 'logging.handlers.WatchedFileHandler',
-            'level': LOG_LEVEL,
-            'formatter': 'api_parser',
-            'filename': API_PARSER_LOGS_PATH,
-            'mode': 'a'
-        },
         'authentication': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
@@ -367,11 +359,6 @@ LOG_SETTINGS = {
             'level': LOG_LEVEL,
             'propagate': True
         },
-        'api_parser': {
-            'handlers': ('api_parser', 'console'),
-            'level': LOG_LEVEL,
-            'propagate': True
-        },
         'authentication': {
             'handlers': ('authentication', 'console'),
             'level': LOG_LEVEL,
@@ -384,6 +371,45 @@ LOG_SETTINGS = {
         },
     },
 }
+
+# Handle optional modules
+for file in glob(f"{SETTINGS_DIR}/settings_*.py"):
+    module_name = os_path.basename(file).split('.')[0]
+    # Load python code from file
+    spec = importlib.util.spec_from_file_location(module_name, file)
+    if spec and spec.loader:
+        # Load python module from loaded spec in runtime
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        # Check selected settings presence to merge into global Django settings
+
+        if hasattr(module, "AVAILABLE_APPS"):
+            INSTALLED_APPS.extend(module.AVAILABLE_APPS)
+
+        if hasattr(module, "CRONJOBS"):
+            CRONJOBS.extend(module.CRONJOBS)
+
+        if hasattr(module, "TEMPLATES"):
+            for template in module.TEMPLATES:
+                if backend := template.get('BACKEND'):
+                    for main_template in TEMPLATES:
+                        if backend == main_template.get('BACKEND'):
+                            for k,v in template.items():
+                                if isinstance(v, dict):
+                                    try:
+                                        main_template[k].update(v)
+                                    except KeyError:
+                                        main_template[k] = v
+                                if isinstance(v, list):
+                                    main_template[k].extend(v)
+
+        if hasattr(module, "LOG_SETTINGS"):
+            for k,v in module.LOG_SETTINGS.items():
+                try:
+                    LOG_SETTINGS[k].update(v)
+                except KeyError:
+                    LOG_SETTINGS[k] = v
 
 TITLE = "VULTURE OS"
 VERSION = "0.1"

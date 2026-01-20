@@ -2271,6 +2271,12 @@ class Frontend(RsyslogQueue, models.Model):
         return result
 
     @property
+    def api_collector(self):
+        if self.mode == "log" and self.listening_mode == "api" and self.api_parser_type:
+            return getattr(self, f"{self.api_parser_type.replace('_', '')}collector_set").first()
+        return None
+
+    @property
     def api_rsyslog_port(self):
         return 20000+self.id
 

@@ -10,145 +10,9 @@ if (!String.prototype.endsWith) {
   };
 }
 
-function get_api_parser_data(type_){
-  var data = {
-    api_parser_type: $('#id_api_parser_type').val(),
-    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked'),
-    api_parser_custom_proxy: $('#id_api_parser_custom_proxy').val(),
-    api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked')
-  };
-
-  if ($('#id_api_parser_verify_ssl').is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
-    data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val();
-  }
-
-  $("#api_" + type_ + "_row input").each(function(){
-    var name = $(this).attr('name');
-    switch($(this).attr('type')){
-      case "checkbox":
-        data[name] = $(this).is(':checked');
-        break;
-      case "text":
-        data[name] = $(this).val();
-        break;
-      case "password":
-        data[name] = $(this).val();
-        break;
-    }
-  })
-
-  $('#api_'+ type_ + "_row textarea").each(function(){
-    var name = $(this).attr('name');
-    data[name] = $(this).val();
-  })
-
-  $('#api_' + type_ + "_row select").each(function(){
-    var name = $(this).attr('name');
-    data[name] = $(this).val();
-  })
-
-  return data;
-}
-
-function refresh_api_parser_type(type_){
-  $('.api_clients_row').hide();
-
-  if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
-    $('#id_node').hide();
-    $('#api_' + type_ + "_row").show();
-
-    if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
-      $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');
-    } else if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
-      $('#id_ruleset').val("api_" + type_).trigger('change');
-    } else if ($("#id_ruleset option[value='" + type_ + "-ecs']").length > 0) {
-      $('#id_ruleset').val(type_ + "-ecs").trigger('change');
-    } else if ($("#id_ruleset option[value='" + type_ + "']").length > 0) {
-      $('#id_ruleset').val(type_).trigger('change');
-    } else {
-      $('#id_ruleset').val('generic_json').trigger('change');
-    }
-  }
-
-  $('.fetch_data_api_parser').unbind('click');
-  $('.fetch_data_api_parser').on('click', function(){
-    PNotify.removeAll();
-
-    var btn = this;
-    var txt = $(btn).html();
-    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
-    $(btn).prop('disabled', true);
-
-    var target = $(this).data('target');
-    var type_target = $(this).data('type');
-
-    var data = get_api_parser_data(type_);
-
-    $('#'+target).empty();
-
-    $.post(
-      fetch_frontend_api_parser_data_uri,
-      data,
-
-      function(response){
-        $(btn).prop('disabled', false);
-        $(btn).html(txt);
-        if (!check_json_error(response))
-          return;
-
-        var data = response.data;
-        if (type_target == "select"){
-          for (var i in data)
-            $('#'+target).append(new Option(data[i], data[i]))
-        }
-      }
-    )
-  })
-
-  $('#test_api_parser').unbind('click');
-  $('#test_api_parser').on('click', function(){
-    PNotify.removeAll();
-    if($('#id_api_parser_type').val() == "") {
-      notify('error', gettext('Error'), gettext('Select an API Parser Type'))
-      return
-    }
-
-    var btn = this;
-    var txt = $(btn).html();
-    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
-    $(btn).prop('disabled', true);
-
-    var data = get_api_parser_data(type_);
-
-    $.post(
-      test_frontend_apiparser_uri,
-      data,
-
-      function(response){
-        $(btn).prop('disabled', false);
-        $(btn).html(txt);
-        if (!check_json_error(response)){
-          $('#id_api_parser_has_been_tested').val('0');
-          return;
-        }
-
-        var data = response.data;
-        $('#id_api_parser_has_been_tested').val('1');
-        $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
-        $('#modal-test-apiparser').modal('show');
-      }
-    ).fail(function(response){
-      notify('error', response.status, response.responseText)
-
-      $(btn).prop('disabled', false);
-      $(btn).html(txt);
-    })
-  })
-}
-
 /* Redraw a switch to take new properties into account */
-function redrawSwitch(id) {
-  elem = document.getElementById(id);
+function redrawSwitch(elem) {
+  if (elem === undefined) return;
   elem.removeAttribute('readonly');
   while(elem.nextElementSibling) elem.nextElementSibling.remove();
   Switchery(elem);
@@ -159,6 +23,182 @@ function editing_existing_object() {
 }
 
 $(function() {
+
+  var initial_test_button_text = $('#test_api_parser').html();
+
+  function fetch_api_collector_form(type_, data) {
+    PNotify.removeAll();
+
+    let btn = $('#test_api_parser');
+    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+    $(btn).prop('disabled', true);
+
+    $.get(
+      fetch_api_collector_form_uri.replace('collector_name', type_),
+      data
+    )
+    .done(function(response){
+      //TODO ensure objects and JS is refreshed to show correctly
+      $('#api_collector_form_div').html(response);
+      // Refresh tags-input bootstrap fields after their import in the DOM
+      $('#api_collector_form_div').find('[data-role="tagsinput"]').each(function(index){
+        $( this ).tagsinput();
+      });
+    })
+    .fail(function(response){
+      notify('error', response.status, "Could not load collector's details");
+    })
+    .always(function(){
+      $(btn).prop('disabled', false);
+      $(btn).html(initial_test_button_text);
+      refresh_api_parser_type(type_);
+    })
+  }
+
+  function get_api_parser_data() {
+    let data = {
+      api_parser_type: $('#id_api_parser_type').val(),
+    };
+
+    $('#api_collector_form_div input, #api_collector_form_div select').each(function(){
+      let name = $(this).attr('name');
+      switch($(this).attr('type')){
+        case "checkbox":
+          data[name] = $(this).is(':checked');
+          break;
+        default:
+          if (name === "x509_cert") {
+            if (data['verify_ssl'] === true && !api_parser_blacklist.includes(data.api_parser_type))
+              data[name] = $(this).val();
+          }
+          else
+            data[name] = $(this).val();
+          break;
+      }
+    })
+
+    return data;
+  }
+
+  function refresh_api_parser_type(type_){
+    $('.api_collectors_row').hide();
+
+    if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
+      $('#id_node').hide();
+      $(`#collector_${type_.replaceAll('_', '')}collectorform_row`).show();
+
+      if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
+        $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');
+      } else if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
+        $('#id_ruleset').val("api_" + type_).trigger('change');
+      } else if ($("#id_ruleset option[value='" + type_ + "-ecs']").length > 0) {
+        $('#id_ruleset').val(type_ + "-ecs").trigger('change');
+      } else if ($("#id_ruleset option[value='" + type_ + "']").length > 0) {
+        $('#id_ruleset').val(type_).trigger('change');
+      } else {
+        $('#id_ruleset').val('generic_json').trigger('change');
+      }
+    }
+
+    $('.fetch_data_api_parser').unbind('click');
+    $('.fetch_data_api_parser').on('click', function(){
+      PNotify.removeAll();
+
+      var btn = this;
+      initial_fetch_data_button_text = $(btn).html();
+      $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+      $(btn).prop('disabled', true);
+
+      var target = $(this).data('target');
+      var type_target = $(this).data('type');
+
+      var data = get_api_parser_data();
+
+      $('#'+target).empty();
+
+      $.post(
+        fetch_frontend_api_parser_data_uri,
+        data,
+      )
+      .done(function(response){
+        if (!check_json_error(response))
+            return;
+
+          var data = response.data;
+          if (type_target == "select"){
+            for (var i in data)
+              $('#'+target).append(new Option(data[i], data[i]))
+          }
+      })
+      .fail(function(response){
+        notify('error', response.status, response.responseText);
+        fetch_api_collector_form($('#id_api_parser_type').val(), data);
+      })
+      .always(function(){
+        $(btn).prop('disabled', false);
+        $(btn).html(initial_fetch_data_button_text);
+      })
+    })
+
+    $('#test_api_parser').unbind('click');
+    $('#test_api_parser').on('click', function(){
+      PNotify.removeAll();
+      if($('#id_api_parser_type').val() == "") {
+        notify('error', gettext('Error'), gettext('Select an API Parser Type'))
+        return
+      }
+
+      var btn = this;
+      $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+      $(btn).prop('disabled', true);
+
+      var data = get_api_parser_data();
+
+      $.post(
+        test_frontend_apiparser_uri,
+        data,
+      )
+      .done(function(response){
+        if (!check_json_error(response)){
+          $('#id_api_parser_has_been_tested').val('0');
+          return;
+        }
+        var data = response.data;
+        $('#id_api_parser_has_been_tested').val('1');
+        $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
+        $('#modal-test-apiparser').modal('show');
+
+      })
+      .fail(function(response){
+        notify('error', response.status, response.responseText);
+        fetch_api_collector_form($('#id_api_parser_type').val(), data);
+      })
+      .always(function(){
+        $(btn).prop('disabled', false);
+        $(btn).html(initial_test_button_text);
+      })
+    })
+
+    if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
+      $('#id_use_proxy').on('change', function(e){
+        if ($(this).is(':checked')) {
+          $(`#collector_custom_proxy`).show();
+        } else {
+          $(`#collector_custom_proxy`).hide();
+        }
+      }).trigger('change');
+      $('#id_verify_ssl').on('change', function(e){
+        if ($(this).is(':checked') && !api_parser_blacklist.includes(type_)) {
+          $(`#collector_x509_cert`).show();
+        } else {
+          $(`#collector_x509_cert`).hide();
+        }
+      }).trigger('change');
+      redrawSwitch($('#id_use_proxy')[0]);
+      redrawSwitch($('#id_verify_ssl')[0]);
+      $('#id_x509_cert').select2();
+    }
+  }
 
   /* All events to refresh (re-apply) after a table is modified */
   function refresh_table_events() {
@@ -192,7 +232,7 @@ $(function() {
           && $('#id_redis_password').val() === redis_local.password
         ) {
       $('#id_redis_use_local').prop('checked', true).trigger('change');
-      redrawSwitch('id_redis_use_local');
+      redrawSwitch($('#id_redis_use_local')[0]);
     }
 
     if ($("#id_redis_use_local").is(':checked')) {
@@ -386,23 +426,22 @@ $(function() {
   $('#id_api_parser_use_proxy').on('change', function(e){
     if ($(this).is(':checked')) {
       $('#api_parser_custom_proxy').show();
-    } else $('#api_parser_custom_proxy').hide();
+    } else {
+      $('#api_parser_custom_proxy').hide();
+    }
   }).trigger('change');
 
-  $('#id_api_parser_verify_ssl').on('change', function(e){
-    if ($(this).is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
-      $('#api_parser_custom_certificate').show();
-    } else $('#api_parser_custom_certificate').hide();
-  }).trigger('change');
+  // we need to trigger it first to activate test button
+  refresh_api_parser_type($('#id_api_parser_type').val());
 
   $('#id_api_parser_type').on('change', function(){
     if($(this).val() == "") {
       $('#test_api_parser').prop("disabled", true);
-    } else $('#test_api_parser').prop("disabled", false);
-    refresh_api_parser_type($(this).val());
-    $('#id_api_parser_verify_ssl').trigger('change');
-  }).trigger('change');
-
+    } else {
+      $('#test_api_parser').prop("disabled", false);
+      fetch_api_collector_form($(this).val());
+    }
+  });
 
   /* Refresh http sub-class attributes show/hide */
   function refresh_http() {
@@ -555,7 +594,7 @@ $(function() {
         $('#id_enable_logging_reputation').trigger("click");
       }
     }
-    redrawSwitch('id_enable_logging');
+    redrawSwitch($('#id_enable_logging')[0]);
   }).trigger("change");
 
   $('#id_darwin_policies').on("change", function(e) {
@@ -881,10 +920,8 @@ $(function() {
 $(function(){
     var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
     elems.forEach(function(html) {
-      var switchery = new Switchery(html);
+      redrawSwitch(html);
     });
-    redrawSwitch('id_enable_logging');
-    redrawSwitch('id_redis_use_local');
     $("#id_kafka_options").tagsinput({
                     freeInput: true,
                     typeaheadjs: {

@@ -53,6 +53,10 @@ urlpatterns = [
             views.frontend_pause,
             name="services.frontend.pause"),
 
+    path('services/frontend/api_collector_forms/<str:collector_name>',
+            views.frontend_api_collector_form,
+            name="services.frontend.api_collector_form"),
+
     re_path('^services/frontend/test_apiparser/',
             views.frontend_test_apiparser,
             name="services.frontend.test_apiparser"),

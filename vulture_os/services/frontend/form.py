@@ -35,6 +35,7 @@ from applications.logfwd.models import LogOM
 from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
+from services.apps import ServicesConfig
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
                                       REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES,
@@ -45,7 +46,6 @@ from services.rsyslogd.form import RsyslogQueueForm
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkAddress
 from system.error_templates.models import ErrorTemplate
-from toolkit.api_parser.utils import get_available_api_parser
 from toolkit.network.network import parse_proxy_url
 from system.pki.models import TLSProfile, X509Certificate
 from system.cluster.models import Node
@@ -132,7 +132,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
         AVAILABLE_API_PARSER = [("", "--------")]
         AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
-                                     for parser in get_available_api_parser()])
+                                     for parser in ServicesConfig.get_available_api_collectors_dict().keys()])
 
         """ Darwin policy """
         self.fields['darwin_policies'] = ModelMultipleChoiceField(
@@ -320,9 +320,6 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
         self.initial['kafka_brokers'] = ",".join(self.initial.get('kafka_brokers', []) or self.fields['kafka_brokers'].initial)
         self.initial['kafka_options'] = ",".join(self.initial.get('kafka_options', []) or self.fields['kafka_options'].initial)
-        self.initial['cisco_umbrella_managed_org_customers_id'] = ",".join(self.initial.get('cisco_umbrella_managed_org_customers_id', []) or self.fields['cisco_umbrella_managed_org_customers_id'].initial)
-        self.initial['ubika_namespaces'] = ",".join(self.initial.get('ubika_namespaces', []) or self.fields['ubika_namespaces'].initial)
-        self.initial['perception_point_x_ray_case_types'] = ",".join([str(case_type) for case_type in (self.initial.get('perception_point_x_ray_case_types', []) or self.fields['perception_point_x_ray_case_types'].initial)])
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
@@ -479,194 +476,6 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'api_parser_custom_proxy': TextInput(attrs={'class': 'form-control'}),
             'api_parser_verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
             'api_parser_custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': "form-control select2"}),
-            'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
-            'forcepoint_password': TextInput(attrs={'class': 'form-control'}),
-            'symantec_username': TextInput(attrs={'class': 'form-control'}),
-            'symantec_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'aws_access_key_id': TextInput(attrs={'class': 'form-control'}),
-            'aws_secret_access_key': TextInput(attrs={'class': 'form-control'}),
-            'aws_bucket_name': Select(attrs={'class': 'form-control select2'}),
-            'akamai_host': TextInput(attrs={'class': 'form-control'}),
-            'akamai_client_secret': TextInput(attrs={'class': 'form-control'}),
-            'akamai_access_token': TextInput(attrs={'class': 'form-control'}),
-            'akamai_client_token': TextInput(attrs={'class': 'form-control'}),
-            'akamai_config_id': TextInput(attrs={'class': 'form-control'}),
-            'office365_tenant_id': TextInput(attrs={'class': 'form-control'}),
-            'office365_client_id': TextInput(attrs={'class': 'form-control'}),
-            'office365_client_secret': TextInput(attrs={'class': 'form-control'}),
-            'imperva_base_url': TextInput(attrs={'class': 'form-control'}),
-            'imperva_api_key': TextInput(attrs={'class': 'form-control'}),
-            'imperva_api_id': TextInput(attrs={'class': 'form-control'}),
-            'imperva_private_key': Textarea(attrs={'class': 'form-control'}),
-            'reachfive_host': TextInput(attrs={'class': 'form-control'}),
-            'reachfive_client_id': TextInput(attrs={'class': 'form-control'}),
-            'reachfive_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'mongodb_api_user': TextInput(attrs={'class': 'form-control'}),
-            'mongodb_api_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'mongodb_api_group_id': TextInput(attrs={'class': 'form-control'}),
-            'mdatp_api_tenant': TextInput(attrs={'class': 'form-control'}),
-            'mdatp_api_appid': TextInput(attrs={'class': 'form-control'}),
-            'mdatp_api_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'cortex_xdr_host': TextInput(attrs={'class': 'form-control'}),
-            'cortex_xdr_apikey_id': TextInput(attrs={'class': 'form-control'}),
-            'cortex_xdr_apikey': TextInput(attrs={'class': 'form-control'}),
-            'cortex_xdr_advanced_token': CheckboxInput(attrs={'class': "js-switch"}),
-            'cybereason_host': TextInput(attrs={'class': 'form-control'}),
-            'cybereason_username': TextInput(attrs={'class': 'form-control'}),
-            'cybereason_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'cisco_meraki_apikey': TextInput(attrs={'class': 'form-control'}),
-            'cisco_meraki_get_security_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-            'cisco_meraki_get_configuration_changes_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-            'proofpoint_tap_host': TextInput(attrs={'class': 'form-control'}),
-            'proofpoint_tap_endpoint': Select(attrs={'class': 'form-control select2'}),
-            'proofpoint_tap_principal': TextInput(attrs={'class': 'form-control'}),
-            'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_account_type': Select(choices=SENTINEL_ONE_ACCOUNT_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
-            'netskope_host': TextInput(attrs={'class': 'form-control'}),
-            'netskope_apikey': TextInput(attrs={'class': 'form-control'}),
-            'netskope_get_page_logs': CheckboxInput(attrs={'class': "js-switch"}),
-            'netskope_get_network_logs': CheckboxInput(attrs={'class': "js-switch"}),
-            'netskope_get_application_logs': CheckboxInput(attrs={'class': "js-switch"}),
-            'carbon_black_host': TextInput(attrs={'class': 'form-control'}),
-            'carbon_black_orgkey': TextInput(attrs={'class': 'form-control'}),
-            'carbon_black_apikey': TextInput(attrs={'class': 'form-control'}),
-            'rapid7_idr_host': TextInput(attrs={'class': 'form-control'}),
-            'rapid7_idr_apikey': TextInput(attrs={'class': 'form-control'}),
-            'harfanglab_host': TextInput(attrs={'class': 'form-control'}),
-            'harfanglab_apikey': TextInput(attrs={'class': 'form-control'}),
-            'nozomi_probe_host': TextInput(attrs={'class': 'form-control'}),
-            'nozomi_probe_login': TextInput(attrs={'class': 'form-control'}),
-            'nozomi_probe_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'vadesecure_host': TextInput(attrs={'class': 'form-control'}),
-            'vadesecure_login': TextInput(attrs={'class': 'form-control'}),
-            'vadesecure_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'defender_token_endpoint': TextInput(attrs={'class': 'form-control'}),
-            'defender_client_id': TextInput(attrs={'class': 'form-control'}),
-            'defender_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'crowdstrike_request_incidents': CheckboxInput(attrs={'class': "js-switch"}),
-            'crowdstrike_host': TextInput(attrs={'class': 'form-control'}),
-            'crowdstrike_client_id': TextInput(attrs={'class': 'form-control'}),
-            'crowdstrike_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'crowdstrike_client': TextInput(attrs={'class': 'form-control'}),
-            'vadesecure_o365_host': TextInput(attrs={'class': 'form-control'}),
-            'vadesecure_o365_tenant': TextInput(attrs={'class': 'form-control'}),
-            'vadesecure_o365_client_id': TextInput(attrs={'class': 'form-control'}),
-            'vadesecure_o365_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'blackberry_cylance_host': TextInput(attrs={'class': 'form-control'}),
-            'blackberry_cylance_tenant': TextInput(attrs={'class': 'form-control'}),
-            'blackberry_cylance_app_id': TextInput(attrs={'class': 'form-control'}),
-            'blackberry_cylance_app_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'ms_sentinel_tenant_id': TextInput(attrs={'class': 'form-control'}),
-            'ms_sentinel_appid': TextInput(attrs={'class': 'form-control'}),
-            'ms_sentinel_appsecret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'ms_sentinel_subscription_id': TextInput(attrs={'class': 'form-control'}),
-            'ms_sentinel_resource_group': TextInput(attrs={'class': 'form-control'}),
-            'ms_sentinel_workspace': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_singularity_mobile_host': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_singularity_mobile_client_id': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_singularity_mobile_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'proofpoint_pod_uri': TextInput(attrs={'class': 'form-control'}),
-            'proofpoint_pod_cluster_id': TextInput(attrs={'class': 'form-control'}),
-            'proofpoint_pod_token': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'waf_cloudflare_apikey': TextInput(attrs={'class': 'form-control'}),
-            'waf_cloudflare_zoneid': TextInput(attrs={'class': 'form-control'}),
-            'gsuite_alertcenter_json_conf': Textarea(attrs={'class': 'form-control'}),
-            'gsuite_alertcenter_admin_mail': TextInput(attrs={'class': 'form-control'}),
-            'sophos_cloud_client_id': TextInput(attrs={'class': 'form-control'}),
-            'sophos_cloud_client_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'sophos_cloud_tenant_id': TextInput(attrs={'class': 'form-control'}),
-            'trendmicro_worryfree_access_token': TextInput(attrs={'class': 'form-control'}),
-            'trendmicro_worryfree_secret_key': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'trendmicro_worryfree_server_name': TextInput(attrs={'class': 'form-control'}),
-            'trendmicro_worryfree_server_port': TextInput(attrs={'class': 'form-control'}),
-            'safenet_tenant_code': TextInput(attrs={'class': 'form-control'}),
-            'safenet_apikey': TextInput(attrs={'class': 'form-control'}),
-            'signalsciences_ngwaf_email': TextInput(attrs={'class': 'form-control'}),
-            'signalsciences_ngwaf_token': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'signalsciences_ngwaf_corp_name': TextInput(attrs={'class': 'form-control'}),
-            'signalsciences_ngwaf_site_name': TextInput(attrs={'class': 'form-control'}),
-            'proofpoint_casb_api_key': TextInput(attrs={'class': 'form-control'}),
-            'proofpoint_casb_client_id': TextInput(attrs={'class': 'form-control'}),
-            'proofpoint_casb_client_secret': TextInput(attrs={'type': 'password','class': 'form-control'}),
-            'proofpoint_trap_host': TextInput(attrs={'class': 'form-control'}),
-            'proofpoint_trap_apikey': TextInput(attrs={'class': 'form-control'}),
-            'waf_cloud_protector_host': TextInput(attrs={'class': 'form-control'}),
-            'waf_cloud_protector_api_key_pub': Textarea(attrs={'class': 'form-control'}),
-            'waf_cloud_protector_api_key_priv': Textarea(attrs={'class': 'form-control'}),
-            'waf_cloud_protector_provider': TextInput(attrs={'class': 'form-control'}),
-            'waf_cloud_protector_tenant': TextInput(attrs={'class': 'form-control'}),
-            'waf_cloud_protector_servers': TextInput(attrs={'class': 'form-control'}),
-            'trendmicro_visionone_token': TextInput(attrs={'class': 'form-control'}),
-            'cisco_duo_host': TextInput(attrs={'class': 'form-control'}),
-            'cisco_duo_ikey': Textarea(attrs={'class': 'form-control'}),
-            'cisco_duo_skey': Textarea(attrs={'class': 'form-control'}),
-            'sentinel_one_mobile_host': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_mobile_apikey': TextInput(attrs={'type': 'password','class': 'form-control'}),
-            'csc_domainmanager_apikey':TextInput(attrs={'class': 'form-control'}),
-            'csc_domainmanager_authorization':TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'retarus_token': TextInput(attrs={'class': 'form-control'}),
-            'retarus_channel': TextInput(attrs={'class': 'form-control'}),
-            'vectra_host': TextInput(attrs={'class': 'form-control'}),
-            'vectra_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'vectra_client_id': TextInput(attrs={'class': 'form-control'}),
-            'apex_server_host': TextInput(attrs={'class': 'form-control'}),
-            'apex_api_key': TextInput(attrs={'class': 'form-control'}),
-            'apex_application_id': TextInput(attrs={'class': 'form-control'}),
-            'gatewatcher_alerts_host': TextInput(attrs={'class': 'form-control'}),
-            'gatewatcher_alerts_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'cisco_umbrella_client_id': TextInput(attrs={'class': 'form-control'}),
-            'cisco_umbrella_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'waf_barracuda_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'beyondtrust_pra_client_id': TextInput(attrs={'class': 'form-control'}),
-            'beyondtrust_pra_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'beyondtrust_pra_host': TextInput(attrs={'class': 'form-control'}),
-            'lockself_x_auth_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'lockself_x_ls_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'lockself_host': TextInput(attrs={'class': 'form-control'}),
-            'lockself_organization_id': TextInput(attrs={'class': 'form-control'}),
-            'cisco_umbrella_managed_org_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'cisco_umbrella_managed_org_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'cisco_umbrella_managed_org_customers_id': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
-            'cisco_umbrella_managed_org_get_dns': CheckboxInput(attrs={'class': 'js-switch'}),
-            'cisco_umbrella_managed_org_get_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
-            'catonetworks_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'catonetworks_account_id': TextInput(attrs={'class': 'form-control'}),
-            'infoblox_threat_defense_host': TextInput(attrs={'class': 'form-control'}),
-            'infoblox_threat_defense_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'beyondtrust_reportings_client_id': TextInput(attrs={'class': 'form-control'}),
-            'beyondtrust_reportings_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'beyondtrust_reportings_host': TextInput(attrs={'class': 'form-control'}),
-            'beyondtrust_reportings_get_team_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-            'beyondtrust_reportings_get_access_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-            'beyondtrust_reportings_get_vault_account_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-            'beyondtrust_reportings_get_support_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-            'varonis_host': TextInput(attrs={'class': 'form-control'}),
-            'varonis_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'armis_centrix_host': TextInput(attrs={'class': 'form-control'}),
-            'armis_centrix_secretkey': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'armis_centrix_get_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-            'perception_point_x_ray_host': TextInput(attrs={'class': 'form-control'}),
-            'perception_point_x_ray_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'perception_point_x_ray_organization_id': TextInput(attrs={'class': 'form-control'}),
-            'perception_point_x_ray_environment_id': TextInput(attrs={'class': 'form-control'}),
-            'perception_point_x_ray_case_types': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
-            'extrahop_host': TextInput(attrs={'class': 'form-control'}),
-            'extrahop_id': TextInput(attrs={'class': 'form-control'}),
-            'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'hornetsecurity_app_id': TextInput(attrs={'class': 'form-control'}),
-            'hornetsecurity_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'ubika_base_refresh_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'ubika_namespaces': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
-            'sentinel_one_graph_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'sentinel_one_graph_console_url': TextInput(attrs={'class': 'form-control'}),
-            'messagetrace_o365_tenant_id': TextInput(attrs={'class': 'form-control'}),
-            'messagetrace_o365_client_id': TextInput(attrs={'class': 'form-control'}),
-            'messagetrace_o365_client_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'cnapp_wiz_client_id': TextInput(attrs={'class': 'form-control'}),
-            'cnapp_wiz_client_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'cnapp_wiz_api_url': TextInput(attrs={'class': 'form-control'}),
         } | RsyslogQueueForm.Meta.widgets
 
     def clean_name(self):
@@ -785,30 +594,6 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         # Bypass validation and avoid database error
         return list()
 
-    def clean_cisco_umbrella_managed_org_customers_id(self):
-        data = self.cleaned_data.get('cisco_umbrella_managed_org_customers_id')
-        if not data:
-            return []
-        if "[" in data and "]" in data:
-            return ast.literal_eval(data)
-        return data.split(',')
-
-    def clean_ubika_namespaces(self):
-        data = self.cleaned_data.get('ubika_namespaces')
-        if not data:
-            return []
-        if "[" in data and "]" in data:
-            return ast.literal_eval(data)
-        return data.split(',')
-
-    def clean_perception_point_x_ray_case_types(self):
-        data = self.cleaned_data.get('perception_point_x_ray_case_types')
-        if not data:
-            return []
-        if "[" in data and "]" in data:
-            return ast.literal_eval(data)
-        return data.split(',')
-
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
@@ -880,26 +665,6 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                 if not custom_proxy:
                     self.add_error('api_parser_custom_proxy', "Wrong proxy format")
                 cleaned_data['api_parser_custom_proxy'] = custom_proxy
-
-            # Cisco Umbrella Managed Org specific validations
-            if cleaned_data.get("api_parser_type") == "cisco_umbrella_managed_org":
-                logger.warning("hello")
-                if not (cleaned_data.get("cisco_umbrella_managed_org_get_dns", False) or cleaned_data.get("cisco_umbrella_managed_org_get_proxy", False)):
-                        self.add_error("cisco_umbrella_managed_org_get_dns", "At least one type should be enabled")
-                        self.add_error("cisco_umbrella_managed_org_get_proxy", "At least one type should be enabled")
-
-            # Beyondtrust Reportings specific validations
-            if cleaned_data.get("api_parser_type") == "beyondtrust_reportings":
-                options = list()
-                options.append(cleaned_data.get("beyondtrust_reportings_get_team_logs", False))
-                options.append(cleaned_data.get("beyondtrust_reportings_get_access_session_logs", False))
-                options.append(cleaned_data.get("beyondtrust_reportings_get_vault_account_activity_logs", False))
-                options.append(cleaned_data.get("beyondtrust_reportings_get_support_session_logs", False))
-                if not any(options):
-                    self.add_error("beyondtrust_reportings_get_team_logs", "At least one of these fields is required.")
-                    self.add_error("beyondtrust_reportings_get_access_session_logs", "At least one of these fields is required.")
-                    self.add_error("beyondtrust_reportings_get_vault_account_activity_logs", "At least one of these fields is required.")
-                    self.add_error("beyondtrust_reportings_get_support_session_logs", "At least one of these fields is required.")
 
         if mode == "log" and cleaned_data.get('listening_mode') == "kafka":
             if not cleaned_data.get('kafka_brokers'):
