@@ -2272,8 +2272,11 @@ class Frontend(RsyslogQueue, models.Model):
 
     @property
     def api_collector(self):
-        if self.mode == "log" and self.listening_mode == "api" and self.api_parser_type:
-            return getattr(self, f"{self.api_parser_type.replace('_', '')}collector_set").first()
+        if self.mode == "log" and self.listening_mode == "api" and \
+            self.api_parser_type and hasattr(self, "apicollector_set"):
+                generic_collector = self.apicollector_set.first()
+                if generic_collector:
+                    return getattr(generic_collector, f"{self.api_parser_type.replace('_', '')}collector")
         return None
 
     @property
