@@ -23,7 +23,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Network View'
 
 
-from django.db.models import Max
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from system.cluster.models import NetworkAddress, NetworkAddressNIC, NetworkInterfaceCard, Cluster
 from system.netif.form import NetIfForm
@@ -72,19 +71,27 @@ def netif_edit(request, object_id=None, api=False):
         netif = form.save(commit=False)
         netif.save()
 
-        """ CARP settings are defined by default, even if they are not used """
+        if api:
+            nics = request.JSON.get("nic")
+        else:
+            nics = request.POST.getlist("nic")
+
+        """ Get existing CARP parameters """
+        # max_prio = netif.networkaddressnic_set.aggregate(Max('carp_priority'))['carp_priority__max']
+        # Do not overflow priority (254)
+        prio_increment = 50 if len(nics) < 5 else int(200/len(nics))
+        # priority = max_prio + prio_increment if max_prio and max_prio + prio_increment < 254 else 50
         priority = 50
-        pwd = get_random_string(20)
+        if netif.networkaddressnic_set.count():
+            pwd = netif.networkaddressnic_set.first().carp_passwd
+        else:
+            pwd = get_random_string(20)
         # Get Node concerned by NetAddr, will be used in case of 'vlan' or 'lagg' virtual interface
         # to create its virtual interface in DB
         node = None
 
         """ This is a new network address """
         if not object_id:
-            if api:
-                nics = request.JSON.get('nic')
-            else:
-                nics = request.POST.getlist("nic")
             for nic in nics:
                 addr_nic = NetworkAddressNIC.objects.create(
                     nic_id=nic,
@@ -95,22 +102,13 @@ def netif_edit(request, object_id=None, api=False):
 
                 node = addr_nic.nic.node
 
-                priority = priority + 50
+                priority = priority + prio_increment
         else:
-            # Get current highest priority and increment for next interface card
-            priority = netif.networkaddressnic_set.aggregate(Max('carp_priority'))['carp_priority__max'] + 50
-            # Get already existing CARP password
-            pwd = netif.networkaddressnic_set.first().carp_passwd
-
-            """ Add new NIC, if any """
-            if api:
-                nic_list = request.JSON.get('nic')
-            else:
-                nic_list = request.POST.getlist('nic')
-
-            for nic in nic_list:
+            for nic in nics:
                 try:
                     addr_nic = NetworkAddressNIC.objects.get(network_address=netif, nic_id=nic)
+                    addr_nic.carp_priority = priority
+                    addr_nic.save(update_fields=['carp_priority'])
                 except NetworkAddressNIC.DoesNotExist:
                     addr_nic = NetworkAddressNIC.objects.create(
                         nic_id=nic,
@@ -119,7 +117,7 @@ def netif_edit(request, object_id=None, api=False):
                         carp_priority=priority
                     )
 
-                    priority = priority + 50
+                priority = priority + prio_increment
 
                 node = addr_nic.nic.node
             """ Delete old NIC, if any """
@@ -127,7 +125,7 @@ def netif_edit(request, object_id=None, api=False):
 
                 """ If the current nic is not in the new config anymore:
                 Remove it from NetworkAddressNIC """
-                if str(current_networkadress_nic.nic.pk) not in nic_list:
+                if str(current_networkadress_nic.nic.pk) not in nics:
                     node_of_removed_nic = current_networkadress_nic.nic.node
                     rc_confs = netif.rc_config()
                     current_networkadress_nic.delete()
