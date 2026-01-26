@@ -60,7 +60,7 @@ $(function() {
       api_parser_type: $('#id_api_parser_type').val(),
     };
 
-    $('#api_collector_form_div input, #api_collector_form_div select').each(function(){
+    $('#api_collector_form_div input, #api_collector_form_div select, #api_collector_form_div textarea').each(function(){
       let name = $(this).attr('name');
       switch($(this).attr('type')){
         case "checkbox":
