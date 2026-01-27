@@ -27,7 +27,9 @@ $(function() {
   var initial_test_button_text = $('#test_api_parser').html();
 
   function fetch_api_collector_form(type_, data) {
-    PNotify.removeAll();
+    if (data === undefined) {
+      PNotify.removeAll();
+    }
 
     let btn = $('#test_api_parser');
     $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
@@ -87,16 +89,18 @@ $(function() {
       $('#id_node').hide();
       $(`#collector_${type_.replaceAll('_', '')}collectorform_row`).show();
 
-      if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
-        $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');
-      } else if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
-        $('#id_ruleset').val("api_" + type_).trigger('change');
-      } else if ($("#id_ruleset option[value='" + type_ + "-ecs']").length > 0) {
-        $('#id_ruleset').val(type_ + "-ecs").trigger('change');
-      } else if ($("#id_ruleset option[value='" + type_ + "']").length > 0) {
-        $('#id_ruleset').val(type_).trigger('change');
-      } else {
-        $('#id_ruleset').val('generic_json').trigger('change');
+      if(!editing_existing_object()) {
+        if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
+          $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');
+        } else if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
+          $('#id_ruleset').val("api_" + type_).trigger('change');
+        } else if ($("#id_ruleset option[value='" + type_ + "-ecs']").length > 0) {
+          $('#id_ruleset').val(type_ + "-ecs").trigger('change');
+        } else if ($("#id_ruleset option[value='" + type_ + "']").length > 0) {
+          $('#id_ruleset').val(type_).trigger('change');
+        } else {
+          $('#id_ruleset').val('generic_json').trigger('change');
+        }
       }
     }
 
@@ -170,7 +174,10 @@ $(function() {
 
       })
       .fail(function(response){
-        notify('error', response.status, response.responseText);
+        if (response.responseJSON !== undefined)
+          check_json_error(response.responseJSON);
+        else
+          notify('error', response.status, response.responseText);
         fetch_api_collector_form($('#id_api_parser_type').val(), data);
       })
       .always(function(){
