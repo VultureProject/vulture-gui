@@ -44,6 +44,7 @@ def execute_parser(frontend):
 
         logger.info("API Collector {} (tenant={}): starting".format(frontend.name, frontend.tenants_config.name),
                     extra={'frontend': str(frontend.name)})
+        collector.allow_early_stop()
         collector.execute()
         try:
             collector.frontend.status[Cluster.get_current_node().name] = "OPEN"
