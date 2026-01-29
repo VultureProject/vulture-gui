@@ -31,7 +31,7 @@ from multiprocessing import Process
 
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 def execute_parser(frontend):
