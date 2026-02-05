@@ -50,11 +50,11 @@ PATTERN_GATEWAY = re.compile("^defaultrouter=(.*)")
 PATTERN_GATEWAY6 = re.compile("^ipv6_defaultrouter=(.*)")
 # Handles almost all types of IPv6 formats
 PATTERN_INET6 = re.compile(r"(inet6 )?(.* )?(((([0-9A-Fa-f]{1,4}:){1,6}:)|(([0-9A-Fa-f]{1,4}:){7}))([0-9A-Fa-f]{1,4}))( prefixlen |\/)([0-9\.]{1,3})")
-PATTERN_INET = re.compile(r"(inet )?(.* )?(([0-9]{1,3}\.){3}[0-9]{1,3})( netmask |\/)([0-9\.]+)( .*)?")
+PATTERN_INET = re.compile(r"(inet )?(.* )?(((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?){4})( netmask |\/)([0-9\.]+)( .*)?")
 # Correct group number for the pattern matches above, to get IP/prefix from it
 # WARNING change those groups if you change the patterns above!
 PATTERN_INET_IP_GROUP = 3
-PATTERN_INET_PREFIX_OR_NETMASK_GROUP = 6
+PATTERN_INET_PREFIX_OR_NETMASK_GROUP = 8
 PATTERN_INET6_IP_GROUP = 3
 PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = 11
 PATTERN_ALIAS = re.compile(r"( |^)alias( |$)")
@@ -89,7 +89,7 @@ def refresh_physical_NICs(node):
             d, created = NetworkInterfaceCard.objects.get_or_create(
                 dev=nic,
                 node=node)
-            if created:
+            if not created:
                 logger.debug("Node::refresh_physical_NICs: NIC {} exists in database".format(d.dev))
             else:
                 logger.info("Node::refresh_physical_NICs: Creating NIC {}".format(nic))
@@ -102,8 +102,7 @@ def parse_ifconfig_key(line, config):
     split = line.split("_")
 
     if len(split) > 3:
-        logger.error(f"Node::parse_ifconfig_key: could not parse line '{line}',"
-                        " problem is on '{tmp}' (too many '_', don't know how to read)")
+        logger.error(f"Node::parse_ifconfig_key: could not parse line '{line}', (too many '_', don't know how to read)")
         return False
 
     if "ipv6" in split:
@@ -354,12 +353,12 @@ if __name__ == "__main__":
                             'name': config['name'] + config['iface_id'],
                             'ip': config.get('ip'),
                             'prefix_or_netmask': config.get('prefix_or_netmask'),
-                            'fib': config.get('fib', 0), 
+                            'fib': config.get('fib', 0),
                             'carp_vhid': config.get('carp_vhid', 0),
                             'vlan': config.get('vlan', 0),
                             'lagg_proto': config.get('lagg_proto', ''),
                         })
-                    
+
                     logger.info("Node::network_sync: {} Network Address configuration {}".format("created" if created else "updated", address))
 
 
