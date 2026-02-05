@@ -49,14 +49,14 @@ PATTERN_IFCONFIG = re.compile('^ifconfig_(.*)="?\'?([^"\']*)"?\'?')
 PATTERN_GATEWAY = re.compile("^defaultrouter=(.*)")
 PATTERN_GATEWAY6 = re.compile("^ipv6_defaultrouter=(.*)")
 # Handles almost all types of IPv6 formats
-PATTERN_INET6 = re.compile(r"(inet6 )?(.* )?(((([0-9A-Fa-f]{1,4}:){1,6}:)|(([0-9A-Fa-f]{1,4}:){7}))([0-9A-Fa-f]{1,4}))(( prefixlen )|(/))([0-9\.]{1,3})")
-PATTERN_INET = re.compile(r"(inet )?(.* )?(([0-9]{1,3}\.){3}[0-9]{1,3})(( netmask )|(\/))([0-9\.]{1,2})( .*)?")
+PATTERN_INET6 = re.compile(r"(inet6 )?(.* )?(((([0-9A-Fa-f]{1,4}:){1,6}:)|(([0-9A-Fa-f]{1,4}:){7}))([0-9A-Fa-f]{1,4}))( prefixlen |\/)([0-9\.]{1,3})")
+PATTERN_INET = re.compile(r"(inet )?(.* )?(([0-9]{1,3}\.){3}[0-9]{1,3})( netmask |\/)([0-9\.]+)( .*)?")
 # Correct group number for the pattern matches above, to get IP/prefix from it
 # WARNING change those groups if you change the patterns above!
 PATTERN_INET_IP_GROUP = 3
-PATTERN_INET_PREFIX_OR_NETMASK_GROUP = 8
+PATTERN_INET_PREFIX_OR_NETMASK_GROUP = 6
 PATTERN_INET6_IP_GROUP = 3
-PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = 13
+PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = 11
 PATTERN_ALIAS = re.compile(r"( |^)alias( |$)")
 PATTERN_IFACE_NAME = re.compile("([a-z]+)([0-9]+)")
 PATTERN_VLAN = re.compile("vlan ([0-9]+)")
