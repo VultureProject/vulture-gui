@@ -45,28 +45,28 @@ logger = logging.getLogger('daemon')
 import re
 import subprocess
 
-PATTERN_IFCONFIG = re.compile('^ifconfig_(.*)="?\'?([^"\']*)"?\'?')
-PATTERN_GATEWAY = re.compile("^defaultrouter=(.*)")
-PATTERN_GATEWAY6 = re.compile("^ipv6_defaultrouter=(.*)")
+PATTERN_IFCONFIG = re.compile(r'^ifconfig_(?P<key>.*)="?\'?(?P<value>[^"\']*)"?\'?')
+PATTERN_GATEWAY = re.compile(r"^defaultrouter=(?P<gateway>.*)")
+PATTERN_GATEWAY6 = re.compile(r"^ipv6_defaultrouter=(?P<gateway>.*)")
 # Handles almost all types of IPv6 formats
-PATTERN_INET6 = re.compile(r"(inet6 )?(.* )?(((([0-9A-Fa-f]{1,4}:){1,6}:)|(([0-9A-Fa-f]{1,4}:){7}))([0-9A-Fa-f]{1,4}))( prefixlen |\/)([0-9\.]{1,3})")
-PATTERN_INET = re.compile(r"(inet )?(.* )?(((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?){4})( netmask |\/)([0-9\.]+)( .*)?")
-# Correct group number for the pattern matches above, to get IP/prefix from it
+PATTERN_INET6 = re.compile(r"(inet6 )?(.* )?(?P<ip>((([0-9A-Fa-f]{1,4}:){1,6}:)|(([0-9A-Fa-f]{1,4}:){7}))([0-9A-Fa-f]{1,4}))( prefixlen |\/)(?P<prefix>[0-9\.]{1,3})")
+PATTERN_INET = re.compile(r"(inet )?(.* )?(?P<ip>((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?){4})( netmask |\/)(?P<netmask>[0-9\.]+)( .*)?")
+# Correct group name for the pattern matches above, to get IP/prefix from it
 # WARNING change those groups if you change the patterns above!
-PATTERN_INET_IP_GROUP = 3
-PATTERN_INET_PREFIX_OR_NETMASK_GROUP = 8
-PATTERN_INET6_IP_GROUP = 3
-PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = 11
+PATTERN_INET_IP_GROUP = "ip"
+PATTERN_INET_PREFIX_OR_NETMASK_GROUP = "netmask"
+PATTERN_INET6_IP_GROUP = "ip"
+PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = "prefix"
 PATTERN_ALIAS = re.compile(r"( |^)alias( |$)")
-PATTERN_IFACE_NAME = re.compile("([a-z]+)([0-9]+)")
-PATTERN_VLAN = re.compile("vlan ([0-9]+)")
-PATTERN_VLANDEV = re.compile("vlandev ([a-z0-9\.]+)")
-PATTERN_LAGGPROTO = re.compile("laggproto ([a-z]+)")
+PATTERN_IFACE_NAME = re.compile(r"(?P<name>[a-z]+)(?P<id>[0-9]+)")
+PATTERN_VLAN = re.compile(r"vlan (?P<vlan>[0-9]+)")
+PATTERN_VLANDEV = re.compile(r"vlandev (?P<nic>[a-z0-9\.]+)")
+PATTERN_LAGGPROTO = re.compile(r"laggproto (?P<proto>[a-z]+)")
 PATTERN_LAGGPORT = re.compile("laggport ([a-z0-9]+)")
-PATTERN_CARP_VHID = re.compile(r"( |^)vhid ([0-9]+)( |$)")
-PATTERN_CARP_ADVSKEW = re.compile(r"( |^)advskew ([0-9]+)( |$)")
-PATTERN_CARP_PASS = re.compile(r"( |^)pass ([0-9a-zA-Z]+)( |$)")
-PATTERN_FIB = re.compile("fib ([0-9])")
+PATTERN_CARP_VHID = re.compile(r"( |^)vhid (?P<vhid>[0-9]+)( |$)")
+PATTERN_CARP_ADVSKEW = re.compile(r"( |^)advskew (?P<priority>[0-9]+)( |$)")
+PATTERN_CARP_PASS = re.compile(r"( |^)pass (?P<password>[0-9a-zA-Z]+)( |$)")
+PATTERN_FIB = re.compile(r"fib (?P<fib>[0-9])")
 
 def refresh_physical_NICs(node):
     """ Get physical NICs """
@@ -75,8 +75,8 @@ def refresh_physical_NICs(node):
     for to_delete in deletion_list:
         iface_name_match = re.search(PATTERN_IFACE_NAME, to_delete.dev)
         if iface_name_match:
-            name = iface_name_match.group(1)
-            iface_id = iface_name_match.group(2)
+            name = iface_name_match.group("name")
+            iface_id = iface_name_match.group("id")
             # Only remove interfaces that cannot represent a NetworkAddress
             if not NetworkAddress.objects.filter(type=name, iface_id=iface_id).exists():
                 logger.info(f"Node::refresh_physical_NICs: Deleting obsolete interface {to_delete.dev}")
@@ -121,8 +121,8 @@ def parse_ifconfig_key(line, config):
     if not iface_name_match:
         return False
 
-    config['name'] = iface_name_match.group(1)
-    config['iface_id'] = iface_name_match.group(2)
+    config['name'] = iface_name_match.group("name")
+    config['iface_id'] = iface_name_match.group("id")
     if config['name'] == 'vlan':
         logger.debug("Node::parse_ifconfig_key: line is a vlan configuration")
         config['type'] = 'vlan'
@@ -165,36 +165,36 @@ def parse_ifconfig_values(line, config):
                 config['type'] = 'system'
 
     if carp_vhid_match := re.search(PATTERN_CARP_VHID, line):
-        logger.debug(f"Node::parse_ifconfig_values: Found CARP VHID {carp_vhid_match.group(2)}")
-        config['carp_vhid'] = carp_vhid_match.group(2)
+        logger.debug(f"Node::parse_ifconfig_values: Found CARP VHID {carp_vhid_match.group("vhid")}")
+        config['carp_vhid'] = carp_vhid_match.group("vhid")
 
     if carp_prio_match := re.search(PATTERN_CARP_ADVSKEW, line):
-        logger.debug(f"Node::parse_ifconfig_values: Found CARP skew {carp_prio_match.group(2)}")
-        config['carp_priority'] = carp_prio_match.group(2)
+        logger.debug(f"Node::parse_ifconfig_values: Found CARP skew {carp_prio_match.group("priority")}")
+        config['carp_priority'] = carp_prio_match.group("priority")
 
     if carp_pass_match := re.search(PATTERN_CARP_PASS, line):
         logger.debug("Node::parse_ifconfig_values: Found CARP password")
-        config['carp_password'] = carp_pass_match.group(2)
+        config['carp_password'] = carp_pass_match.group("password")
 
     fib_match = re.search(PATTERN_FIB, line)
     if fib_match:
         logger.debug("Node::parse_ifconfig_values: interface has specific fib")
-        config['fib'] = fib_match.group(1)
+        config['fib'] = fib_match.group("fib")
 
     vlan_match = re.search(PATTERN_VLAN, line)
     vlandev_match = re.search(PATTERN_VLANDEV, line)
     if vlan_match and vlandev_match:
         logger.debug("Node::parse_ifconfig_values: interface has vlan parameters")
         parse_success = True
-        config['vlan'] = vlan_match.group(1)
-        config['nic'] = [vlandev_match.group(1)]
+        config['vlan'] = vlan_match.group("vlan")
+        config['nic'] = [vlandev_match.group("nic")]
 
     laggproto_match = re.search(PATTERN_LAGGPROTO, line)
     laggport_matches = re.findall(PATTERN_LAGGPORT, line)
     if laggproto_match and laggport_matches:
         logger.debug("Node::parse_ifconfig_values: interface is a Link Aggregation")
         parse_success = True
-        config['lagg_proto'] = laggproto_match.group(1)
+        config['lagg_proto'] = laggproto_match.group("proto")
         config['nic'] = laggport_matches
         logger.debug("line does not define network configuration: configurations are "
                      f"laggproto = {config['lagg_proto']}, laggports = {config['nic']}")
@@ -207,13 +207,13 @@ def parse_gateway_config(line, config):
     have_gateway = False
     if gateway_match:
         logger.debug("Node::parse_gateway_config: this is a gateway (ipv4) configuration line")
-        config['defaultgateway'] = gateway_match.group(1)
+        config['defaultgateway'] = gateway_match.group("gateway")
         have_gateway = True
 
     gateway6_match = re.search(PATTERN_GATEWAY6, line)
     if gateway6_match:
         logger.debug("Node::parse_gateway_config: this is a gateway (ipv6) configuration line")
-        config['defaultgateway_ipv6'] = gateway6_match.group(1)
+        config['defaultgateway_ipv6'] = gateway6_match.group("gateway")
         have_gateway = True
 
     return have_gateway
@@ -238,8 +238,8 @@ if __name__ == "__main__":
             ifconfig_parsed = False
 
             if ifconfig_match:
-                key = ifconfig_match.group(1)
-                value = ifconfig_match.group(2)
+                key = ifconfig_match.group("key")
+                value = ifconfig_match.group("value")
 
                 key_parsed = parse_ifconfig_key(key, config)
 
@@ -373,7 +373,7 @@ if __name__ == "__main__":
                                 "carp_priority": config.get('carp_priority', 0),
                                 "carp_passwd": config.get('carp_password', ''),
                             }
-                            )
+                        )
                         logger.info("Node::network_sync: {} link {}".format("created" if created else "updated", address_nic))
                     except Exception as e:
                         logger.error(f"Node::network_sync: Could not create link {address} -> {iface}")
