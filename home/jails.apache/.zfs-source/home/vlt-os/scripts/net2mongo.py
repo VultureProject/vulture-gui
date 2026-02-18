@@ -36,7 +36,13 @@ django.setup()
 from system.cluster.models import (Cluster, NetworkInterfaceCard,
                                 NetworkAddress, NetworkAddressNIC)
 
-
+from toolkit.network.network import (
+    PATTERN_IFACE_NAME,
+    PATTERN_IFCONFIG,
+    parse_ifconfig_key,
+    parse_ifconfig_values,
+    parse_gateway_config
+)
 
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -44,29 +50,6 @@ logger = logging.getLogger('daemon')
 
 import re
 import subprocess
-
-PATTERN_IFCONFIG = re.compile(r'^ifconfig_(?P<key>.*)="?\'?(?P<value>[^"\']*)"?\'?')
-PATTERN_GATEWAY = re.compile(r"^defaultrouter=(?P<gateway>.*)")
-PATTERN_GATEWAY6 = re.compile(r"^ipv6_defaultrouter=(?P<gateway>.*)")
-# Handles almost all types of IPv6 formats
-PATTERN_INET6 = re.compile(r"(inet6 )?(.* )?(?P<ip>((([0-9A-Fa-f]{1,4}:){1,6}:)|(([0-9A-Fa-f]{1,4}:){7}))([0-9A-Fa-f]{1,4}))( prefixlen |\/)(?P<prefix>[0-9\.]{1,3})")
-PATTERN_INET = re.compile(r"(inet )?(.* )?(?P<ip>((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?){4})( netmask |\/)(?P<netmask>[0-9\.]+)( .*)?")
-# Correct group name for the pattern matches above, to get IP/prefix from it
-# WARNING change those groups if you change the patterns above!
-PATTERN_INET_IP_GROUP = "ip"
-PATTERN_INET_PREFIX_OR_NETMASK_GROUP = "netmask"
-PATTERN_INET6_IP_GROUP = "ip"
-PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = "prefix"
-PATTERN_ALIAS = re.compile(r"( |^)alias( |$)")
-PATTERN_IFACE_NAME = re.compile(r"(?P<name>[a-z]+)(?P<id>[0-9]+)")
-PATTERN_VLAN = re.compile(r"vlan (?P<vlan>[0-9]+)")
-PATTERN_VLANDEV = re.compile(r"vlandev (?P<nic>[a-z0-9\.]+)")
-PATTERN_LAGGPROTO = re.compile(r"laggproto (?P<proto>[a-z]+)")
-PATTERN_LAGGPORT = re.compile("laggport ([a-z0-9]+)")
-PATTERN_CARP_VHID = re.compile(r"( |^)vhid (?P<vhid>[0-9]+)( |$)")
-PATTERN_CARP_ADVSKEW = re.compile(r"( |^)advskew (?P<priority>[0-9]+)( |$)")
-PATTERN_CARP_PASS = re.compile(r"( |^)pass (?P<password>[0-9a-zA-Z]+)( |$)")
-PATTERN_FIB = re.compile(r"fib (?P<fib>[0-9])")
 
 def refresh_physical_NICs(node):
     """ Get physical NICs """
@@ -96,127 +79,6 @@ def refresh_physical_NICs(node):
         except Exception as e:
             logger.error(f"Node::refresh_physical_NICs: Could not create physical NICs ->  {e}")
             logger.exception(e)
-
-
-def parse_ifconfig_key(line, config):
-    split = line.split("_")
-
-    if len(split) > 3:
-        logger.error(f"Node::parse_ifconfig_key: could not parse line '{line}', (too many '_', don't know how to read)")
-        return False
-
-    if "ipv6" in split:
-        split.remove('ipv6')
-        config['ipv6'] = True
-        config['family'] = 'inet6'
-    else:
-        config['family'] = 'inet'
-
-    if "alias" in split[-1]:
-        logger.debug("Node::parse_ifconfig_key: line is an alias")
-        config['nic'] = [split[0]]
-        config['type'] = 'alias'
-
-    iface_name_match = re.search(PATTERN_IFACE_NAME, split[-1])
-    if not iface_name_match:
-        return False
-
-    config['name'] = iface_name_match.group("name")
-    config['iface_id'] = iface_name_match.group("id")
-    if config['name'] == 'vlan':
-        logger.debug("Node::parse_ifconfig_key: line is a vlan configuration")
-        config['type'] = 'vlan'
-    if config['name'] == 'lagg':
-        logger.debug("Node::parse_ifconfig_key: line is a lagg configuration")
-        config['type'] = 'lagg'
-
-    return True
-
-
-def parse_ifconfig_values(line, config):
-    parse_success = False
-
-    if line.upper() in ['DHCP', 'SYNCDHCP']:
-        logger.debug("Node::parse_ifconfig_values: interface is configured for DHCP")
-        config['dhcp'] = True
-        config['type'] = "system"
-        return True
-
-    if config.get('ipv6'):
-        pattern = PATTERN_INET6
-        ip_group = PATTERN_INET_IP_GROUP
-        prefix_or_netmask_group = PATTERN_INET6_PREFIX_OR_NETMASK_GROUP
-    else:
-        pattern = PATTERN_INET
-        ip_group = PATTERN_INET6_IP_GROUP
-        prefix_or_netmask_group = PATTERN_INET_PREFIX_OR_NETMASK_GROUP
-
-    inet_match = re.search(pattern, line)
-    if inet_match:
-        logger.debug("Node::parse_ifconfig_values: interface has an IP")
-        parse_success = True
-        config['ip'] = inet_match.group(ip_group)
-        logger.debug(f"Node::parse_ifconfig_values: IP {inet_match.group(ip_group)}")
-        config['prefix_or_netmask'] = inet_match.group(prefix_or_netmask_group)
-        if 'type' not in config:
-            if re.search(PATTERN_ALIAS, line):
-                config['type'] = 'alias'
-            else:
-                config['type'] = 'system'
-
-    if carp_vhid_match := re.search(PATTERN_CARP_VHID, line):
-        logger.debug(f"Node::parse_ifconfig_values: Found CARP VHID {carp_vhid_match.group("vhid")}")
-        config['carp_vhid'] = carp_vhid_match.group("vhid")
-
-    if carp_prio_match := re.search(PATTERN_CARP_ADVSKEW, line):
-        logger.debug(f"Node::parse_ifconfig_values: Found CARP skew {carp_prio_match.group("priority")}")
-        config['carp_priority'] = carp_prio_match.group("priority")
-
-    if carp_pass_match := re.search(PATTERN_CARP_PASS, line):
-        logger.debug("Node::parse_ifconfig_values: Found CARP password")
-        config['carp_password'] = carp_pass_match.group("password")
-
-    fib_match = re.search(PATTERN_FIB, line)
-    if fib_match:
-        logger.debug("Node::parse_ifconfig_values: interface has specific fib")
-        config['fib'] = fib_match.group("fib")
-
-    vlan_match = re.search(PATTERN_VLAN, line)
-    vlandev_match = re.search(PATTERN_VLANDEV, line)
-    if vlan_match and vlandev_match:
-        logger.debug("Node::parse_ifconfig_values: interface has vlan parameters")
-        parse_success = True
-        config['vlan'] = vlan_match.group("vlan")
-        config['nic'] = [vlandev_match.group("nic")]
-
-    laggproto_match = re.search(PATTERN_LAGGPROTO, line)
-    laggport_matches = re.findall(PATTERN_LAGGPORT, line)
-    if laggproto_match and laggport_matches:
-        logger.debug("Node::parse_ifconfig_values: interface is a Link Aggregation")
-        parse_success = True
-        config['lagg_proto'] = laggproto_match.group("proto")
-        config['nic'] = laggport_matches
-        logger.debug("line does not define network configuration: configurations are "
-                     f"laggproto = {config['lagg_proto']}, laggports = {config['nic']}")
-
-    return parse_success
-
-
-def parse_gateway_config(line, config):
-    gateway_match = re.search(PATTERN_GATEWAY, line)
-    have_gateway = False
-    if gateway_match:
-        logger.debug("Node::parse_gateway_config: this is a gateway (ipv4) configuration line")
-        config['defaultgateway'] = gateway_match.group("gateway")
-        have_gateway = True
-
-    gateway6_match = re.search(PATTERN_GATEWAY6, line)
-    if gateway6_match:
-        logger.debug("Node::parse_gateway_config: this is a gateway (ipv6) configuration line")
-        config['defaultgateway_ipv6'] = gateway6_match.group("gateway")
-        have_gateway = True
-
-    return have_gateway
 
 
 if __name__ == "__main__":
