@@ -183,7 +183,7 @@ def parse_ifconfig_values(line, config):
 
     laggproto_match = re.search(PATTERN_LAGGPROTO, line)
     laggport_matches = re.findall(PATTERN_LAGGPORT, line)
-    if laggproto_match and laggport_matches:
+    if laggproto_match and laggport_matches and len(laggport_matches) > 1:
         logger.debug("parse_ifconfig_values: interface is a Link Aggregation")
         parse_success = True
         config['lagg_proto'] = laggproto_match.group("proto")
