@@ -54,7 +54,6 @@
                           {{form.carp_vhid}}
                           {{form.carp_vhid.errors}}
                         </div>
-                        <div class="form-group" id="container_carp"></div>
                       </div>
 
                       <div class="form-group">
@@ -215,10 +214,9 @@
 
     }).trigger('change')
 
-    $('#netif_edit_form').on('submit', function(e){
-      PNotify().removeAll()
-      e.preventDefault();
+    $('#netif_edit_form').submit(function(e){
       if (require_carp_vhid && $('#id_carp_vhid').val() === "0"){
+        e.preventDefault();
         notify('error', gettext('Error'), gettext('Define a VHID > 0 for a CARP network address'))
         return false;
       }

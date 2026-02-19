@@ -172,6 +172,10 @@ def parse_ifconfig_values(line, config):
     if carp_prio_match := re.search(PATTERN_CARP_ADVSKEW, line):
         logger.debug(f"Node::parse_ifconfig_values: Found CARP skew {carp_prio_match.group(2)}")
         config['carp_priority'] = carp_prio_match.group(2)
+        # Ignore CARP declaration with incompatible priority
+        if int(config['carp_priority']) < 1 or int(config['carp_priority']) > 254:
+            logger.error(f"Node::parse_ifconfig_values: CARP skew value out of bounds: {carp_prio_match.group(2)}")
+            return False
 
     if carp_pass_match := re.search(PATTERN_CARP_PASS, line):
         logger.debug("Node::parse_ifconfig_values: Found CARP password")
@@ -374,7 +378,7 @@ if __name__ == "__main__":
                                 "carp_priority": config.get('carp_priority', 0),
                                 "carp_passwd": config.get('carp_password', ''),
                             }
-                            )
+                        )
                         logger.info("Node::network_sync: {} link {}".format("created" if created else "updated", address_nic))
                     except Exception as e:
                         logger.error(f"Node::network_sync: Could not create link {address} -> {iface}")
