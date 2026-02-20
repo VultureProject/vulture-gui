@@ -66,12 +66,12 @@ JAIL_ADDRESSES = {
     },
 }
 
-PATTERN_IFCONFIG = re.compile(r'^ifconfig_(?P<key>.*)="?\'?(?P<value>[^"\']*)"?\'?')
-PATTERN_GATEWAY = re.compile(r"^defaultrouter=(?P<gateway>.*)")
-PATTERN_GATEWAY6 = re.compile(r"^ipv6_defaultrouter=(?P<gateway>.*)")
-# Handles almost all types of IPv6 formats
-PATTERN_INET6 = re.compile(r"(inet6 )?(.* )?(?P<ip>((([0-9A-Fa-f]{1,4}:){1,6}:)|(([0-9A-Fa-f]{1,4}:){7}))([0-9A-Fa-f]{1,4}))( prefixlen |\/)(?P<prefix>[0-9\.]{1,3})")
-PATTERN_INET = re.compile(r"(inet )?(.* )?(?P<ip>((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?){4})( netmask |\/)(?P<netmask>[0-9\.]+)( .*)?")
+PATTERN_IFCONFIG = re.compile(r"^ifconfig_(?P<key>[a-z]{1}[a-z0-9_]+)=([\"'])(?:(?=(\\?))\3)(?P<value>.*)\2")
+PATTERN_GATEWAY = re.compile(r"^defaultrouter=([\"'])(?:(?=(\\?))\2)(?P<gateway>.+)\1")
+PATTERN_GATEWAY6 = re.compile(r"^ipv6_defaultrouter=([\"'])(?:(?=(\\?))\2)(?P<gateway>.+)\1")
+# Handles all types of IPv6 formats
+PATTERN_INET6 = re.compile(r"(inet6|^)( *)(?P<ip>(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])))( prefixlen |\/)(?P<prefix>[0-9\.]{1,3})")
+PATTERN_INET = re.compile(r"(inet|^)( *)(?P<ip>((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4})( netmask (?P<netmask>[0-9\.]+)|\/(?P<prefix>[0-9]{1,2}))( .*)?")
 # Correct group name for the pattern matches above, to get IP/prefix from it
 # WARNING change those groups if you change the patterns above!
 PATTERN_INET_IP_GROUP = "ip"
@@ -80,14 +80,14 @@ PATTERN_INET6_IP_GROUP = "ip"
 PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = "prefix"
 PATTERN_ALIAS = re.compile(r"( |^)alias( |$)")
 PATTERN_IFACE_NAME = re.compile(r"(?P<name>[a-z]+)(?P<id>[0-9]+)")
-PATTERN_VLAN = re.compile(r"vlan (?P<vlan>[0-9]+)")
-PATTERN_VLANDEV = re.compile(r"vlandev (?P<nic>[a-z0-9\.]+)")
-PATTERN_LAGGPROTO = re.compile(r"laggproto (?P<proto>[a-z]+)")
-PATTERN_LAGGPORT = re.compile("laggport ([a-z0-9]+)")
+PATTERN_VLAN = re.compile(r"( |^)vlan (?P<vlan>[0-9]+)( |$)")
+PATTERN_VLANDEV = re.compile(r"( |^)vlandev (?P<nic>[a-z0-9\.]+)( |$)")
+PATTERN_LAGGPROTO = re.compile(r"( |^)laggproto (?P<proto>[a-z]+)( |$)")
+PATTERN_LAGGPORT = re.compile(r"laggport ([a-z0-9]+)")
 PATTERN_CARP_VHID = re.compile(r"( |^)vhid (?P<vhid>[0-9]+)( |$)")
 PATTERN_CARP_ADVSKEW = re.compile(r"( |^)advskew (?P<priority>[0-9]+)( |$)")
 PATTERN_CARP_PASS = re.compile(r"( |^)pass (?P<password>[0-9a-zA-Z]+)( |$)")
-PATTERN_FIB = re.compile(r"fib (?P<fib>[0-9])")
+PATTERN_FIB = re.compile(r"( |^)fib (?P<fib>[0-9])( |$)")
 
 
 def parse_ifconfig_key(line, config):
@@ -136,20 +136,19 @@ def parse_ifconfig_values(line, config):
 
     if config.get('ipv6'):
         pattern = PATTERN_INET6
-        ip_group = PATTERN_INET_IP_GROUP
-        prefix_or_netmask_group = PATTERN_INET6_PREFIX_OR_NETMASK_GROUP
     else:
         pattern = PATTERN_INET
-        ip_group = PATTERN_INET6_IP_GROUP
-        prefix_or_netmask_group = PATTERN_INET_PREFIX_OR_NETMASK_GROUP
 
     inet_match = re.search(pattern, line)
     if inet_match:
         logger.debug("parse_ifconfig_values: interface has an IP")
         parse_success = True
-        config['ip'] = inet_match.group(ip_group)
-        logger.debug(f"parse_ifconfig_values: IP {inet_match.group(ip_group)}")
-        config['prefix_or_netmask'] = inet_match.group(prefix_or_netmask_group)
+        config['ip'] = inet_match.group('ip')
+        logger.debug(f"parse_ifconfig_values: IP {config['ip']}")
+        if 'netmask' in inet_match.groupdict().keys() and inet_match.group('netmask'):
+            config['prefix_or_netmask'] = inet_match.group('netmask')
+        elif 'prefix' in inet_match.groupdict().keys() and inet_match.group('prefix'):
+            config['prefix_or_netmask'] = inet_match.group('prefix')
         if 'type' not in config:
             if re.search(PATTERN_ALIAS, line):
                 config['type'] = 'alias'
