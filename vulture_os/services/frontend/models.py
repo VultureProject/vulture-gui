@@ -1836,6 +1836,10 @@ class Frontend(RsyslogQueue, models.Model):
             result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
                                     for log_fwd in self.log_forwarders.all().only('id')]
 
+        if not fields or "api_parser_parameters" in fields:
+            excluded_fields = ("id", "apicollector_ptr", "frontend", "last_collected_timestamps")
+            result['api_parser_parameters'] = model_to_dict(self.api_collector, exclude=excluded_fields) if self.api_collector else None
+
         return result
 
     def to_html_template(self):

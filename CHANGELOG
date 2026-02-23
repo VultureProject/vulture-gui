@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [NETWORK] Improve rc.conf networking lines' parsing patterns
 - [GUI] [JS] Avoid DOM-based XSS (and silence JS scanner's false positives...)
+- [API_PARSER] Improperly set JSONFields due to a djongo bug
 
 
 ## [2.35.0] - 2026-02-06
