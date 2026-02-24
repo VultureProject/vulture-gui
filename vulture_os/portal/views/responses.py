@@ -59,7 +59,7 @@ def split_domain(url):
 
 
 def set_portal_cookie(response, portal_cookie_name, portal_cookie, url):
-	response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(url), httponly=True, secure=url.startswith('https'))
+	response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(url), httponly=True, secure=url.startswith('https'), samesite="Lax")
 	return response
 
 
@@ -68,6 +68,7 @@ def create_gzip_response(request, content):
 	return HttpResponse(content)
 
 
+# This function is unused anyway
 def response_redirect_with_portal_cookie(url, portal_cookie_name, portal_cookie, cookie_secure, kerberos_resp=None):
 	response = HttpResponseRedirect(url)
 	if not portal_cookie:
@@ -75,7 +76,7 @@ def response_redirect_with_portal_cookie(url, portal_cookie_name, portal_cookie,
 
 	if kerberos_resp:
 		response['WWW-Authenticate'] = 'Negotiate '+str(kerberos_resp)
-	response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(url), httponly=True, secure=cookie_secure)
+	response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(url), httponly=True, secure=cookie_secure, samesite="Lax")
 	return response
 
 

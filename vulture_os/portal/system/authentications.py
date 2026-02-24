@@ -32,7 +32,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 # FIXME from gui.models.repository_settings  import KerberosRepository, LDAPRepository
 from portal.system.redis_sessions import (REDISBase, REDISPortalSession, REDISOauth2Session,
                                           REDISRefreshSession, RedisOpenIDSession)
-from portal.views.responses import (split_domain, basic_authentication_response, kerberos_authentication_response,
+from portal.views.responses import (split_domain, set_portal_cookie, basic_authentication_response, kerberos_authentication_response,
                                     post_authentication_response, otp_authentication_response,
                                     learning_authentication_response, error_response)
 from system.users.models import User
@@ -354,9 +354,7 @@ class POSTAuthentication(Authentication):
 
         portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
-            response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
-                                domain=self.get_redirect_url_domain(), httponly=True,
-                                secure=self.get_redirect_url().startswith('https'))
+            set_portal_cookie(response, portal_cookie_name, self.redis_portal_session.key, self.get_redirect_url())
 
         return response
 
@@ -376,9 +374,7 @@ class BASICAuthentication(Authentication):
 
         portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
-            response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
-                                domain=self.get_redirect_url_domain(), httponly=True,
-                                secure=self.get_redirect_url().startswith('https'))
+            set_portal_cookie(response, portal_cookie_name, self.redis_portal_session.key, self.get_redirect_url())
 
         return response
 
@@ -435,9 +431,7 @@ class KERBEROSAuthentication(Authentication):
 
         portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
-            response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
-                                domain=self.get_redirect_url_domain(), httponly=True,
-                                secure=self.get_redirect_url().startswith('https'))
+            set_portal_cookie(response, portal_cookie_name, self.redis_portal_session.key, self.get_redirect_url())
 
         return response
 

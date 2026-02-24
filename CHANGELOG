@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [PORTAL] [IDP] New cookie attribute: SameSite=Lax
 
 
 ## [2.35.3] - 2026-03-23

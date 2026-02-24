@@ -35,7 +35,7 @@ from django.http                     import (HttpResponseRedirect, HttpResponseS
 
 # Django project imports
 from system.cluster.models           import Cluster
-from portal.views.responses          import (set_portal_cookie, split_domain)
+from portal.views.responses          import set_portal_cookie
 from portal.system.authentications   import (Authentication, POSTAuthentication, BASICAuthentication,
                                              KERBEROSAuthentication, DOUBLEAuthentication)
 from portal.system.sso_forwards      import SSOForwardPOST, SSOForwardBASIC, SSOForwardKERBEROS
@@ -144,7 +144,7 @@ def openid_start(request, workflow_id, repo_id):
         response = HttpResponseRedirect(authorization_url)
         # Needed for Safari and mobiles support
         response['Content-Length'] = 0
-        response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(fqdn), httponly=True, secure=scheme=="https")
+        set_portal_cookie(response, portal_cookie_name, portal_cookie, f"{scheme}://{fqdn}")
 
         return response
 
@@ -693,7 +693,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # If the user is already authenticated (retrieved with RedisPortalSession ) => SSO
                 else:
                     logger.info(f"Applying SSO with connected user on backend {backend_id}")
-                    portal_cookie, oauth2_token, refresh_token = authentication.register_sso(backend_id)
+                    portal_cookie, oauth2_token, _ = authentication.register_sso(backend_id)
                     logger.info(f"PORTAL::log_in: User {authentication.credentials[0]} successfully SSO-powered !")
                     if oauth2_token:
                         logger.debug(f"OAuth2 session = {oauth2_token}")
