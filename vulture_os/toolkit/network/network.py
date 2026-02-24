@@ -66,6 +66,149 @@ JAIL_ADDRESSES = {
     },
 }
 
+PATTERN_IFCONFIG = re.compile(r"^ifconfig_(?P<key>[a-z]{1}[a-z0-9_]+)=([\"'])(?:(?=(\\?))\3)(?P<value>.*)\2")
+PATTERN_GATEWAY = re.compile(r"^defaultrouter=([\"'])(?:(?=(\\?))\2)(?P<gateway>.+)\1")
+PATTERN_GATEWAY6 = re.compile(r"^ipv6_defaultrouter=([\"'])(?:(?=(\\?))\2)(?P<gateway>.+)\1")
+# Handles all types of IPv6 formats
+PATTERN_INET6 = re.compile(r"(inet6|^)( *)(?P<ip>(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])))( prefixlen |\/)(?P<prefix>[0-9\.]{1,3})")
+PATTERN_INET = re.compile(r"(inet|^)( *)(?P<ip>((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4})( netmask (?P<netmask>[0-9\.]+)|\/(?P<prefix>[0-9]{1,2}))( .*)?")
+# Correct group name for the pattern matches above, to get IP/prefix from it
+# WARNING change those groups if you change the patterns above!
+PATTERN_INET_IP_GROUP = "ip"
+PATTERN_INET_PREFIX_OR_NETMASK_GROUP = "netmask"
+PATTERN_INET6_IP_GROUP = "ip"
+PATTERN_INET6_PREFIX_OR_NETMASK_GROUP = "prefix"
+PATTERN_ALIAS = re.compile(r"( |^)alias( |$)")
+PATTERN_IFACE_NAME = re.compile(r"(?P<name>[a-z]+)(?P<id>[0-9]+)")
+PATTERN_VLAN = re.compile(r"( |^)vlan (?P<vlan>[0-9]+)( |$)")
+PATTERN_VLANDEV = re.compile(r"( |^)vlandev (?P<nic>[a-z0-9\.]+)( |$)")
+PATTERN_LAGGPROTO = re.compile(r"( |^)laggproto (?P<proto>[a-z]+)( |$)")
+PATTERN_LAGGPORT = re.compile(r"laggport ([a-z0-9]+)")
+PATTERN_CARP_VHID = re.compile(r"( |^)vhid (?P<vhid>[0-9]+)( |$)")
+PATTERN_CARP_ADVSKEW = re.compile(r"( |^)advskew (?P<priority>[0-9]+)( |$)")
+PATTERN_CARP_PASS = re.compile(r"( |^)pass (?P<password>[0-9a-zA-Z]+)( |$)")
+PATTERN_FIB = re.compile(r"( |^)fib (?P<fib>[0-9])( |$)")
+
+
+def parse_ifconfig_key(line, config):
+    split = line.split("_")
+
+    if len(split) > 3:
+        logger.error(f"parse_ifconfig_key: could not parse line '{line}', (too many '_', don't know how to read)")
+        return False
+
+    if "ipv6" in split:
+        split.remove('ipv6')
+        config['ipv6'] = True
+        config['family'] = 'inet6'
+    else:
+        config['family'] = 'inet'
+
+    if "alias" in split[-1]:
+        logger.debug("parse_ifconfig_key: line is an alias")
+        config['nic'] = [split[0]]
+        config['type'] = 'alias'
+
+    iface_name_match = re.search(PATTERN_IFACE_NAME, split[-1])
+    if not iface_name_match:
+        return False
+
+    config['name'] = iface_name_match.group("name")
+    config['iface_id'] = iface_name_match.group("id")
+    if config['name'] == 'vlan':
+        logger.debug("parse_ifconfig_key: line is a vlan configuration")
+        config['type'] = 'vlan'
+    if config['name'] == 'lagg':
+        logger.debug("parse_ifconfig_key: line is a lagg configuration")
+        config['type'] = 'lagg'
+
+    return True
+
+
+def parse_ifconfig_values(line, config):
+    parse_success = False
+
+    if line.upper() in ['DHCP', 'SYNCDHCP']:
+        logger.debug("parse_ifconfig_values: interface is configured for DHCP")
+        config['dhcp'] = True
+        config['type'] = "system"
+        return True
+
+    if config.get('ipv6'):
+        pattern = PATTERN_INET6
+    else:
+        pattern = PATTERN_INET
+
+    inet_match = re.search(pattern, line)
+    if inet_match:
+        logger.debug("parse_ifconfig_values: interface has an IP")
+        parse_success = True
+        config['ip'] = inet_match.group('ip')
+        logger.debug(f"parse_ifconfig_values: IP {config['ip']}")
+        if 'netmask' in inet_match.groupdict().keys() and inet_match.group('netmask'):
+            config['prefix_or_netmask'] = inet_match.group('netmask')
+        elif 'prefix' in inet_match.groupdict().keys() and inet_match.group('prefix'):
+            config['prefix_or_netmask'] = inet_match.group('prefix')
+        if 'type' not in config:
+            if re.search(PATTERN_ALIAS, line):
+                config['type'] = 'alias'
+            else:
+                config['type'] = 'system'
+
+    if carp_vhid_match := re.search(PATTERN_CARP_VHID, line):
+        logger.debug(f"parse_ifconfig_values: Found CARP VHID {carp_vhid_match.group('vhid')}")
+        config['carp_vhid'] = carp_vhid_match.group("vhid")
+
+    if carp_prio_match := re.search(PATTERN_CARP_ADVSKEW, line):
+        logger.debug(f"parse_ifconfig_values: Found CARP skew {carp_prio_match.group('priority')}")
+        config['carp_priority'] = carp_prio_match.group("priority")
+
+    if carp_pass_match := re.search(PATTERN_CARP_PASS, line):
+        logger.debug("parse_ifconfig_values: Found CARP password")
+        config['carp_password'] = carp_pass_match.group("password")
+
+    fib_match = re.search(PATTERN_FIB, line)
+    if fib_match:
+        logger.debug("parse_ifconfig_values: interface has specific fib")
+        config['fib'] = fib_match.group("fib")
+
+    vlan_match = re.search(PATTERN_VLAN, line)
+    vlandev_match = re.search(PATTERN_VLANDEV, line)
+    if vlan_match and vlandev_match:
+        logger.debug("parse_ifconfig_values: interface has vlan parameters")
+        parse_success = True
+        config['vlan'] = vlan_match.group("vlan")
+        config['nic'] = [vlandev_match.group("nic")]
+
+    laggproto_match = re.search(PATTERN_LAGGPROTO, line)
+    laggport_matches = re.findall(PATTERN_LAGGPORT, line)
+    if laggproto_match and laggport_matches and len(laggport_matches) > 1:
+        logger.debug("parse_ifconfig_values: interface is a Link Aggregation")
+        parse_success = True
+        config['lagg_proto'] = laggproto_match.group("proto")
+        config['nic'] = laggport_matches
+        logger.debug("line does not define network configuration: configurations are "
+                     f"laggproto = {config['lagg_proto']}, laggports = {config['nic']}")
+
+    return parse_success
+
+
+def parse_gateway_config(line, config):
+    gateway_match = re.search(PATTERN_GATEWAY, line)
+    have_gateway = False
+    if gateway_match:
+        logger.debug("parse_gateway_config: this is a gateway (ipv4) configuration line")
+        config['defaultgateway'] = gateway_match.group("gateway")
+        have_gateway = True
+
+    gateway6_match = re.search(PATTERN_GATEWAY6, line)
+    if gateway6_match:
+        logger.debug("parse_gateway_config: this is a gateway (ipv6) configuration line")
+        config['defaultgateway_ipv6'] = gateway6_match.group("gateway")
+        have_gateway = True
+
+    return have_gateway
+
 
 def is_valid_ip4(ip: str) -> bool:
     try:
@@ -74,6 +217,7 @@ def is_valid_ip4(ip: str) -> bool:
     except AddressValueError:
         return False
 
+
 def is_valid_ip6(ip: str) -> bool:
     try:
         IPv6Address(ip)
@@ -81,11 +225,14 @@ def is_valid_ip6(ip: str) -> bool:
     except AddressValueError:
         return False
 
+
 def is_valid_ip(ip: str) -> bool:
     return is_valid_ip4(ip) or is_valid_ip6(ip)
 
+
 def is_loopback(name: str) -> bool:
     return name.startswith("lo")
+
 
 def is_valid_hostname(hostname: str) -> bool:
     # Solution taken from this SO answer: https://stackoverflow.com/a/33214423
@@ -267,16 +414,16 @@ def ifconfig_call(logger, netif_id):
 
                 _, error = proc.communicate()
                 if error:
-                    logger.error("Node::ifconfig_call() Error on '{}' with IP '{}': {}".format(
+                    logger.error("ifconfig_call() Error on '{}' with IP '{}': {}".format(
                         dev, netif.ip_cidr, str(error)))
                     ret = False
                     continue
                 else:
-                    logger.info("Node::ifconfig_call() {}: IP address {} is UP".format(dev, netif.ip_cidr))
+                    logger.info("ifconfig_call() {}: IP address {} is UP".format(dev, netif.ip_cidr))
                     continue
 
             except Exception as e:
-                logger.error("Node::ifconfig_call(): {}".format(str(e)))
+                logger.error("ifconfig_call(): {}".format(str(e)))
                 ret = False
                 continue
 
@@ -318,14 +465,14 @@ def address_cleanup(logger):
                             netif.prefix = netif.prefix_or_netmask
 
                     if netif.family == "inet" and str(netif.prefix) == str(prefix):
-                        logger.debug("Node::address_cleanup(): IPv4 {}/{} has been found on {}".format(
+                        logger.debug("address_cleanup(): IPv4 {}/{} has been found on {}".format(
                             ip,
                             prefix,
                             nic.dev
                         ))
                         found = True
                     elif netif.family == "inet6" and str(prefix) == str(netif.prefix_or_netmask):
-                        logger.debug("Node::address_cleanup(): IPv6 {}/{} has been found on {}".format(
+                        logger.debug("address_cleanup(): IPv6 {}/{} has been found on {}".format(
                             ip,
                             prefix,
                             nic.dev
@@ -335,11 +482,11 @@ def address_cleanup(logger):
             """ IP Address not found: Delete it """
             if not found:
                 logger.info(
-                    "Node::address_cleanup(): Deleting {}/{} on {}".format(
+                    "address_cleanup(): Deleting {}/{} on {}".format(
                         ip, prefix, nic.dev
                     ))
 
-                logger.debug('Node::address_cleanup() /usr/local/bin/sudo /sbin/ifconfig {} {} {} delete'.format(
+                logger.debug('address_cleanup() /usr/local/bin/sudo /sbin/ifconfig {} {} {} delete'.format(
                     nic.dev,
                     family, str(ip) + "/" + str(prefix))
                 )
@@ -352,7 +499,7 @@ def address_cleanup(logger):
                 success, error = proc.communicate()
                 if error:
                     logger.error(
-                        "Node::address_cleanup(): {}".format(str(error)))
+                        "address_cleanup(): {}".format(str(error)))
 
     return ret
 
@@ -366,10 +513,10 @@ def destroy_virtual_interface(logger, iface_name):
     """
     ret = True
 
-    logger.info(f"Node::destroy_virtual_interface: destroying interface {iface_name}")
+    logger.info(f"destroy_virtual_interface: destroying interface {iface_name}")
     _, error = subprocess.Popen(['/usr/local/bin/sudo', '/sbin/ifconfig', iface_name, 'destroy']).communicate()
     if error:
-        logger.error(f"Node::destroy_virtual_interface: Could not destroy interface -> {str(error)}")
+        logger.error(f"destroy_virtual_interface: Could not destroy interface -> {str(error)}")
         ret = False
 
     return ret
@@ -384,10 +531,10 @@ def create_virtual_interface(logger, iface_name):
     """
     ret = True
 
-    logger.info(f"Node::create_virtual_interface: creating interface {iface_name}")
+    logger.info(f"create_virtual_interface: creating interface {iface_name}")
     _, error = subprocess.Popen(['/usr/local/bin/sudo', '/sbin/ifconfig', iface_name, 'create']).communicate()
     if error:
-        logger.error(f"Node::create_virtual_interface: Could not create interface -> {str(error)}")
+        logger.error(f"create_virtual_interface: Could not create interface -> {str(error)}")
         ret = False
 
     return ret
@@ -409,7 +556,7 @@ def write_management_ips(logger):
             filename='network')
         if not status:
             logger.error(
-                f"Node::write_management_ips: Could not update value of {attr} -> {error}")
+                f"write_management_ips: Could not update value of {attr} -> {error}")
 
 
 def write_network_config(logger):
@@ -435,10 +582,10 @@ def write_network_config(logger):
                                           filename="network",
                                           operation="+=")
             if not status:
-                logger.error(f"Node::write_network_config: Could not add {main_iface}"
+                logger.error(f"write_network_config: Could not add {main_iface}"
                              f" to the list of cloned interfaces: {error}")
             else:
-                logger.info(f"Node::write_network_config: Added {main_iface} to the list of cloned interfaces")
+                logger.info(f"write_network_config: Added {main_iface} to the list of cloned interfaces")
 
         nodes_configurations = address.rc_config(node_id=node.pk)
         for configuration in nodes_configurations[node.pk]:
@@ -446,14 +593,14 @@ def write_network_config(logger):
             status, error = set_rc_config(**configuration)
             if not status:
                 logger.error(
-                    "Node::write_network_config() {}:{}: {}".format(
+                    "write_network_config() {}:{}: {}".format(
                         nic.dev, address.ip_cidr, str(error))
                 )
                 ret = False
                 continue
             else:
                 logger.info(
-                    "Node::write_network_config() {}:{}: Ok".format(
+                    "write_network_config() {}:{}: Ok".format(
                         nic.dev, address.ip_cidr)
                 )
                 continue
@@ -478,21 +625,21 @@ def write_network_config(logger):
 
     # Remove all past routing config
     status, removed = remove_rc_config(".*route.*")
-    logger.info(f"Node::write_network_config(): removed old routing configurations {removed}")
+    logger.info(f"write_network_config(): removed old routing configurations {removed}")
 
     # Apply configurations
-    logger.info(f"Node::write_network_config(): setting new routing configuration {configs}")
+    logger.info(f"write_network_config(): setting new routing configuration {configs}")
     for config in configs:
         status, error = set_rc_config(variable=config[0], value=config[1])
         if not status:
             logger.error(
-                f"Node::write_network_config(routing): {config[0]} -> {str(error)}"
+                f"write_network_config(routing): {config[0]} -> {str(error)}"
             )
             ret = False
             continue
         else:
             logger.info(
-                f"Node::write_network_config(routing): {config[0]} -> Ok"
+                f"write_network_config(routing): {config[0]} -> Ok"
             )
             continue
 
@@ -520,9 +667,9 @@ def remove_netif_configs(logger, rc_confs):
             message += str(tmp) + "\n"
 
             if not status:
-                logger.error(f"Node::remove_netif_configs: a problem occurred while trying to remove configuration {rc_conf}")
+                logger.error(f"remove_netif_configs: a problem occurred while trying to remove configuration {rc_conf}")
             else:
-                logger.info(f"Node::remove_netif_configs: successfuly removed configuration {rc_conf}")
+                logger.info(f"remove_netif_configs: successfuly removed configuration {rc_conf}")
 
     return message
 
@@ -541,9 +688,9 @@ def restart_routing(logger):
         proc.communicate()
 
     except Exception as e:
-        logger.error("Node::restart_routing(): {}".format(str(e)))
+        logger.error("restart_routing(): {}".format(str(e)))
         return False
-    logger.info("Node::restart_routing(): OK")
+    logger.info("restart_routing(): OK")
     return True
 
 
