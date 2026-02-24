@@ -169,7 +169,7 @@ $(function() {
         }
         var data = response.data;
         $('#id_api_parser_has_been_tested').val('1');
-        $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
+        $('#modal-test-apiparser-body').html(DOMPurify.sanitize('<pre>' + JSON.stringify(data, null, 4) + "</pre>"));
         $('#modal-test-apiparser').modal('show');
 
       })

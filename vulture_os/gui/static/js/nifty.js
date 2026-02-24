@@ -410,7 +410,7 @@
 
             el.prop('disabled', true).data('niftyOverlay',ovId);
             target.addClass('panel-overlay-wrap');
-            panelOv.appendTo(target).html(el.data('overlayTemplate'));
+            panelOv.appendTo(target).html(DOMPurify.sanitize(el.data('overlayTemplate')));
             return null;
         },
         'hide': function(el){
@@ -1143,7 +1143,7 @@
                     if (elHasSub) {
                         $listSub.removeAttr('style').appendTo($el.parent());
                     }else if($listWidget.length){
-                        $listWidget.appendTo($listWidgetParent);
+                        $listWidget.appendTo(DOMPurify.sanitize($listWidgetParent));
                     }
                     clearInterval(hidePopover);
                 })
@@ -1160,7 +1160,7 @@
                             if (elHasSub) {
                                 $listSub.removeAttr('style').appendTo($el.parent());
                             }else if($listWidget.length){
-                                $listWidget.appendTo($listWidgetParent);
+                                $listWidget.appendTo(DOMPurify.sanitize($listWidgetParent));
                             }
                             clearInterval(hidePopover);
                         })

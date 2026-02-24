@@ -48,7 +48,7 @@ let idp_view = new Vue({
             }).$mount()
 
             $("#modalAddUser").modal('show')
-            $("#modalAddUserContent").html(comp.$el)
+            $("#modalAddUserContent").html(DOMPurify.sanitize(comp.$el))
         },
 
         initTable() {
@@ -121,7 +121,7 @@ let idp_view = new Vue({
                         }).$mount()
 
                         $("#modalAddUser").modal('show')
-                        $("#modalAddUserContent").html(comp.$el)
+                        $("#modalAddUserContent").html(DOMPurify.sanitize(comp.$el))
                     })
 
                     $(nRow).find('.btn-delete').on('click', (e) => {
