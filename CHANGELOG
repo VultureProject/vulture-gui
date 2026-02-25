@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [NETWORK] Improve rc.conf networking lines' parsing patterns
 - [GUI] [JS] Avoid DOM-based XSS (and silence JS scanner's false positives...)
 - [API_PARSER] Fix a bug preventing to create/update frontend through APIs
+- [API_PARSER] Fix possibility of multiple running instances of a collector
 
 
 ## [2.35.0] - 2026-02-06

@@ -55,11 +55,10 @@ def execute_parser(frontend):
                      extra={'frontend': str(frontend.name)})
         logger.exception(e, extra={'frontend': str(frontend.name)})
         collector.frontend.status[Cluster.get_current_node().name] = "ERROR"
-    finally:
-        # Delete running key in redis
-        logger.info("API Collector {} (tenant={}): ending".format(frontend.name, frontend.tenants_config.name),
-                    extra={'frontend': str(frontend.name)})
-        collector.finish()
+    # Delete running key in redis - only if not already running (see return above)
+    logger.info("API Collector {} (tenant={}): ending".format(frontend.name, frontend.tenants_config.name),
+                extra={'frontend': str(frontend.name)})
+    collector.finish()
 
 def node_selected(current_node, frontend):
     """ Small routine that verify if this node has to run the collector """
