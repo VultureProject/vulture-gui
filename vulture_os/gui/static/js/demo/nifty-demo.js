@@ -20,7 +20,7 @@ $(document).on('nifty.ready', function () {
         $("#demo-nifty-settings").addClass("in");
         $("#demo-set-content").append(contentIndi);
         $.get("settings.html", function( data ) {
-            $("#demo-set-content").empty().append(data);
+            $("#demo-set-content").empty().append(DOMPurify.sanitize(data));
             settingsInit();
         }).fail(function(e) {
             $("#demo-get-status").html(e.status);

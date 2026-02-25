@@ -1,6 +1,6 @@
 // Unite Gallery, Version: 1.7.40, released 29 Nov 2016 
 
-
+import { sanitize } from "../../DOMPurify/purify.min";
 
 /**
  * write something to debug line
@@ -19239,11 +19239,11 @@ var g_ugWistiaAPI = new UGWistiaAPI();
 			
 			if(type == "jquery"){
 				var objGallery = document.getElementById(galleryID);
-				objGallery.innerHTML = message;
+				objGallery.innerHTML = sanitize(message);
 				objGallery.style.display = "block";
 			}
 			else
-				jQuery(galleryID).show().html(message);
+				jQuery(galleryID).show().html(sanitize(message));
 			
 			return(false);
 		}
@@ -19595,7 +19595,7 @@ function UniteGalleryMain(){
 		
 		g_objWrapper.children().remove();
 		
-		g_objWrapper.html(html);
+		g_objWrapper.html(sanitize(html));
 		g_objWrapper.show();		
 	}
 	

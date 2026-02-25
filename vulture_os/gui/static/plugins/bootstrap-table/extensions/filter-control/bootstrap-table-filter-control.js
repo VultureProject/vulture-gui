@@ -3,6 +3,7 @@
  * @webSite: http://djhvscf.github.io/Blog
  * @version: v2.1.2
  */
+import { sanitize } from '../../../DOMPurify/purify.min.js';
 
 (function ($) {
 
@@ -35,7 +36,7 @@
         if (!existOptionInSelectControl(selectControl, value)) {
             selectControl.append($("<option></option>")
                 .attr("value", value)
-                .text($('<div />').html(text).text()));
+                .text($('<div />').html(sanitize(text)).text()));
         }
     };
 

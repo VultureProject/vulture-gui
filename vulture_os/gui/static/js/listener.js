@@ -41,7 +41,7 @@ $(function() {
     )
     .done(function(response){
       //TODO ensure objects and JS is refreshed to show correctly
-      $('#api_collector_form_div').html(response);
+      $('#api_collector_form_div').html(DOMPurify.sanitize(response));
       // Refresh tags-input bootstrap fields after their import in the DOM
       $('#api_collector_form_div').find('[data-role="tagsinput"]').each(function(index){
         $( this ).tagsinput();
@@ -169,7 +169,7 @@ $(function() {
         }
         var data = response.data;
         $('#id_api_parser_has_been_tested').val('1');
-        $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
+        $('#modal-test-apiparser-body').html(DOMPurify.sanitize('<pre>' + JSON.stringify(data, null, 4) + "</pre>"));
         $('#modal-test-apiparser').modal('show');
 
       })

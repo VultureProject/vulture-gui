@@ -9,7 +9,7 @@ function init_application_form(btn, html, app_id){
 		function(response){
 			$(btn).html(html);
 			if (response.status){
-				$('#modal-application-content').html(response.template);
+				$('#modal-application-content').html(DOMPurify.sanitize(response.template));
 				$('#modal-application').modal({
 					backdrop: 'static',
 				    keyboard: false
@@ -169,7 +169,7 @@ $(function(){
 
 			function(response){
 				if (!response.status){
-					$('#modal-application-content').html(response.template);
+					$('#modal-application-content').html(DOMPurify.sanitize(response.template));
 				} else {
 					$('#modal-application').modal('hide');
 					notify('success', gettext('Application successfully saved'))

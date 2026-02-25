@@ -30,14 +30,14 @@ $(function(){
 				if ($('#documentation_tab').css('right') !== "0px")
 					$('#documentation_tab').css('right', 0);
 
-				$('#documentation_tab').html(response.html);
+				$('#documentation_tab').html(DOMPurify.sanitize(response.html));
 
 				converter = new showdown.Converter({
 					literalMidWordUnderscores: true
 				}),
                 readme = converter.makeHtml(response.readme);
 				
-				$('#documentation_content').html(readme)
+				$('#documentation_content').html(DOMPurify.sanitize(readme))
 				bind_buttons();
 			}
 		)

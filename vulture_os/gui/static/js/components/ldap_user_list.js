@@ -141,7 +141,7 @@ let UserListComponent = Vue.component("UserList", {
                 }).$mount()
 
                 $(`#modal-${this.id}`).modal('show')
-                $(`#${this.modalContentId()}`).html(comp.$el)
+                $(`#${this.modalContentId()}`).html(DOMPurify.sanitize(comp.$el))
             })
 
             $(nRow).find('.btn-delete').on('click', (e) => {
@@ -187,7 +187,7 @@ let UserListComponent = Vue.component("UserList", {
       }).$mount()
 
       $(`#modal-${this.id}`).modal('show')
-      $(`#${this.modalContentId()}`).html(comp.$el)
+      $(`#${this.modalContentId()}`).html(DOMPurify.sanitize(comp.$el))
     }
   }
 })

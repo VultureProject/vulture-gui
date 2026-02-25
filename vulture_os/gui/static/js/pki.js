@@ -9,7 +9,7 @@ function init_pki_form(btn, html, pki_id){
 		function(response){
 			$(btn).html(html);
 			if (response.status){
-				$('#modal-pki-content').html(response.template);
+				$('#modal-pki-content').html(DOMPurify.sanitize(response.template));
 				$('#modal-pki').modal({
 					backdrop: 'static',
 				    keyboard: false
@@ -135,7 +135,7 @@ $(function(){
 
 			function(response){
 				if (!response.status){
-					$('#modal-pki-content').html(response.template);
+					$('#modal-pki-content').html(DOMPurify.sanitize(response.template));
 				} else {
 					$('#modal-pki').modal('hide');
 					notify('success', gettext('pki successfully saved'))
