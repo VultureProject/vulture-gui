@@ -39,7 +39,7 @@ from services.apps import ServicesConfig
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
                                       REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES,
-                                      FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES,
+                                      FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST,
                                       get_available_timezones)
 
 from services.rsyslogd.form import RsyslogQueueForm
