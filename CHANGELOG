@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [DEPENDENCIES]
+  - joblib (added) 1.5.3
 
 
 ## [2.35.2] - 2026-03-17

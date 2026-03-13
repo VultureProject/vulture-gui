@@ -37,3 +37,4 @@ https://github.com/VultureProject/Sophos-Central-SIEM-Integration/archive/refs/h
 defusedxml
 xmltodict
 msal ~= 1.34
+joblib
