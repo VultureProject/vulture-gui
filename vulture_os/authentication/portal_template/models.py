@@ -429,7 +429,7 @@ class TemplateImage(models.Model):
         :return: A string with pre-formatted html for the image
         """
 
-        return "<img src='data:image/{};base64,{}'/>".format(self.image_type, self.content)
+        return f"<img src='data:{self.image_type};base64,{self.content}'/>"
 
     def create_preview_html(self):
         """
@@ -437,4 +437,4 @@ class TemplateImage(models.Model):
         :return: A string with pre-formatted html for the image
         """
 
-        return "data:image/{};base64,{}".format(self.image_type, self.content)
+        return f"data:{self.image_type};base64,{self.content}"
