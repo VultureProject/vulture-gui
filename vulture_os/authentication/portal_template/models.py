@@ -417,7 +417,7 @@ class TemplateImage(models.Model):
         :return: String containing the URI of the image.
         """
         try:
-            url = f"portal_statics/{self.uid}"
+            url = f"portal_statics/{self.pk}"
         except Exception:
             return None
 
