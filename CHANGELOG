@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [SYSTEM] [PKI] Prohibit spaces in X509Certificate name
 
 
 ## [2.35.4] - 2026-04-07
