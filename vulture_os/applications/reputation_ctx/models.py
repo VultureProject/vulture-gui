@@ -159,7 +159,12 @@ class ReputationContext(models.Model):
     nb_netset = models.IntegerField(default=0)
     nb_unique = models.IntegerField(default=0)
     internal = models.BooleanField(default=False)
-    enable_hour_download = models.BooleanField(default=True)
+    enable_hour_download = models.BooleanField(
+        default=True,
+        verbose_name=_("Automatically download file every hour"),
+        help_text=_("If activated, Vulture will download and save the file, and will automatically"
+                    " restart the service(s) using it")
+    )
 
     """ Use DjongoManager to use mongo_find() & Co """
     objects = models.DjongoManager()
