@@ -33,6 +33,7 @@ pyjwt ~= 2.3
 websocket-client ~= 1.3.2
 google-auth
 google-api-python-client
+pysocks # needed by httplib2 to support proxy
 https://github.com/VultureProject/Sophos-Central-SIEM-Integration/archive/refs/heads/add_setup-py.zip
 defusedxml
 xmltodict
