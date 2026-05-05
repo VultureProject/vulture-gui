@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [GUI] Bump axios version to 1.15.2
 
 
 ## [2.35.6] - 2026-04-21
