@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [REPUTATION_CTX] Allow to configure if custom Reputation Context DBs should be downloaded every hour
+- [REPUTATION_CTX] Set back update crontab to download Reputation Context files every hour
 
 
 ## [2.35.7] - 2026-05-06
