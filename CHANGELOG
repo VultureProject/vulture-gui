@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [DEPENDENCIES]
+  - urllib3 2.6.3 -> 2.7.0
+  - idna 3.7 -> 3.16
 
 
 ## [2.35.7] - 2026-05-06
