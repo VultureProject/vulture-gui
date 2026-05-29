@@ -666,8 +666,6 @@ class REDISBase(object):
     """Base class for database wrapper
     """
 
-    ip = settings.REDISIP
-    port = settings.REDISPORT
     r = None
     logger = logging.getLogger('redis_events')
 
@@ -676,8 +674,8 @@ class REDISBase(object):
 
         try:
             self.r = Redis(
-                host='127.0.0.5', # Haproxy load-balancing
-                port=6379,
+                host=settings.REDISIP,
+                port=settings.REDISPORT,
                 password=Cluster.get_global_config().redis_password,
                 db=0,
                 decode_responses=True
