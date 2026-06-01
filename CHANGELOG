@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DEPENDENCIES]
   - urllib3 2.6.3 -> 2.7.0
   - idna 3.7 -> 3.16
+  - pyjwt 2.12.1 -> 2.13.0
 - [GUI] Bump axios version to 1.16.1
 ### Fixed
 - [REDIS] Correctly use Haproxy load-balancer for Redis connection everywhere
