@@ -10,7 +10,10 @@
             {%- if ratelimit_burst %}
             RateLimit.Burst="{{ratelimit_burst}}"
             {%- endif %}
+        {%- if compression_mode != "none" %}
+            compression.mode="{{compression_mode}}"
             ZipLevel="{{zip_level}}"
+        {%- endif %}
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
             queue.dequeuebatchsize="{{dequeue_size}}"

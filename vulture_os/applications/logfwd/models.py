@@ -569,6 +569,11 @@ class LogOMHIREDIS(LogOM):
 
 
 class LogOMFWD(LogOM):
+    class CompressionMode(models.TextChoices):
+        NONE = "none", _("No compression")
+        SINGLE = "single", _("Compress message by message")
+        STREAM_ALWAYS = "stream:always", _("Compress TCP data flow")
+
     target = models.TextField(null=False, default="1.2.3.4")
     port = models.IntegerField(
         null=False,
@@ -581,6 +586,12 @@ class LogOMFWD(LogOM):
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(9)],
         help_text=_("Compression level for messages.")
+    )
+    compression_mode = models.TextField(
+        default=CompressionMode.NONE,
+        choices=CompressionMode.choices,
+        help_text=_("stream:always option requires a compatible destination."),
+        verbose_name=_("Compression mode")
     )
 
     ratelimit_interval = models.PositiveIntegerField(null=True, blank=True)
@@ -615,6 +626,7 @@ class LogOMFWD(LogOM):
             'port': self.port,
             'protocol': self.protocol,
             'type': 'Syslog',
+            'compression_mode': self.compression_mode,
             'zip_level': self.zip_level,
             'ratelimit_interval': self.ratelimit_interval,
             'ratelimit_burst': self.ratelimit_burst,

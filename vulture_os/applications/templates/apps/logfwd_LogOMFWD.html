@@ -109,7 +109,7 @@
                 </div>
               </div>
               <div class="row">
-                <div class="col-md-12">
+                <div class="col-md-12" id="zip_level_div">
                   <div class="form-group">
                     <label class="col-sm-4 control-label">{% translate "ZIP level" %}</label>
                     <div class="col-sm-5">
@@ -158,6 +158,17 @@
                       <div class="col-sm-5">
                         {{form.ratelimit_burst}}
                         {{form.ratelimit_burst.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.compression_mode.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.compression_mode}}
+                        {{form.compression_mode.errors|safe}}
                       </div>
                     </div>
                   </div>
@@ -342,11 +353,19 @@
 
     /* Switchery mandatory code */
     var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
-      elems.forEach(function(html) {
+    elems.forEach(function(html) {
       var switchery = new Switchery(html, {
         'color': '#FA9834'
       });
     });
+
+    $('#id_compression_mode').on('change', function(e){
+      if ($(this).val() !== "none") {
+        $('#zip_level_div').show();
+      } else {
+        $('#zip_level_div').hide();
+      }
+    }).trigger('change');
 
     $('#id_enable_retry').on('change', function(e){
       if ($(this).is(':checked')) {
