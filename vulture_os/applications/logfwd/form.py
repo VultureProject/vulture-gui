@@ -207,7 +207,7 @@ class LogOMFWDForm(LogOMForm):
     class Meta(LogOMForm.Meta):
         model = LogOMFWD
         fields = LogOMForm.Meta.fields + ('target', 'port', 'protocol', 'zip_level',
-                  'compression_mode', 'ratelimit_interval', 'ratelimit_burst')
+                  'compression_mode', 'flush_on_txend', 'ratelimit_interval', 'ratelimit_burst')
 
         widgets = {
             'target': TextInput(attrs={'class': 'form-control'}),
@@ -215,6 +215,7 @@ class LogOMFWDForm(LogOMForm):
             'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'select2'}),
             'zip_level': NumberInput(attrs={'class': 'form-control'}),
             'compression_mode': Select(choices=LogOMFWD.CompressionMode.choices, attrs={'class': 'select2'}),
+            'flush_on_txend': Select(choices=LogOMFWD.FlushOnTXEnd.choices, attrs={'class': 'select2'}),
             'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
             'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
         }

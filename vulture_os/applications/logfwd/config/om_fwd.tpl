@@ -13,6 +13,9 @@
         {%- if compression_mode != "none" %}
             compression.mode="{{compression_mode}}"
             ZipLevel="{{zip_level}}"
+            {%- if compression_mode == "stream:always" %}
+            compression.stream.flushOnTXEnd="{{flush_on_txend}}"
+            {%- endif %}
         {%- endif %}
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
