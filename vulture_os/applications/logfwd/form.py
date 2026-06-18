@@ -215,7 +215,7 @@ class LogOMFWDForm(LogOMForm):
             'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'select2'}),
             'zip_level': NumberInput(attrs={'class': 'form-control'}),
             'compression_mode': Select(choices=LogOMFWD.CompressionMode.choices, attrs={'class': 'select2'}),
-            'flush_on_txend': Select(choices=LogOMFWD.FlushOnTXEnd.choices, attrs={'class': 'select2'}),
+            'flush_on_txend': CheckboxInput(attrs={'class': 'js-switch'}),
             'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
             'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
         }

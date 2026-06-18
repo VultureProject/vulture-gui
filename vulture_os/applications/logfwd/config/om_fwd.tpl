@@ -14,7 +14,7 @@
             compression.mode="{{compression_mode}}"
             ZipLevel="{{zip_level}}"
             {%- if compression_mode == "stream:always" %}
-            compression.stream.flushOnTXEnd="{{flush_on_txend}}"
+            compression.stream.flushOnTXEnd="{% if flush_on_txend %}on{% else %}off{% endif %}"
             {%- endif %}
         {%- endif %}
             queue.type="LinkedList"
