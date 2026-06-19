@@ -1,0 +1,153 @@
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture OS.
+
+Vulture OS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture OS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
+"""
+
+__author__ = "Fabien Amelinck"
+__credits__ = []
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture OS"
+__email__ = "contact@vultureproject.org"
+__doc__ = 'Tests for LogOM App'
+
+from django.test import TestCase
+from django.template import Context, Template as JinjaTemplate
+from unittest.mock import patch
+
+from applications.logfwd.models import LogOM, LogOMFWD
+
+class LogOMFWDTestCase(TestCase):
+    TEST_CASE_NAME=f"{__name__}"
+
+    def setUp(self):
+        from services.frontend.models import Frontend, Listener
+        from system.cluster.models import Node, NetworkAddress, NetworkInterfaceCard, NetworkAddressNIC
+        from system.tenants.models import Tenants
+
+        # Prevent logger from printing logs to stdout during tests
+        self.logger_patcher = patch('services.frontend.models.logger')
+        self.logger_patcher2 = patch('system.cluster.models.logger')
+        self.logger_patcher.start()
+        self.logger_patcher2.start()
+
+        self.node = Node.objects.create(
+            name=f"node_test_{self.TEST_CASE_NAME}",
+        )
+        self.nic = NetworkInterfaceCard.objects.create(
+            dev = "vtnet0",
+            node=self.node,
+        )
+        self.netaddr = NetworkAddress.objects.create(
+            name=f"network_address_test_{self.TEST_CASE_NAME}",
+            type="alias",
+            ip="127.127.127.127",
+            prefix_or_netmask="24",
+        )
+        NetworkAddressNIC.objects.create(
+            nic=self.nic,
+            network_address=self.netaddr,
+        )
+        self.tenant = Tenants.objects.create(
+            name=f"tenant_test_{self.TEST_CASE_NAME}"
+        )
+        self.logfwd = LogOMFWD.objects.create(
+            name=f"syslog_forwarder_test_{self.TEST_CASE_NAME.replace('.','_')}",
+            target="127.127.127.127",
+            port=514,
+            protocol="tcp",
+            zip_level=6,
+            compression_mode="stream:always",
+            flush_on_txend=True,
+        )
+        self.logfwd_uncompressed = LogOMFWD.objects.create(
+            name=f"syslog_forwarder_uncompressed_test_{self.TEST_CASE_NAME.replace('.','_')}",
+            target="127.127.127.127",
+            port=514,
+            protocol="tcp",
+            compression_mode="none"
+        )
+        self.frontend_log = Frontend.objects.create(
+            name=f"frontend_log_test_{self.TEST_CASE_NAME}",
+            mode="log",
+            enabled=True,
+            listening_mode="tcp",
+            enable_logging=True,
+            ruleset="raw_to_json",
+            log_condition="{{" + self.logfwd.name + "}}",
+            tenants_config=self.tenant
+        )
+        self.frontend_log.log_forwarders=LogOM.objects.filter(pk=self.logfwd.pk)
+        self.frontend_log.save()
+        self.frontend_log_uncompressed = Frontend.objects.create(
+            name=f"frontend_log_uncompressed_test_{self.TEST_CASE_NAME}",
+            mode="log",
+            enabled=True,
+            listening_mode="tcp",
+            enable_logging=True,
+            ruleset="raw_to_json",
+            log_condition="{{" + self.logfwd_uncompressed.name + "}}",
+            tenants_config=self.tenant
+        )
+        self.frontend_log_uncompressed.log_forwarders=LogOM.objects.filter(pk=self.logfwd_uncompressed.pk)
+        self.frontend_log_uncompressed.save()
+        self.listener_tcp = Listener.objects.create(
+            network_address=self.netaddr,
+            port=1234,
+            frontend=self.frontend_log
+        )
+        self.listener_tcp_uncompressed = Listener.objects.create(
+            network_address=self.netaddr,
+            port=1235,
+            frontend=self.frontend_log_uncompressed
+        )
+
+    def tearDown(self) -> None:
+        # Cleanly remove the logger patch
+        self.logger_patcher.stop()
+        self.logger_patcher2.stop()
+        return super().tearDown()
+
+    def test_present_settings(self):
+        logfwd_rsyslog_config = self.frontend_log.render_log_condition()
+
+        self.assertIn('compression.mode="stream:always"', logfwd_rsyslog_config)
+        self.assertIn('ZipLevel="6"', logfwd_rsyslog_config)
+        self.assertIn('compression.stream.flushOnTXEnd="on"', logfwd_rsyslog_config)
+
+    def test_absent_settings(self):
+        logfwd_rsyslog_config = self.frontend_log_uncompressed.render_log_condition()
+
+        self.assertNotIn("compression.mode", logfwd_rsyslog_config)
+        self.assertNotIn("ZipLevel", logfwd_rsyslog_config)
+        self.assertNotIn("compression.stream.flushOnTXEnd", logfwd_rsyslog_config)
+
+    def test_generate_logfwd_conf(self):
+        expected_rsyslog_config = f'''    action(type="omfwd"\n            name="{self.logfwd.name}_{self.frontend_log.name}"\n            ''' + \
+                                  f'''Target="{self.netaddr.ip}"\n            Port="{self.logfwd.port}"\n            ''' + \
+                                  f'''Protocol="{self.logfwd.protocol}"\n            Template="{self.frontend_log.ruleset}"\n            ''' + \
+                                  '''compression.mode="stream:always"\n            ZipLevel="6"\n            ''' + \
+                                  '''compression.stream.flushOnTXEnd="on"\n            queue.type="LinkedList"\n            ''' + \
+                                  '''queue.size="10000"\n            queue.dequeuebatchsize="300"\n            )\n'''
+        logfwd_rsyslog_config = self.frontend_log.render_log_condition()
+
+        self.assertEqual(expected_rsyslog_config, logfwd_rsyslog_config)
+
+    def test_generate_frontend_conf(self):
+        frontend_rsyslog_config = self.frontend_log.generate_rsyslog_conf()
+
+        self.assertIn('compression.mode="stream:always"', frontend_rsyslog_config)
+        self.assertIn('ZipLevel="6"', frontend_rsyslog_config)
+        self.assertIn('compression.stream.flushOnTXEnd="on"', frontend_rsyslog_config)
