@@ -571,8 +571,8 @@ class LogOMHIREDIS(LogOM):
 class LogOMFWD(LogOM):
     class CompressionMode(models.TextChoices):
         NONE = "none", _("No compression")
-        SINGLE = "single", _("Compress message by message")
-        STREAM_ALWAYS = "stream:always", _("Compress TCP data flow")
+        SINGLE = "single", _("Compress message by message (no delay)")
+        STREAM_ALWAYS = "stream:always", _("Compress TCP data flow (delay may occur when sending)")
 
     target = models.TextField(null=False, default="1.2.3.4")
     port = models.IntegerField(
@@ -595,8 +595,8 @@ class LogOMFWD(LogOM):
     )
     flush_on_txend = models.BooleanField(
         default=True,
-        help_text=_("Not flushing compression buffer can improve perfs on high EPS only."),
-        verbose_name=_("Flush on TX End (high EPS only)")
+        help_text=_("Not flushing compression buffer can improve performances on high EPS only."),
+        verbose_name=_("Flush on TX End (disable on very high throughput only)")
     )
 
     ratelimit_interval = models.PositiveIntegerField(null=True, blank=True)

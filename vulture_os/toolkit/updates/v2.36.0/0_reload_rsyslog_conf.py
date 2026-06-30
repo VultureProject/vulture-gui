@@ -49,7 +49,7 @@ if __name__ == "__main__":
     else:
         try:
             print("Rebuilding Frontend configurations using a Syslog forwarder...")
-            logfwds = list(LogOMFWD.objects.all())
+            logfwds = list(LogOMFWD.objects.all().values_list('pk', flat=True))
             for frontend in Frontend.objects.filter(
                 Q(log_forwarders__in=logfwds) |
                 Q(log_forwarders_parse_failure__in=logfwds)).distinct():

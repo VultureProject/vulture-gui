@@ -109,17 +109,6 @@
                 </div>
               </div>
               <div class="row">
-                <div class="col-md-12" id="zip_level_div">
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{% translate "ZIP level" %}</label>
-                    <div class="col-sm-5">
-                      {{form.zip_level}}
-                      {{form.zip_level.errors|safe}}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
                     <label class="col-sm-4 control-label">{% translate "Send as raw" %}</label>
@@ -169,6 +158,17 @@
                       <div class="col-sm-5">
                         {{form.compression_mode}}
                         {{form.compression_mode.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12" id="zip_level_div">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{% translate "ZIP level" %}</label>
+                      <div class="col-sm-5">
+                        {{form.zip_level}}
+                        {{form.zip_level.errors|safe}}
                       </div>
                     </div>
                   </div>
