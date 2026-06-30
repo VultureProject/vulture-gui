@@ -171,7 +171,7 @@ DATABASES = {
         "CLIENT": {
             'host': env.str('MONGODB_HOST', HOSTNAME),
             'port': env.int('MONGODB_PORT', 9091),
-            'serverSelectionTimeoutMS': 5000,
+            'serverSelectionTimeoutMS': 60000,
             'REPLICASET': 'Vulture',
             'SSL': env.bool('MONGODB_SSL', True),
             'tlsCertificateKeyFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CERT_FILE', 'pki/node.pem')),
