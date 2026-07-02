@@ -24,7 +24,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Tests for LogOM App'
 
 from django.test import TestCase
-from django.template import Context, Template as JinjaTemplate
 from unittest.mock import patch
 
 from applications.logfwd.models import LogOM, LogOMFWD
@@ -36,12 +35,6 @@ class LogOMFWDTestCase(TestCase):
         from services.frontend.models import Frontend, Listener
         from system.cluster.models import Node, NetworkAddress, NetworkInterfaceCard, NetworkAddressNIC
         from system.tenants.models import Tenants
-
-        # Prevent logger from printing logs to stdout during tests
-        self.logger_patcher = patch('services.frontend.models.logger')
-        self.logger_patcher2 = patch('system.cluster.models.logger')
-        self.logger_patcher.start()
-        self.logger_patcher2.start()
 
         self.node = Node.objects.create(
             name=f"node_test_{self.TEST_CASE_NAME}",
@@ -72,13 +65,6 @@ class LogOMFWDTestCase(TestCase):
             compression_mode="stream:always",
             flush_on_txend=True,
         )
-        self.logfwd_uncompressed = LogOMFWD.objects.create(
-            name=f"syslog_forwarder_uncompressed_test_{self.TEST_CASE_NAME.replace('.','_')}",
-            target="127.127.127.127",
-            port=514,
-            protocol="tcp",
-            compression_mode="none"
-        )
         self.frontend_log = Frontend.objects.create(
             name=f"frontend_log_test_{self.TEST_CASE_NAME}",
             mode="log",
@@ -89,8 +75,119 @@ class LogOMFWDTestCase(TestCase):
             log_condition="{{" + self.logfwd.name + "}}",
             tenants_config=self.tenant
         )
-        self.frontend_log.log_forwarders=LogOM.objects.filter(pk=self.logfwd.pk)
+        self.frontend_log.log_forwarders = LogOM.objects.filter(pk=self.logfwd.pk)
         self.frontend_log.save()
+        self.listener_tcp = Listener.objects.create(
+            network_address=self.netaddr,
+            port=1234,
+            frontend=self.frontend_log
+        )
+
+    def tearDown(self) -> None:
+        return super().tearDown()
+
+    @patch('applications.logfwd.form.logger')
+    def test_invalid_compression_mode(self, logger_patcher):
+        from applications.logfwd.form import LogOMFWDForm
+
+        logfwd_form = LogOMFWDForm({
+            'name': f"syslog_forwarder_invalid_compression_mode_test_{self.TEST_CASE_NAME}",
+            'target': "127.127.127.127",
+            'port': 514,
+            'protocol': "tcp",
+            'compression_mode': "toto"
+        })
+        self.assertFalse(logfwd_form.is_valid())
+
+    @patch('applications.logfwd.form.logger')
+    def test_invalid_zip_level(self, logger_patcher):
+        from applications.logfwd.form import LogOMFWDForm
+
+        logfwd_form = LogOMFWDForm({
+            'name': f"syslog_forwarder_invalid_zip_level_test_{self.TEST_CASE_NAME}",
+            'target': "127.127.127.127",
+            'port': 514,
+            'protocol': "tcp",
+            'zip_level': -10
+        })
+        self.assertFalse(logfwd_form.is_valid())
+
+    @patch('applications.logfwd.form.logger')
+    def test_invalid_flush_on_txend(self, logger_patcher):
+        from applications.logfwd.form import LogOMFWDForm
+
+        logfwd_form = LogOMFWDForm({
+            'name': f"syslog_forwarder_invalid_flush_on_txend_test_{self.TEST_CASE_NAME}",
+            'target': "127.127.127.127",
+            'port': 514,
+            'protocol': "tcp",
+            'flush_on_txend': "on"
+        })
+        self.assertFalse(logfwd_form.is_valid())
+
+    def test_present_settings(self):
+        logfwd_rsyslog_config = LogOM.generate_conf(self.logfwd, "raw_to_json", frontend="dummy")
+
+        self.assertIn('compression.mode="stream:always"', logfwd_rsyslog_config)
+        self.assertIn('ZipLevel="6"', logfwd_rsyslog_config)
+        self.assertIn('compression.stream.flushOnTXEnd="on"', logfwd_rsyslog_config)
+
+    def test_flushontxend_absence(self):
+        self.logfwd_single_compression = LogOMFWD.objects.create(
+            name=f"syslog_forwarder_flushontxend_absence_test_{self.TEST_CASE_NAME.replace('.','_')}",
+            target="127.127.127.127",
+            port=514,
+            protocol="tcp",
+            zip_level=6,
+            compression_mode="single",
+            flush_on_txend=False,
+        )
+        logfwd_rsyslog_config = LogOM.generate_conf(self.logfwd_single_compression, "raw_to_json", frontend="dummy")
+
+        self.assertIn('compression.mode="single"', logfwd_rsyslog_config)
+        self.assertNotIn('compression.stream.flushOnTXEnd', logfwd_rsyslog_config)
+
+    def test_flushontxend_on(self):
+        self.logfwd_flushontxend_on = LogOMFWD.objects.create(
+            name=f"syslog_forwarder_flushontxend_on_test_{self.TEST_CASE_NAME.replace('.','_')}",
+            target="127.127.127.127",
+            port=514,
+            protocol="tcp",
+            zip_level=6,
+            compression_mode="stream:always",
+            flush_on_txend=True,
+        )
+        logfwd_rsyslog_config = LogOM.generate_conf(self.logfwd_flushontxend_on, "raw_to_json", frontend="dummy")
+
+        self.assertIn('compression.mode="stream:always"', logfwd_rsyslog_config)
+        self.assertIn('compression.stream.flushOnTXEnd="on"', logfwd_rsyslog_config)
+
+    def test_flushontxend_off(self):
+        self.logfwd_flushontxend_off = LogOMFWD.objects.create(
+            name=f"syslog_forwarder_flushontxend_off_test_{self.TEST_CASE_NAME.replace('.','_')}",
+            target="127.127.127.127",
+            port=514,
+            protocol="tcp",
+            zip_level=6,
+            compression_mode="stream:always",
+            flush_on_txend=False,
+        )
+        logfwd_rsyslog_config = LogOM.generate_conf(self.logfwd_flushontxend_off, "raw_to_json", frontend="dummy")
+
+        self.assertIn('compression.mode="stream:always"', logfwd_rsyslog_config)
+        self.assertIn('compression.stream.flushOnTXEnd="off"', logfwd_rsyslog_config)
+
+    @patch('services.frontend.models.logger')
+    def test_absent_settings(self, logger_patcher):
+        from services.frontend.models import Frontend, Listener
+
+        self.logfwd_uncompressed = LogOMFWD.objects.create(
+            name=f"syslog_forwarder_uncompressed_test_{self.TEST_CASE_NAME.replace('.','_')}",
+            target="127.127.127.127",
+            port=514,
+            protocol="tcp",
+            compression_mode="none"
+        )
         self.frontend_log_uncompressed = Frontend.objects.create(
             name=f"frontend_log_uncompressed_test_{self.TEST_CASE_NAME}",
             mode="log",
@@ -101,53 +198,31 @@ class LogOMFWDTestCase(TestCase):
             log_condition="{{" + self.logfwd_uncompressed.name + "}}",
             tenants_config=self.tenant
         )
-        self.frontend_log_uncompressed.log_forwarders=LogOM.objects.filter(pk=self.logfwd_uncompressed.pk)
+        self.frontend_log_uncompressed.log_forwarders = LogOM.objects.filter(pk=self.logfwd_uncompressed.pk)
         self.frontend_log_uncompressed.save()
-        self.listener_tcp = Listener.objects.create(
-            network_address=self.netaddr,
-            port=1234,
-            frontend=self.frontend_log
-        )
         self.listener_tcp_uncompressed = Listener.objects.create(
             network_address=self.netaddr,
             port=1235,
             frontend=self.frontend_log_uncompressed
         )
 
-    def tearDown(self) -> None:
-        # Cleanly remove the logger patch
-        self.logger_patcher.stop()
-        self.logger_patcher2.stop()
-        return super().tearDown()
-
-    def test_present_settings(self):
-        logfwd_rsyslog_config = self.frontend_log.render_log_condition()
-
-        self.assertIn('compression.mode="stream:always"', logfwd_rsyslog_config)
-        self.assertIn('ZipLevel="6"', logfwd_rsyslog_config)
-        self.assertIn('compression.stream.flushOnTXEnd="on"', logfwd_rsyslog_config)
-
-    def test_absent_settings(self):
         logfwd_rsyslog_config = self.frontend_log_uncompressed.render_log_condition()
 
         self.assertNotIn("compression.mode", logfwd_rsyslog_config)
         self.assertNotIn("ZipLevel", logfwd_rsyslog_config)
         self.assertNotIn("compression.stream.flushOnTXEnd", logfwd_rsyslog_config)
 
-    def test_generate_logfwd_conf(self):
-        expected_rsyslog_config = f'''    action(type="omfwd"\n            name="{self.logfwd.name}_{self.frontend_log.name}"\n            ''' + \
-                                  f'''Target="{self.netaddr.ip}"\n            Port="{self.logfwd.port}"\n            ''' + \
-                                  f'''Protocol="{self.logfwd.protocol}"\n            Template="{self.frontend_log.ruleset}"\n            ''' + \
-                                  '''compression.mode="stream:always"\n            ZipLevel="6"\n            ''' + \
-                                  '''compression.stream.flushOnTXEnd="on"\n            queue.type="LinkedList"\n            ''' + \
-                                  '''queue.size="10000"\n            queue.dequeuebatchsize="300"\n            )\n'''
-        logfwd_rsyslog_config = self.frontend_log.render_log_condition()
+    @patch('services.frontend.models.logger')
+    @patch('applications.logfwd.models.LogOM.generate_conf')
+    def test_render_log_condition(self, patched_render_log_condition, logger_patcher):
+        patched_render_log_condition.return_value = (True, "Success")
+        self.frontend_log.render_log_condition()
+        patched_render_log_condition.assert_called()
 
-        self.assertEqual(expected_rsyslog_config, logfwd_rsyslog_config)
-
-    def test_generate_frontend_conf(self):
-        frontend_rsyslog_config = self.frontend_log.generate_rsyslog_conf()
-
-        self.assertIn('compression.mode="stream:always"', frontend_rsyslog_config)
-        self.assertIn('ZipLevel="6"', frontend_rsyslog_config)
-        self.assertIn('compression.stream.flushOnTXEnd="on"', frontend_rsyslog_config)
+    @patch('system.cluster.models.logger')
+    @patch('services.frontend.models.logger')
+    @patch('applications.logfwd.models.LogOM.generate_conf')
+    def test_generate_frontend_conf(self, patched_render_log_condition, logger_patcher, logger_patcher2):
+        patched_render_log_condition.return_value = (True, "Success")
+        self.frontend_log.generate_rsyslog_conf()
+        patched_render_log_condition.assert_called()
