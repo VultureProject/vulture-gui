@@ -224,10 +224,10 @@ class LogOMFWDForm(LogOMForm):
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
-        """ Stream compression should only be used with tcp protocol """
-        if cleaned_data.get('protocol') == "udp" and cleaned_data.get('compression_mode') != LogOMFWD.CompressionMode.NONE:
+        #Stream compression should only be used with tcp protocol
+        if cleaned_data.get('protocol') == "udp" and cleaned_data.get('compression_mode') == LogOMFWD.CompressionMode.STREAM_ALWAYS:
             self.add_error("compression_mode", "Stream compression is incompatible with UDP.")
-        """ if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank"""
+        #if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank
         if cleaned_data.get('ratelimit_interval') and not cleaned_data.get('ratelimit_burst'):
             self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
         if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):
