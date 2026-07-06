@@ -55,7 +55,6 @@ if __name__ == "__main__":
                 Q(log_forwarders_parse_failure__in=logfwds)).distinct():
                 print(f"Reloading configuration of {frontend}")
                 frontend.reload_conf()
-            node.api_request("services.rsyslogd.rsyslog.restart_service")
 
         except Exception as e:
             print(f"Failed to rebuild Frontends: {e}")
