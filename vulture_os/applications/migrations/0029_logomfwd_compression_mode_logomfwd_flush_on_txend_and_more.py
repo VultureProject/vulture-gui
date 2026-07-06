@@ -8,9 +8,7 @@ def migrate_compression_mode(apps, schema_editor):
     logomfwd_model = apps.get_model("applications", "logomfwd")
     logomfwd = logomfwd_model.objects.using(db_alias)
 
-    for logom in logomfwd.filter(zip_level__gt=0):
-        logom.compression_mode = "single"
-        logom.save()
+    logomfwd.filter(zip_level__gt=0).update(compression_mode="single")
 
 
 class Migration(migrations.Migration):
@@ -23,12 +21,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='logomfwd',
             name='compression_mode',
-            field=models.TextField(choices=[('none', 'No compression'), ('single', 'Compress message by message'), ('stream:always', 'Compress TCP data flow')], default='none', help_text='stream:always option requires a compatible destination.', verbose_name='Compression mode'),
+            field=models.TextField(choices=[('none', 'No compression'), ('single', 'Compress message by message (no delay)'), ('stream:always', 'Compress TCP data flow (delay may occur when sending)')], default='none', help_text='stream:always option requires a compatible destination.', verbose_name='Compression mode'),
         ),
         migrations.AddField(
             model_name='logomfwd',
             name='flush_on_txend',
-            field=models.TextField(choices=[('on', 'On (default)'), ('off', 'Off (for high throughput only!)')], default='on', help_text='Not flushing compression buffer can improve perfs on high EPS only.', verbose_name='Flush on TX End'),
+            field=models.BooleanField(default=True, help_text='Not flushing compression buffer can improve performances on high EPS only.', verbose_name='Flush on TX End (disable on very high throughput only)'),
         ),
         migrations.RunPython(migrate_compression_mode, migrations.RunPython.noop),
     ]
