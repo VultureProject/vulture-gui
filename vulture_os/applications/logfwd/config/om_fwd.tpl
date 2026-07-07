@@ -10,7 +10,13 @@
             {%- if ratelimit_burst %}
             RateLimit.Burst="{{ratelimit_burst}}"
             {%- endif %}
+        {%- if compression_mode != "none" %}
+            compression.mode="{{compression_mode}}"
             ZipLevel="{{zip_level}}"
+            {%- if compression_mode == "stream:always" %}
+            compression.stream.flushOnTXEnd="{% if flush_on_txend %}on{% else %}off{% endif %}"
+            {%- endif %}
+        {%- endif %}
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
             queue.dequeuebatchsize="{{dequeue_size}}"

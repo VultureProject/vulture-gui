@@ -109,12 +109,14 @@ class LogOM (models.Model):
     enabled = models.BooleanField(default=True)
     queue_size = models.PositiveIntegerField(
         default=10000,
+        blank=True,
         help_text=_("Size of the queue in nb of message"),
         verbose_name=_("Size of the queue in nb of message"),
         validators=[MinValueValidator(100)]
     )
     dequeue_size = models.PositiveIntegerField(
         default=300,
+        blank=True,
         help_text=_("Size of the batch to dequeue"),
         verbose_name=_("Size of the batch to dequeue"),
         validators=[MinValueValidator(1)]
@@ -569,6 +571,11 @@ class LogOMHIREDIS(LogOM):
 
 
 class LogOMFWD(LogOM):
+    class CompressionMode(models.TextChoices):
+        NONE = "none", _("No compression")
+        SINGLE = "single", _("Compress message by message (no delay)")
+        STREAM_ALWAYS = "stream:always", _("Compress TCP data flow (delay may occur when sending)")
+
     target = models.TextField(null=False, default="1.2.3.4")
     port = models.IntegerField(
         null=False,
@@ -579,8 +586,22 @@ class LogOMFWD(LogOM):
     protocol = models.TextField(null=False, choices=OMFWD_PROTOCOL, default="tcp")
     zip_level = models.PositiveIntegerField(
         default=0,
+        blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(9)],
         help_text=_("Compression level for messages.")
+    )
+    compression_mode = models.TextField(
+        default=CompressionMode.NONE,
+        choices=CompressionMode.choices,
+        blank=True,
+        help_text=_("stream:always option requires a compatible destination."),
+        verbose_name=_("Compression mode")
+    )
+    flush_on_txend = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=_("Not flushing compression buffer can improve performances on high EPS only."),
+        verbose_name=_("Flush on TX End (disable on very high throughput only)")
     )
 
     ratelimit_interval = models.PositiveIntegerField(null=True, blank=True)
@@ -616,6 +637,8 @@ class LogOMFWD(LogOM):
             'protocol': self.protocol,
             'type': 'Syslog',
             'zip_level': self.zip_level,
+            'compression_mode': self.compression_mode,
+            'flush_on_txend': self.flush_on_txend,
             'ratelimit_interval': self.ratelimit_interval,
             'ratelimit_burst': self.ratelimit_burst,
             'output': self.target + ':' + str(self.port) + ' ({})'.format(self.protocol)

@@ -207,13 +207,15 @@ class LogOMFWDForm(LogOMForm):
     class Meta(LogOMForm.Meta):
         model = LogOMFWD
         fields = LogOMForm.Meta.fields + ('target', 'port', 'protocol', 'zip_level',
-                  'ratelimit_interval', 'ratelimit_burst')
+                  'compression_mode', 'flush_on_txend', 'ratelimit_interval', 'ratelimit_burst')
 
         widgets = {
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
             'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'select2'}),
             'zip_level': NumberInput(attrs={'class': 'form-control'}),
+            'compression_mode': Select(choices=LogOMFWD.CompressionMode.choices, attrs={'class': 'select2'}),
+            'flush_on_txend': CheckboxInput(attrs={'class': 'js-switch'}),
             'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
             'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
         }
@@ -222,7 +224,10 @@ class LogOMFWDForm(LogOMForm):
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
-        """ if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank"""
+        #Stream compression should only be used with tcp protocol
+        if cleaned_data.get('protocol') == "udp" and cleaned_data.get('compression_mode') == LogOMFWD.CompressionMode.STREAM_ALWAYS:
+            self.add_error("compression_mode", "Stream compression is incompatible with UDP.")
+        #if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank
         if cleaned_data.get('ratelimit_interval') and not cleaned_data.get('ratelimit_burst'):
             self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
         if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):

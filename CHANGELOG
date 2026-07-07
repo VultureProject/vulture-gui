@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [APPLICATIONS] [LOGOMFWD] Add possibility to compress syslog output flows
 
 
 ## [2.35.8] - 2026-06-15
