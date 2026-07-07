@@ -33,10 +33,10 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 import django
 django.setup()
 
-from django.db.models import Q
-from system.cluster.models import Cluster
-from services.frontend.models import Frontend
-from applications.logfwd.models import LogOMFWD
+from django.db.models import Q # noqa: E402
+from system.cluster.models import Cluster # noqa: E402
+from services.frontend.models import Frontend # noqa: E402
+from applications.logfwd.models import LogOMFWD # noqa: E402
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
