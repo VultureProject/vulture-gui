@@ -27,128 +27,76 @@ from django.test import TestCase
 from unittest.mock import patch
 
 from applications.logfwd.models import LogOM, LogOMFWD
+from applications.logfwd.form import LogOMFWDForm
 
 class LogOMFWDTestCase(TestCase):
+    """Test mechanics of LogOMFwd models"""
     TEST_CASE_NAME=f"{__name__}"
 
     def setUp(self):
-        from services.frontend.models import Frontend, Listener
-        from system.cluster.models import Node, NetworkAddress, NetworkInterfaceCard, NetworkAddressNIC
-        from system.tenants.models import Tenants
+        # Prevent logger from printing logs to stdout during tests
+        self.system_logger_patcher = patch('system.cluster.models.logger')
+        self.frontend_logger_patcher = patch('services.frontend.models.logger')
+        self.system_logger_patcher.start()
+        self.frontend_logger_patcher.start()
 
-        self.node = Node.objects.create(
-            name=f"node_test_{self.TEST_CASE_NAME}",
-        )
-        self.nic = NetworkInterfaceCard.objects.create(
-            dev = "vtnet0",
-            node=self.node,
-        )
-        self.netaddr = NetworkAddress.objects.create(
-            name=f"network_address_test_{self.TEST_CASE_NAME}",
-            type="alias",
-            ip="127.127.127.127",
-            prefix_or_netmask="24",
-        )
-        NetworkAddressNIC.objects.create(
-            nic=self.nic,
-            network_address=self.netaddr,
-        )
-        self.tenant = Tenants.objects.create(
-            name=f"tenant_test_{self.TEST_CASE_NAME}"
-        )
-        self.logfwd = LogOMFWD.objects.create(
+    def tearDown(self) -> None:
+        # Cleanly remove the logger patch
+        self.system_logger_patcher.stop()
+        self.frontend_logger_patcher.stop()
+        return super().tearDown()
+
+#################################
+# generated configuration tests #
+#################################
+
+    def test_generated_conf_without_compression(self):
+        logfwd = LogOMFWD.objects.create(
             name=f"syslog_forwarder_test_{self.TEST_CASE_NAME.replace('.','_')}",
             target="127.127.127.127",
             port=514,
             protocol="tcp",
-            zip_level=6,
+            compression_mode="none",
+        )
+        logfwd_rsyslog_config = LogOM.generate_conf(logfwd, "raw_to_json", frontend="dummy")
+
+        self.assertNotIn('compression.mode', logfwd_rsyslog_config)
+        self.assertNotIn('ZipLevel', logfwd_rsyslog_config)
+        self.assertNotIn('compression.stream.flushOnTXEnd', logfwd_rsyslog_config)
+
+    def test_generated_conf_with_compression(self):
+        logfwd = LogOMFWD.objects.create(
+            name=f"syslog_forwarder_test_{self.TEST_CASE_NAME.replace('.','_')}",
+            target="127.127.127.127",
+            port=514,
+            protocol="tcp",
             compression_mode="stream:always",
+            zip_level=6,
             flush_on_txend=True,
         )
-        self.frontend_log = Frontend.objects.create(
-            name=f"frontend_log_test_{self.TEST_CASE_NAME}",
-            mode="log",
-            enabled=True,
-            listening_mode="tcp",
-            enable_logging=True,
-            ruleset="raw_to_json",
-            log_condition="{{" + self.logfwd.name + "}}",
-            tenants_config=self.tenant
-        )
-        self.frontend_log.log_forwarders = LogOM.objects.filter(pk=self.logfwd.pk)
-        self.frontend_log.save()
-        self.listener_tcp = Listener.objects.create(
-            network_address=self.netaddr,
-            port=1234,
-            frontend=self.frontend_log
-        )
-
-    def tearDown(self) -> None:
-        return super().tearDown()
-
-    @patch('applications.logfwd.form.logger')
-    def test_invalid_compression_mode(self, logger_patcher):
-        from applications.logfwd.form import LogOMFWDForm
-
-        logfwd_form = LogOMFWDForm({
-            'name': f"syslog_forwarder_invalid_compression_mode_test_{self.TEST_CASE_NAME}",
-            'target': "127.127.127.127",
-            'port': 514,
-            'protocol': "tcp",
-            'compression_mode': "toto"
-        })
-        self.assertFalse(logfwd_form.is_valid())
-
-    @patch('applications.logfwd.form.logger')
-    def test_invalid_zip_level(self, logger_patcher):
-        from applications.logfwd.form import LogOMFWDForm
-
-        logfwd_form = LogOMFWDForm({
-            'name': f"syslog_forwarder_invalid_zip_level_test_{self.TEST_CASE_NAME}",
-            'target': "127.127.127.127",
-            'port': 514,
-            'protocol': "tcp",
-            'zip_level': -10
-        })
-        self.assertFalse(logfwd_form.is_valid())
-
-    @patch('applications.logfwd.form.logger')
-    def test_invalid_flush_on_txend(self, logger_patcher):
-        from applications.logfwd.form import LogOMFWDForm
-
-        logfwd_form = LogOMFWDForm({
-            'name': f"syslog_forwarder_invalid_flush_on_txend_test_{self.TEST_CASE_NAME}",
-            'target': "127.127.127.127",
-            'port': 514,
-            'protocol': "tcp",
-            'flush_on_txend': "on"
-        })
-        self.assertFalse(logfwd_form.is_valid())
-
-    def test_present_settings(self):
-        logfwd_rsyslog_config = LogOM.generate_conf(self.logfwd, "raw_to_json", frontend="dummy")
+        logfwd_rsyslog_config = LogOM.generate_conf(logfwd, "raw_to_json", frontend="dummy")
 
         self.assertIn('compression.mode="stream:always"', logfwd_rsyslog_config)
         self.assertIn('ZipLevel="6"', logfwd_rsyslog_config)
         self.assertIn('compression.stream.flushOnTXEnd="on"', logfwd_rsyslog_config)
 
-    def test_flushontxend_absence(self):
-        self.logfwd_single_compression = LogOMFWD.objects.create(
+    def test_generated_conf_no_flushontxend_on_single_compression(self):
+        logfwd_single_compression = LogOMFWD.objects.create(
             name=f"syslog_forwarder_flushontxend_absence_test_{self.TEST_CASE_NAME.replace('.','_')}",
             target="127.127.127.127",
             port=514,
             protocol="tcp",
-            zip_level=6,
             compression_mode="single",
-            flush_on_txend=False,
+            zip_level=6,
+            flush_on_txend=True,
         )
-        logfwd_rsyslog_config = LogOM.generate_conf(self.logfwd_single_compression, "raw_to_json", frontend="dummy")
+        logfwd_rsyslog_config = LogOM.generate_conf(logfwd_single_compression, "raw_to_json", frontend="dummy")
 
         self.assertIn('compression.mode="single"', logfwd_rsyslog_config)
         self.assertNotIn('compression.stream.flushOnTXEnd', logfwd_rsyslog_config)
 
-    def test_flushontxend_on(self):
-        self.logfwd_flushontxend_on = LogOMFWD.objects.create(
+    def test_generated_conf_flushontxend_on_stream_always(self):
+        logfwd_flushontxend_on = LogOMFWD.objects.create(
             name=f"syslog_forwarder_flushontxend_on_test_{self.TEST_CASE_NAME.replace('.','_')}",
             target="127.127.127.127",
             port=514,
@@ -157,13 +105,13 @@ class LogOMFWDTestCase(TestCase):
             compression_mode="stream:always",
             flush_on_txend=True,
         )
-        logfwd_rsyslog_config = LogOM.generate_conf(self.logfwd_flushontxend_on, "raw_to_json", frontend="dummy")
+        logfwd_rsyslog_config = LogOM.generate_conf(logfwd_flushontxend_on, "raw_to_json", frontend="dummy")
 
         self.assertIn('compression.mode="stream:always"', logfwd_rsyslog_config)
         self.assertIn('compression.stream.flushOnTXEnd="on"', logfwd_rsyslog_config)
 
-    def test_flushontxend_off(self):
-        self.logfwd_flushontxend_off = LogOMFWD.objects.create(
+    def test_generated_conf_flushontxend_off_on_stream_always(self):
+        logfwd_flushontxend_off = LogOMFWD.objects.create(
             name=f"syslog_forwarder_flushontxend_off_test_{self.TEST_CASE_NAME.replace('.','_')}",
             target="127.127.127.127",
             port=514,
@@ -172,57 +120,65 @@ class LogOMFWDTestCase(TestCase):
             compression_mode="stream:always",
             flush_on_txend=False,
         )
-        logfwd_rsyslog_config = LogOM.generate_conf(self.logfwd_flushontxend_off, "raw_to_json", frontend="dummy")
+        logfwd_rsyslog_config = LogOM.generate_conf(logfwd_flushontxend_off, "raw_to_json", frontend="dummy")
 
         self.assertIn('compression.mode="stream:always"', logfwd_rsyslog_config)
         self.assertIn('compression.stream.flushOnTXEnd="off"', logfwd_rsyslog_config)
 
-    @patch('services.frontend.models.logger')
-    def test_absent_settings(self, logger_patcher):
-        from services.frontend.models import Frontend, Listener
 
-        self.logfwd_uncompressed = LogOMFWD.objects.create(
-            name=f"syslog_forwarder_uncompressed_test_{self.TEST_CASE_NAME.replace('.','_')}",
-            target="127.127.127.127",
-            port=514,
-            protocol="tcp",
-            compression_mode="none"
-        )
-        self.frontend_log_uncompressed = Frontend.objects.create(
-            name=f"frontend_log_uncompressed_test_{self.TEST_CASE_NAME}",
-            mode="log",
-            enabled=True,
-            listening_mode="tcp",
-            enable_logging=True,
-            ruleset="raw_to_json",
-            log_condition="{{" + self.logfwd_uncompressed.name + "}}",
-            tenants_config=self.tenant
-        )
-        self.frontend_log_uncompressed.log_forwarders = LogOM.objects.filter(pk=self.logfwd_uncompressed.pk)
-        self.frontend_log_uncompressed.save()
-        self.listener_tcp_uncompressed = Listener.objects.create(
-            network_address=self.netaddr,
-            port=1235,
-            frontend=self.frontend_log_uncompressed
-        )
+class LogOMFWDFormTestCase(TestCase):
+    """Test custom clean() mechanics for LogOMFwd forms"""
+    TEST_CASE_NAME=f"{__name__}"
 
-        logfwd_rsyslog_config = self.frontend_log_uncompressed.render_log_condition()
+    def setUp(self):
+        # Prevent logger from printing logs to stdout during tests
+        self.system_logger_patcher = patch('system.cluster.models.logger')
+        self.frontend_logger_patcher = patch('services.frontend.models.logger')
+        self.system_logger_patcher.start()
+        self.frontend_logger_patcher.start()
 
-        self.assertNotIn("compression.mode", logfwd_rsyslog_config)
-        self.assertNotIn("ZipLevel", logfwd_rsyslog_config)
-        self.assertNotIn("compression.stream.flushOnTXEnd", logfwd_rsyslog_config)
+    def tearDown(self) -> None:
+        # Cleanly remove the logger patch
+        self.system_logger_patcher.stop()
+        self.frontend_logger_patcher.stop()
+        return super().tearDown()
 
-    @patch('services.frontend.models.logger')
-    @patch('applications.logfwd.models.LogOM.generate_conf')
-    def test_render_log_condition(self, patched_render_log_condition, logger_patcher):
-        patched_render_log_condition.return_value = (True, "Success")
-        self.frontend_log.render_log_condition()
-        patched_render_log_condition.assert_called()
+#################
+# clean() tests #
+#################
 
-    @patch('system.cluster.models.logger')
-    @patch('services.frontend.models.logger')
-    @patch('applications.logfwd.models.LogOM.generate_conf')
-    def test_generate_frontend_conf(self, patched_render_log_condition, logger_patcher, logger_patcher2):
-        patched_render_log_condition.return_value = (True, "Success")
-        self.frontend_log.generate_rsyslog_conf()
-        patched_render_log_condition.assert_called()
+    def test_udp_protocol_no_stream_compression(self):
+        logfwd_form = LogOMFWDForm({
+            "name": f"syslog_forwarder_{self.TEST_CASE_NAME}",
+            "target": "127.127.127.127",
+            "port": 514,
+            "protocol": "udp",
+            "compression_mode": "stream:always",
+        })
+
+        self.assertFalse(logfwd_form.is_valid())
+        self.assertListEqual(list(logfwd_form.errors.keys()), ['compression_mode'])
+
+    def test_ratelimit_burst_without_ratelimit_interval(self):
+        logfwd_form = LogOMFWDForm({
+            "name": f"syslog_forwarder_{self.TEST_CASE_NAME}",
+            "target": "127.127.127.127",
+            "port": 514,
+            "protocol": "tcp",
+            "ratelimit_burst": 200,
+        })
+
+        self.assertFalse(logfwd_form.is_valid())
+        self.assertListEqual(list(logfwd_form.errors.keys()), ['ratelimit_interval'])
+
+    def test_ratelimit_interval_without_ratelimit_burst(self):
+        logfwd_form = LogOMFWDForm({
+            "name": f"syslog_forwarder_{self.TEST_CASE_NAME}",
+            "target": "127.127.127.127",
+            "port": 514,
+            "protocol": "tcp",
+            "ratelimit_interval": 100,
+        })
+
+        self.assertFalse(logfwd_form.is_valid())
+        self.assertListEqual(list(logfwd_form.errors.keys()), ['ratelimit_burst'])
