@@ -109,12 +109,14 @@ class LogOM (models.Model):
     enabled = models.BooleanField(default=True)
     queue_size = models.PositiveIntegerField(
         default=10000,
+        blank=True,
         help_text=_("Size of the queue in nb of message"),
         verbose_name=_("Size of the queue in nb of message"),
         validators=[MinValueValidator(100)]
     )
     dequeue_size = models.PositiveIntegerField(
         default=300,
+        blank=True,
         help_text=_("Size of the batch to dequeue"),
         verbose_name=_("Size of the batch to dequeue"),
         validators=[MinValueValidator(1)]
