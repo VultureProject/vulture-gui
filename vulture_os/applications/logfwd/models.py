@@ -586,17 +586,20 @@ class LogOMFWD(LogOM):
     protocol = models.TextField(null=False, choices=OMFWD_PROTOCOL, default="tcp")
     zip_level = models.PositiveIntegerField(
         default=0,
+        blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(9)],
         help_text=_("Compression level for messages.")
     )
     compression_mode = models.TextField(
         default=CompressionMode.NONE,
         choices=CompressionMode.choices,
+        blank=True,
         help_text=_("stream:always option requires a compatible destination."),
         verbose_name=_("Compression mode")
     )
     flush_on_txend = models.BooleanField(
         default=True,
+        blank=True,
         help_text=_("Not flushing compression buffer can improve performances on high EPS only."),
         verbose_name=_("Flush on TX End (disable on very high throughput only)")
     )
