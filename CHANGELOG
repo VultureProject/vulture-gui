@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [APPLICATIONS] [LOGOMFWD] Add possibility to compress syslog output flows
+### Changed
+- [DEPENDENCIES]
+  - djongo v1.3.7.2 -> v1.3.7.3
 ### Fixed
 - [SETTINGS] Increase serverSelectionTimeoutMS in DATABASES configuration
 
