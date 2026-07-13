@@ -38,7 +38,7 @@ from django.utils.timezone import now as timezone_now
 from gui.models.rss import RSS
 from toolkit.network.network import get_proxy
 from applications.reputation_ctx.models import ReputationContext
-from services.rsyslogd.rsyslog import restart_service as restart_rsyslog_service
+from services.rsyslogd.rsyslog import reload_service as reload_rsyslog_service
 from system.exceptions import VultureSystemError
 
 import subprocess
@@ -182,7 +182,7 @@ def update_reputation_ctx_now(node_logger=logger):
             node_logger.error("Crontab::update_reputation_ctx::error: Failed to write reputation database '{}' : {}"
                          .format(reputation_ctx.name, e))
 
-    restart_rsyslog_service(node_logger)
+    reload_rsyslog_service(node_logger)
     node_logger.info("Crontab::update_reputation_ctx: Task ended.")
     return True
 
