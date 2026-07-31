@@ -13,7 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [APPLICATIONS] [LOGOMFWD] Add possibility to compress syslog output flows
 ### Changed
 - [DEPENDENCIES]
+  - aiohttp 3.13.5 -> 3.14.1
   - djongo 1.3.7.2 -> 1.3.7.3
+  - httplib2 0.31.2 -> 0.32.0
+  - pillow 12.2.0 -> 12.3.0
+  - soupsieve 2.5 -> 2.8.4
 - [CRON] Reload Rsyslog instead of restart after reputation context update
 ### Fixed
 - [SETTINGS] Increase serverSelectionTimeoutMS in DATABASES configuration
