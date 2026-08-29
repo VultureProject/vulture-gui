@@ -90,7 +90,7 @@ class WorkflowTestCase(TestCase):
             serial=1
         )
         self.tls_profile = TLSProfile.objects.create(
-            name=f"tlp_profile_test_{self.TEST_CASE_NAME}",
+            name=f"tls_profile_test_{self.TEST_CASE_NAME}",
             x509_certificate=self.node_cert,
 
         )
