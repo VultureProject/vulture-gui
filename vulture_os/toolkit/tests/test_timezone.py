@@ -72,43 +72,43 @@ class TimezoneTestCase(SimpleTestCase):
 # get_offset_string #
 #####################
     def test_offset_string_positive_int(self):
-        self.assertEquals(get_offset_string(4200), "+01:10")
+        self.assertEqual(get_offset_string(4200), "+01:10")
 
     def test_offset_string_positive_timedelta(self):
-        self.assertEquals(get_offset_string(timedelta(hours=2, minutes=3)), "+02:03")
+        self.assertEqual(get_offset_string(timedelta(hours=2, minutes=3)), "+02:03")
 
     def test_offset_string_negative_int(self):
-        self.assertEquals(get_offset_string(-14400), "-04:00")
+        self.assertEqual(get_offset_string(-14400), "-04:00")
 
     def test_offset_string_negative_timedelta(self):
-        self.assertEquals(get_offset_string(timedelta(hours=-3, minutes=-25)), "-03:25")
+        self.assertEqual(get_offset_string(timedelta(hours=-3, minutes=-25)), "-03:25")
 
     def test_offset_string_zero_int(self):
-        self.assertEquals(get_offset_string(0), "+00:00")
+        self.assertEqual(get_offset_string(0), "+00:00")
 
 ############################
 # get_timezone_transitions #
 ############################
     def test_get_timezone_transitions_europe_paris(self):
         tz = ZoneInfo("Europe/Paris")
-        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
-        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        start_date = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=dt_timezone.utc)
         timestamps = get_timezone_transitions(tz, start_date, end_date)
         self.assertIsNotNone(timestamps)
         self.assertIsNot(len(timestamps), 0)
 
     def test_get_timezone_transitions_never_empty(self):
         for tz in get_transient_timezones():
-            start_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
-            end_date = datetime(2025, 1, 1, tzinfo=timezone.utc)
+            start_date = datetime(2024, 1, 1, tzinfo=dt_timezone.utc)
+            end_date = datetime(2025, 1, 1, tzinfo=dt_timezone.utc)
             timestamps = get_timezone_transitions(tz, start_date, end_date)
             self.assertIsNotNone(timestamps, f"{tz} is None")
             self.assertIsNot(len(timestamps), 0, f"{tz} returns no timezone transition")
 
     def test_get_timezone_transitions_contents(self):
         tz = ZoneInfo("Europe/Paris")
-        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
-        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        start_date = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=dt_timezone.utc)
         timestamps = get_timezone_transitions(tz, start_date, end_date)
         for timestamp in timestamps:
             self.assertListEqual(
@@ -121,8 +121,8 @@ class TimezoneTestCase(SimpleTestCase):
 
     def test_get_timezone_transitions_ensure_tz_aware(self):
         tz = ZoneInfo("Europe/Paris")
-        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
-        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        start_date = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=dt_timezone.utc)
         timestamps = get_timezone_transitions(tz, start_date, end_date)
         for timestamp in timestamps:
             self.assertTrue(timezone.is_aware(timestamp['utc_timestamp']))
@@ -130,20 +130,20 @@ class TimezoneTestCase(SimpleTestCase):
 
     def test_get_timezone_transitions_ensure_tz_utc(self):
         tz = ZoneInfo("Europe/Paris")
-        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
-        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        start_date = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=dt_timezone.utc)
         timestamps = get_timezone_transitions(tz, start_date, end_date)
         for timestamp in timestamps:
-            self.assertEqual(timestamp['utc_timestamp'].tzinfo, timezone.utc)
-            self.assertEqual(timestamp['local_timestamp'].tzinfo, timezone.utc)
+            self.assertEqual(timestamp['utc_timestamp'].tzinfo, dt_timezone.utc)
+            self.assertEqual(timestamp['local_timestamp'].tzinfo, dt_timezone.utc)
 
     def test_get_timezone_transitions_local_value(self):
         tz = ZoneInfo("Europe/Paris")
-        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
-        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        start_date = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=dt_timezone.utc)
         timestamps = get_timezone_transitions(tz, start_date, end_date)
         for timestamp in timestamps:
-            self.assertEquals(
+            self.assertEqual(
                 timestamp['local_timestamp'],
                 timestamp['utc_timestamp'] + timedelta(seconds=timestamp['offset_seconds'])
             )
@@ -152,15 +152,15 @@ class TimezoneTestCase(SimpleTestCase):
 # get_local_boundaries #
 ########################
     def test_get_local_boundaries_no_change(self):
-        timestamp_utc = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc = datetime(year=2025, month=3, day=5, hour=12, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc = datetime(year=2025, month=3, day=5, hour=12, minute=45, second=57, tzinfo=dt_timezone.utc)
         transition = {
             "utc_timestamp": timestamp_utc,
             "local_timestamp": timestamp_loc,
             "offset_seconds": 3600,
         }
 
-        self.assertEquals(
+        self.assertEqual(
             get_local_boundaries(transition, transition, transition),
             set()
         )
@@ -172,11 +172,11 @@ class TimezoneTestCase(SimpleTestCase):
         and will last for the difference in offset between the old and new local timestamps.
         Then, the new offset will apply
         """
-        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=13, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=13, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset1 = 7200
-        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=12, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=12, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset2 = 3600
         diff_offset = abs(offset2 - offset1)
         transition1 = {
@@ -206,11 +206,11 @@ class TimezoneTestCase(SimpleTestCase):
         and will end at the latest local timestamp.
         Then, the new offset will apply
         """
-        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=12, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=12, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset1 = 3600
-        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=13, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=13, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset2 = 7200
         diff_offset = abs(offset2 - offset1)
         transition1 = {
@@ -240,11 +240,11 @@ class TimezoneTestCase(SimpleTestCase):
         and will end at the current timestamp.
         Then, the new offset will apply
         """
-        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=12, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=12, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset1 = 3600
-        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=13, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=13, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset2 = 7200
         diff_offset = abs(offset2 - offset1)
         transition1 = {
@@ -274,11 +274,11 @@ class TimezoneTestCase(SimpleTestCase):
         and will last for the difference in offset between the old and new local timestamps.
         Then, the new offset will apply
         """
-        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=13, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=13, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset1 = 7200
-        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=12, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=12, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset2 = 3600
         diff_offset = abs(offset2 - offset1)
         transition1 = {
@@ -308,11 +308,11 @@ class TimezoneTestCase(SimpleTestCase):
         and will last for the difference in offset between the old and new local timestamps.
         Then, the new offset will apply
         """
-        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=10, minute=15, second=57, tzinfo=timezone.utc)
+        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=10, minute=15, second=57, tzinfo=dt_timezone.utc)
         offset1 = -5400
-        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=9, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=9, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset2 = -7200
         diff_offset = abs(offset2 - offset1)
         transition1 = {
@@ -342,11 +342,11 @@ class TimezoneTestCase(SimpleTestCase):
         and will end at the latest local timestamp.
         Then, the new offset will apply
         """
-        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=10, minute=44, second=57, tzinfo=timezone.utc)
+        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=10, minute=44, second=57, tzinfo=dt_timezone.utc)
         offset1 = -3660
-        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=11, minute=30, second=57, tzinfo=timezone.utc)
+        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=11, minute=30, second=57, tzinfo=dt_timezone.utc)
         offset2 = -900
         diff_offset = abs(offset2 - offset1)
         transition1 = {
@@ -376,11 +376,11 @@ class TimezoneTestCase(SimpleTestCase):
         and will end at the current timestamp.
         Then, the new offset will apply
         """
-        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=7, minute=45, second=57, tzinfo=timezone.utc)
+        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=7, minute=45, second=57, tzinfo=dt_timezone.utc)
         offset1 = -14400
-        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=9, minute=15, second=57, tzinfo=timezone.utc)
+        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=9, minute=15, second=57, tzinfo=dt_timezone.utc)
         offset2 = -9000
         diff_offset = abs(offset2 - offset1)
         transition1 = {
@@ -410,11 +410,11 @@ class TimezoneTestCase(SimpleTestCase):
         and will last for the difference in offset between the old and new local timestamps.
         Then, the new offset will apply
         """
-        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=9, minute=15, second=57, tzinfo=timezone.utc)
+        timestamp_utc1 = datetime(year=2025, month=3, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc1 = datetime(year=2025, month=3, day=5, hour=9, minute=15, second=57, tzinfo=dt_timezone.utc)
         offset1 = -9000
-        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=timezone.utc)
-        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=8, minute=15, second=57, tzinfo=timezone.utc)
+        timestamp_utc2 = datetime(year=2025, month=4, day=5, hour=11, minute=45, second=57, tzinfo=dt_timezone.utc)
+        timestamp_loc2 = datetime(year=2025, month=4, day=5, hour=8, minute=15, second=57, tzinfo=dt_timezone.utc)
         offset2 = -12600
         diff_offset = abs(offset2 - offset1)
         transition1 = {
