@@ -42,7 +42,7 @@ logger = logging.getLogger('api')
 class NetworkInterfaceCardAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
-        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
+        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public")
 
         dev = request.GET.get('dev')
         node_name = request.GET.get('node_name')
