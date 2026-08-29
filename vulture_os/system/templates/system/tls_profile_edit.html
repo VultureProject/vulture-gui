@@ -19,40 +19,47 @@
       <div class="col-md-12">
         <form id="tls_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
           {% csrf_token %}
+          <div class="panel panel-danger">
+            <div class="panel-heading">
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
+                </ul>
+                <h4 class="panel-title">{% translate "Configuration error" %}</h4>
+              {% endif %}
+              {% if form.non_field_errors %}
+                <h4 class="panel-title"><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
+              {% endif %}
+            </div>
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {{ form.non_field_errors|safe }}
+                </div>
+              {% endif %}
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre class="console-type">{{ save_error.0 }}</pre>
+                    </div> <!-- /.tab-pane -->
+                    <div class="tab-pane" id="tab_2">
+                      <pre class="console-type">{{ save_error.1 }}</pre>
+                    </div> <!-- /.tab-pane -->
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
           <div class="panel">
             <div class="panel-heading">
                 <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "TLS Profile" %}</h1>
             </div>
             <div class="panel-body">
-              {# Print form errors correctly #}
-              {% if form.non_field_errors %}
-                <div class="alert alert-danger alert-dismissible">
-                  <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
-                  <div class="tab-content no-padding">
-                    {{ form.non_field_errors|safe }}
-                  </div>
-                </div>
-              {% endif %}
-              {# If there is save/configuration errors #}
-              {% if save_error %}
-                <div class="alert alert-danger alert-dismissible nav-tabs-custom">
-                  <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                    <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
-                    <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
-                    <li class="pull-left header"><i class="fa fa-inbox"></i>{% translate "Configuration error" %}</li>
-                  </ul>
-                  <div class="tab-content no-padding">
-                    <div class="tab-pane active" id="tab_1">
-                      <pre>{{ save_error.0 }}</pre>
-                    </div>
-                    <!-- /.tab-pane -->
-                    <div class="tab-pane" id="tab_2">
-                      <pre>{{ save_error.1 }}</pre>
-                    </div>
-                    <!-- /.tab-pane -->
-                  </div>
-                </div>
-              {% endif %}
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
