@@ -53,6 +53,8 @@ class PFSettings(models.Model):
         """ Dictionary used to create configuration file
         :return     Dictionnary of configuration parameters
         """
+        node = Cluster.get_current_node()
+
         return {
             'nodes': Node.objects.exclude(name=settings.HOSTNAME),
             'carp_allowed_interfaces': set(NetworkInterfaceCard.objects.filter(
@@ -61,7 +63,10 @@ class PFSettings(models.Model):
             'global_config': Cluster.get_global_config(),
             'jail_addresses': JAIL_ADDRESSES,
             'databases_path': DATABASES_PATH,
-            'proxy': get_sanitized_proxy()
+            'proxy': get_sanitized_proxy(),
+            'listeners_enabled': node.get_listeners_enabled,
+            'forwarders_enabled': node.get_forwarders_enabled,
+            'backends_enabled': node.get_backends_enabled
         }
 
     def __str__(self):
