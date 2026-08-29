@@ -143,6 +143,12 @@ VERIFY_CHOICES = (
     ('required', 'Required')
 )
 
+CERTIFICATE_TYPE_CHOICES = (
+    ('internal', "Self-Signed Vulture Certificate"),
+    ('letsencrypt', "Let's Encrypt Certificate"),
+    ('external', "External certificate")
+)
+
 CERT_PATH = path_join(settings.DBS_PATH, "pki")
 ACME_PATH = path_join(settings.DBS_PATH, "acme")
 CERT_OWNER = "vlt-os:haproxy"

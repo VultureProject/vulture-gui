@@ -36,7 +36,7 @@ from django.urls import reverse
 from gui.forms.form_utils import DivErrorList
 from services.frontend.models import Frontend
 from system.exceptions import VultureSystemConfigError
-from system.pki.form import TLSProfileForm, X509ExternalCertificateForm, X509InternalCertificateForm
+from system.pki.form import TLSProfileForm, X509CertificateForm, X509ExternalCertificateForm
 from system.pki.models import CIPHER_SUITES, PROTOCOLS_HANDLER, TLSProfile, X509Certificate
 from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
@@ -129,36 +129,35 @@ def pki_edit(request, object_id=None, api=False):
     if api:
         # Don't allow setting internal or letsencrypt certs through APIs
         request.JSON['type'] = "external"
-        request.JSON["is_external"] = True
+        request.JSON['is_external'] = True
         cert_type = request.JSON.get("type")
         form = X509ExternalCertificateForm(request.JSON or None, instance=x509_model, error_class=DivErrorList)
     else:
         cert_type = request.POST.get("type")
-        form = X509ExternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
+        if cert_type in ("internal", "letsencrypt") or (x509_model and not x509_model.is_external):
+            form = X509CertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
+        else:
+            form = X509ExternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
 
-    """ Internal Vulture Certificate """
-    if request.method in ("POST", "PUT") and cert_type in ("internal", "letsencrypt"):
-        form = X509InternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
-        if form.is_valid():
+    if request.method in ("POST", "PUT") and form.is_valid():
+        if cert_type == "external":
+            """ External certificate """
+            pki = form.save(commit=False)
+            pki.is_external = True
+            pki.is_vulture_ca = False
+            pki.save()
+
+        else:
+            """ Internal Vulture or LetsEncrypt Certificate """
             cn = form.cleaned_data['cn']
             name = form.cleaned_data['name']
 
-            if form.cleaned_data.get("type") == "letsencrypt":
-                X509Certificate().gen_letsencrypt(cn, name)
-            elif form.cleaned_data.get("type") == "internal":
-                X509Certificate(name=name, cn=cn).gen_cert()
-
-            return HttpResponseRedirect('/system/pki/')
-        else:
-            form = X509InternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
-
-    elif request.method in ("POST", "PUT") and form.is_valid() and cert_type == "external":
-
-        """ External certificate """
-        pki = form.save(commit=False)
-        pki.is_external = True
-        pki.is_vulture_ca = False
-        pki.save()
+            if not x509_model:
+                if cert_type == "letsencrypt":
+                    X509Certificate().gen_letsencrypt(cn, name)
+                elif cert_type == "internal":
+                    X509Certificate(name=name, cn=cn).gen_cert()
+            pki = form.save()
 
         """ Reload HAProxy on certificate change """
         if X509Certificate.objects.filter(certificate_of__listener__isnull=False, id=pki.id).exists() or X509Certificate.objects.filter(certificate_of__server__isnull=False, id=pki.id).exists():
