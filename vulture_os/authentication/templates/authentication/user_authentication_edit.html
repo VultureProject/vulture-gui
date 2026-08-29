@@ -769,10 +769,13 @@
 
   /* Switchery mandatory code */
   var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
-    elems.forEach(function(html) {
+  elems.forEach(function(html) {
     var switchery = new Switchery(html, {
       'color': '#FA9834',
     });
+    if (html.attributes['data-original-title']) {
+      $(html.nextElementSibling).tooltip({title: html.attributes['data-original-title'].value, placement: "bottom"});
+    }
   });
 
   let enable_oauth_switch = new Switchery(document.querySelector("#id_enable_oauth"));
@@ -1185,7 +1188,13 @@
   });
 
   /* Initialize select2 objects */
-  $('.select2').select2();
+  let selects = Array.prototype.slice.call(document.querySelectorAll('.select2'));
+  selects.forEach(function(html) {
+    $(html).select2();
+    if (html.attributes['data-original-title']) {
+      $(html.nextElementSibling).tooltip({title: html.attributes['data-original-title'].value, placement: "bottom"});
+    }
+  });
 
 //}); // end of function()
 

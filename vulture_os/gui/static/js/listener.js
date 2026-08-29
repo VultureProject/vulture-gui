@@ -216,7 +216,13 @@ $(function() {
     });
 
     /* Re-initialize select2 objects */
-    $('.select2').select2();
+    let selects = Array.prototype.slice.call(document.querySelectorAll('.select2'));
+    selects.forEach(function(html) {
+      $(html).select2();
+      if (html.attributes['data-original-title']) {
+        $(html.nextElementSibling).tooltip({title: html.attributes['data-original-title'].value, placement: "bottom"});
+      }
+    });
 
     /* Re-initialize Tag-Editor events */
     /* Try to destroy old tag-editor elements */
@@ -928,6 +934,9 @@ $(function(){
     var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
     elems.forEach(function(html) {
       redrawSwitch(html);
+      if (html.attributes['data-original-title']) {
+        $(html.nextElementSibling).tooltip({title: html.attributes['data-original-title'].value, placement: "bottom"});
+      }
     });
     $("#id_kafka_options").tagsinput({
                     freeInput: true,

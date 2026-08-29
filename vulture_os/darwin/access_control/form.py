@@ -25,6 +25,7 @@ __doc__ = 'Access Control Form'
 from darwin.access_control.models import (AccessControl, CRITERION_CHOICES,
                                           CONVERTER_CHOICES, OPERATOR_CHOICES,
                                           FLAGS_CHOICES)
+from gui.forms.form_utils import bootstrap_tooltips
 from django.conf import settings
 from django import forms
 import logging
@@ -45,6 +46,7 @@ class AccessControlForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         for field_name in ['acls', 'rules']:
             self.fields[field_name].required = False
 

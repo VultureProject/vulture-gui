@@ -28,6 +28,7 @@ from django.forms import ModelForm, TextInput, Textarea
 
 # Django project imports
 from applications.parser.models import Parser
+from gui.forms.form_utils import bootstrap_tooltips
 
 # Required exceptions imports
 
@@ -56,6 +57,7 @@ class ParserForm(ModelForm):
     def __init__(self, *args, **kwargs):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         # Convert list field from model to text input comma separated
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
