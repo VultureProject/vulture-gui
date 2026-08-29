@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [GUI] [NETIF] Prevent out of bounds carp configuration
 
 
 ## [2.36.0] - 2026-07-15

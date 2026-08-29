@@ -31,6 +31,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
 
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Q
 from django.db.utils import DatabaseError
 from django.utils.translation import gettext as _
@@ -973,7 +974,7 @@ class NetworkAddress(models.Model):
 
     ip = models.GenericIPAddressField(blank=True, null=True)
     prefix_or_netmask = models.TextField(blank=True)
-    carp_vhid = models.PositiveSmallIntegerField(default=0)
+    carp_vhid = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(255)])
     vlan = models.PositiveSmallIntegerField(default=0)
     fib = models.PositiveSmallIntegerField(default=0)
     iface_id = models.SmallIntegerField(
