@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CRON] Reload Rsyslog instead of restart after reputation context update
 ### Fixed
 - [SETTINGS] Increase serverSelectionTimeoutMS in DATABASES configuration
+- [SCRIPT] [WIPE] Fix HAProxy jail name
 
 
 ## [2.35.8] - 2026-06-15
