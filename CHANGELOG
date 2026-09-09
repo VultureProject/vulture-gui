@@ -6,7 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [DEPENDENCIES]
+  - djongo v1.3.7.3 -> v1.3.7.4
 ### Fixed
+- [SERVICES] [PF] Recent pfctl requires root permissions
 - [SCRIPT] [WIPE] Fix HAProxy jail name
 
 
