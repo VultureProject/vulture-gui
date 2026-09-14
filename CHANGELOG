@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.36.1] - 2026-09-14
+### Changed
+- [DEPENDENCIES]
+    - djongo 1.3.7.3 -> 1.3.7.4
+
+
 ## [2.36.0] - 2026-07-15
 ### Added
 - [APPLICATIONS] [LOGOMFWD] Add possibility to compress syslog output flows
