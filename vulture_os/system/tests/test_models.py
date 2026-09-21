@@ -54,7 +54,7 @@ class NetworkInterfaceCardTestCase(TestCase):
 
         interface_list = nic.get_list()
         self.assertIsInstance(interface_list, list)
-        self.assertEquals(set(["vtnet0", "em1"]), set(interface_list))
+        self.assertEqual(set(["vtnet0", "em1"]), set(interface_list))
 
     def test_has_ipv4_simple(self):
         nic = NetworkInterfaceCard.objects.create(
@@ -110,7 +110,7 @@ class NetworkInterfaceCardTestCase(TestCase):
         self.assertIsNotNone(nic_addr)
         self.assertIsNotNone(nic_addr2)
 
-        self.assertEquals(nic.networkaddress_set.count(), 2)
+        self.assertEqual(nic.networkaddress_set.count(), 2)
 
         self.assertTrue(nic.has_ipv4)
         self.assertFalse(nic.has_ipv6)
@@ -170,7 +170,7 @@ class NetworkInterfaceCardTestCase(TestCase):
         self.assertIsNotNone(nic_addr)
         self.assertIsNotNone(nic_addr2)
 
-        self.assertEquals(nic.networkaddress_set.count(), 2)
+        self.assertEqual(nic.networkaddress_set.count(), 2)
 
         self.assertFalse(nic.has_ipv4)
         self.assertTrue(nic.has_ipv6)
@@ -234,10 +234,10 @@ class NetworkAddressTestCase(TestCase):
         self.assertIsNotNone(net_addr_ipv4)
         self.assertIsNotNone(net_addr_ipv6)
         self.assertIsNotNone(net_addr_lagg)
-        self.assertEquals(net_addr_ipv4.version, 4)
-        self.assertEquals(net_addr_ipv6.version, 6)
+        self.assertEqual(net_addr_ipv4.version, 4)
+        self.assertEqual(net_addr_ipv6.version, 6)
         # Oh that's ugly...
-        self.assertEquals(net_addr_lagg.version, '')
+        self.assertEqual(net_addr_lagg.version, '')
 
     def test_ip_cidr(self):
         net_addr_ipv4 = NetworkAddress.objects.create(
@@ -260,9 +260,9 @@ class NetworkAddressTestCase(TestCase):
         self.assertIsNotNone(net_addr_ipv4)
         self.assertIsNotNone(net_addr_ipv6)
         self.assertIsNotNone(net_addr_lagg)
-        self.assertEquals(net_addr_ipv4.ip_cidr, '127.0.0.1/24')
-        self.assertEquals(net_addr_ipv6.ip_cidr, 'fe80::1/64')
-        self.assertEquals(net_addr_lagg.ip_cidr, '')
+        self.assertEqual(net_addr_ipv4.ip_cidr, '127.0.0.1/24')
+        self.assertEqual(net_addr_ipv6.ip_cidr, 'fe80::1/64')
+        self.assertEqual(net_addr_lagg.ip_cidr, '')
 
     def test_family(self):
         net_addr_ipv4 = NetworkAddress.objects.create(
@@ -285,9 +285,9 @@ class NetworkAddressTestCase(TestCase):
         self.assertIsNotNone(net_addr_ipv4)
         self.assertIsNotNone(net_addr_ipv6)
         self.assertIsNotNone(net_addr_lagg)
-        self.assertEquals(net_addr_ipv4.family, 'inet')
-        self.assertEquals(net_addr_ipv6.family, 'inet6')
-        self.assertEquals(net_addr_lagg.family, '')
+        self.assertEqual(net_addr_ipv4.family, 'inet')
+        self.assertEqual(net_addr_ipv6.family, 'inet6')
+        self.assertEqual(net_addr_lagg.family, '')
 
     def test_main_iface(self):
         net_addr_ipv4 = NetworkAddress.objects.create(
@@ -336,7 +336,7 @@ class NetworkAddressTestCase(TestCase):
         self.assertIsNotNone(net_addr_ipv6)
         self.assertIsNotNone(net_addr_lagg)
         self.assertIsNotNone(net_addr_vlan)
-        self.assertEquals(net_addr_ipv4.main_iface, 'vtnet0')
-        self.assertEquals(net_addr_ipv6.main_iface, 'vtnet1_alias1')
-        self.assertEquals(net_addr_lagg.main_iface, 'lagg2')
-        self.assertEquals(net_addr_vlan.main_iface, 'vlan42')
+        self.assertEqual(net_addr_ipv4.main_iface, 'vtnet0')
+        self.assertEqual(net_addr_ipv6.main_iface, 'vtnet1_alias1')
+        self.assertEqual(net_addr_lagg.main_iface, 'lagg2')
+        self.assertEqual(net_addr_vlan.main_iface, 'vlan42')
