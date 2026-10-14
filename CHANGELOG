@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SERVICES] [PF] Recent pfctl requires root permissions
 - [SCRIPT] [WIPE] Fix HAProxy jail name
 - [NET2MONGO] Correctly read defaultrouter from rc.conf
+- [SETTINGS] Mitigate mbuf exhaution after MongoDB 7.0 migration
 
 
 ## [2.36.1] - 2026-09-14
