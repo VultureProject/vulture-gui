@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [SERVICES] [NGINX] enable http2 in configuration
 ### Fixed
+- [SERVICES] [RSYSLOG] Correctly forward pstats logs every minute instead of every second
 - [SERVICES] [PF] Correct pf log output file template for log rotation
 - [SERVICES] [PF] Recent pfctl requires root permissions
 - [SCRIPT] [WIPE] Fix HAProxy jail name
