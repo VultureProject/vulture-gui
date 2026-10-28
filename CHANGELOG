@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - [SERVICES] [NGINX] enable http2 in configuration
+- [DEPENDENCIES]
+    - aiohttp 3.14.1 -> 3.14.5
+    - certifi 2025.8.3 -> 2026.10.23
+    - dnspython 2.6.1 -> 2.9.0
+    - jsonfield 3.1.0 -> 3.2.0
+    - oauthlib 3.2.2 -> 4.0.0
+    - pillow 12.3.0 -> 13.0.0
+    - pyasn1 0.6.3 -> 0.6.5
+    - pyjwt 2.13.0 -> 2.15.1
+    - pymongo 4.6.3 -> 4.19.0
+    - soupsieve 2.8.4 -> 3.0.4
+    - sqlparse 0.5.5 -> 0.6.0
+    - urllib3 2.7.0 -> 2.8.0
+    - werkzeug 3.1.8 -> 3.1.9
+    - yarl 1.22.0 -> 1.25.1
 ### Fixed
 - [SERVICES] [RSYSLOG] Correctly forward pstats logs every minute instead of every second
 - [SERVICES] [PF] Correct pf log output file template for log rotation
