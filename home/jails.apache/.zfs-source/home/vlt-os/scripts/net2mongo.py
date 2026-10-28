@@ -163,6 +163,9 @@ if __name__ == "__main__":
                 if not found_gateway:
                     logger.info("Node::network_sync: line does not define network configuration, ignoring")
                     continue
+                else:
+                    defaultgateway = config.get('defaultgateway', "")
+                    defaultgateway_ipv6 = config.get('defaultgateway_ipv6', "")
 
             """ If the current line is interface configuration """
             if ifconfig_parsed:

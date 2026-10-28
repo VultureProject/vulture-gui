@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SERVICES] [PF] Correct pf log output file template for log rotation
 - [SERVICES] [PF] Recent pfctl requires root permissions
 - [SCRIPT] [WIPE] Fix HAProxy jail name
+- [NET2MONGO] Correctly read defaultrouter from rc.conf
 
 
 ## [2.36.1] - 2026-09-14
