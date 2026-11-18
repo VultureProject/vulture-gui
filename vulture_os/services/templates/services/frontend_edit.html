@@ -35,7 +35,7 @@
             <div class="panel-body">
               {# Print form errors correctly #}
               {% if form.non_field_errors %}
-                <div>
+                <div class="alert alert-danger">
                   {{ form.non_field_errors|safe }}
                 </div>
               {% endif %}
