@@ -39,9 +39,9 @@ done
 
 # Reset Haproxy configurations
 /bin/echo "Resetting Haproxy configurations..."
-/usr/sbin/jexec hapropxy service haproxy stop
+/usr/sbin/jexec haproxy service haproxy stop
 /usr/bin/find /usr/local/etc/haproxy.d/ -not -name backend_session.cfg -type f -delete
-/usr/sbin/jexec hapropxy service haproxy start
+/usr/sbin/jexec haproxy service haproxy start
 
 # Reset Redis
 /bin/echo "Resetting Redis configurations..."
@@ -55,7 +55,6 @@ done
 
 # Reset Mongodb
 /bin/echo "Resetting Mongodb configurations..."
-/bin/echo "Resetting redis configurations..."
 /usr/sbin/jexec mongodb service mongod stop
 /usr/bin/find /zroot/mongodb/var/db/mongodb/* -not -name "mongod.log" -delete
 

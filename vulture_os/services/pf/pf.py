@@ -224,7 +224,7 @@ def test_config(node_logger, config):
     node_logger.info("PF::test_config: testing configuration")
     node_logger.debug(f"PF::test_config: configuration is {config}")
     try:
-        check_output(["/sbin/pfctl", "-n", "-f", "-"],
+        check_output(["/usr/local/bin/sudo", "/sbin/pfctl", "-n", "-f", "-"],
                         stderr=subprocess.STDOUT,
                         input=config.encode('utf8')).decode('utf8')
     except CalledProcessError as e:

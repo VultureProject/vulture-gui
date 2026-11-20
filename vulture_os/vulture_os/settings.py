@@ -177,7 +177,8 @@ DATABASES = {
             'tlsCertificateKeyFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CERT_FILE', 'pki/node.pem')),
             'tlsCAFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CA_FILE', 'pki/ca.pem')),
             'tlsAllowInvalidHostnames': True,
-            'READPREFERENCE': "primaryPreferred"
+            'READPREFERENCE': "primaryPreferred",
+            'serverMonitoringMode': "poll"
         },
     }
 }
