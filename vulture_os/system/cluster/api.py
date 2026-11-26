@@ -43,6 +43,7 @@ from system.cluster.models import Cluster
 from system.pki.models import X509Certificate
 from toolkit.network.network import is_valid_ip, is_valid_hostname
 from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.network.network import is_valid_ip4, is_valid_ip6
 from services.frontend.models import Frontend
 from workflow.models import Workflow
 
@@ -78,14 +79,16 @@ def cluster_add(request):
         })
 
     """ Make the new_node_name resolvable on all Cluster nodes """
-    new_node_is_resolvable = current_node.api_request("toolkit.network.network.make_hostname_resolvable", (new_node_name, new_node_ip))
-    if not new_node_is_resolvable.get('status', False) or 'instances' not in new_node_is_resolvable:
-        logger.error(f"Error while creating new 'network.make_hostname_resolvable' task: {new_node_is_resolvable.get('message')}")
-        return JsonResponse({
-            'status': False,
-            'message': 'Error during repl_add. Check logs'
-        })
-    new_node_is_resolvable = new_node_is_resolvable.get('instances', [None])[0]
+
+    if is_valid_ip4(new_node_ip) or is_valid_ip6(new_node_ip):
+        new_node_is_resolvable = current_node.api_request("toolkit.network.network.make_hostname_resolvable", (new_node_name, new_node_ip))
+        if not new_node_is_resolvable.get('status', False) or 'instances' not in new_node_is_resolvable:
+            logger.error(f"Error while creating new 'network.make_hostname_resolvable' task: {new_node_is_resolvable.get('message')}")
+            return JsonResponse({
+                'status': False,
+                'message': 'Error during repl_add. Check logs'
+            })
+        new_node_is_resolvable = new_node_is_resolvable.get('instances', [None])[0]
 
     """ Now the new node should be in the cluster: Add its management IP """
     new_node = Node()
@@ -163,12 +166,15 @@ def cluster_add(request):
         logger.error("Could not connect to the MongoDB replicaset")
 
     if status:
-        Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (new_node_name, new_node_ip))
+        if is_valid_ip4(new_node_ip) or is_valid_ip6(new_node_ip):
+            Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (new_node_name, new_node_ip))
         Cluster.api_request("services.pf.pf.gen_config")
         Cluster.api_request("services.pf.pf.reload_service")
         new_node.api_request('toolkit.network.network.refresh_nic')
-        for other_node in Node.objects.exclude(id=new_node.id):
-            new_node.api_request("toolkit.network.network.make_hostname_resolvable", (other_node.name, other_node.management_ip))
+
+        if is_valid_ip4(new_node_ip) or is_valid_ip6(new_node_ip):
+            for other_node in Node.objects.exclude(id=new_node.id):
+                new_node.api_request("toolkit.network.network.make_hostname_resolvable", (other_node.name, other_node.management_ip))
 
         """ Update uri of internal Log Forwarder """
         logfwd = LogOMMongoDB.objects.get()
