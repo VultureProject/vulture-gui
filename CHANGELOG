@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [GUI] Bump axios version to 1.16.1
 - [SETTINGS] [MONGODB] set connectTimeoutMS and socketTimeoutMS so no database operation can wait forever
+### Fixed
+- [API_PARSER] Avoid collectors' potential hang after fork
 
 
 ## [2.36.2] - 2026-11-23
