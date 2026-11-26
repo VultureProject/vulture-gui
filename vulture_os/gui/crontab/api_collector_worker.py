@@ -41,11 +41,28 @@ def ensure_django():
         django.setup()
 
 
+def set_process_title(title):
+    """Show `title` as this process' command line in ps/top/procstat output.
+
+    Uses FreeBSD's setproctitle(3); silently does nothing where libc does not provide it.
+    """
+    try:
+        import ctypes
+        import ctypes.util
+        libc = ctypes.CDLL(ctypes.util.find_library("c"))
+        # A leading '-' makes setproctitle(3) replace the whole command line
+        # instead of prefixing the title with the program name.
+        libc.setproctitle(b"-%s", title.encode("utf-8", "replace"))
+    except (OSError, AttributeError, TypeError):
+        pass
+
+
 def run_collector(frontend_id):
     """Entry point of a collector child process.
 
     The frontend is fetched again here, with a MongoClient that belongs to this process only.
     """
+    set_process_title(f"vulture: api_collector [frontend={frontend_id}]")
     ensure_django()
     from services.frontend.models import Frontend
     from gui.crontab.api_clients_parser import execute_parser, logger
@@ -56,6 +73,7 @@ def run_collector(frontend_id):
         logger.warning(f"API Collector: frontend {frontend_id} does not exist anymore, skipping",
                        extra={'frontend': str(frontend_id)})
         return
+    set_process_title(f"vulture: api_collector [frontend={frontend.pk} collector={frontend.api_collector.pk}] {frontend.name} ({frontend.api_parser_type})")
     execute_parser(frontend)
 
 
