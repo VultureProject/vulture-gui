@@ -28,6 +28,7 @@ from django.forms import (ModelForm, TextInput, Textarea, HiddenInput, ModelChoi
                           ValidationError)
 
 # Django project imports
+from gui.forms.form_utils import bootstrap_tooltips
 from system.cluster.models import Node, NetworkAddress
 
 # Logger configuration imports
@@ -74,6 +75,7 @@ class NodeForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         # Set non required fields
         for field_name in ['backends_outgoing_ip', 'logom_outgoing_ip', 'pstats_forwarders']:
             self.fields[field_name].required = False

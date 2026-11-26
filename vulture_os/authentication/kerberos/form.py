@@ -28,6 +28,7 @@ from django.forms import ModelForm, TextInput, FileInput
 
 # Django project imports
 from authentication.kerberos.models import KerberosRepository
+from gui.forms.form_utils import bootstrap_tooltips
 from toolkit.auth.kerberos_client import test_keytab
 
 # Extern modules imports
@@ -59,6 +60,7 @@ class KerberosRepositoryForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
 
     def clean_keytab(self):
         """ Test keytab """
