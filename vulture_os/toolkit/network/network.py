@@ -162,6 +162,10 @@ def parse_ifconfig_values(line, config):
     if carp_prio_match := re.search(PATTERN_CARP_ADVSKEW, line):
         logger.debug(f"parse_ifconfig_values: Found CARP skew {carp_prio_match.group('priority')}")
         config['carp_priority'] = carp_prio_match.group("priority")
+        # Ignore CARP declaration with incompatible priority
+        if int(config['carp_priority']) < 1 or int(config['carp_priority']) > 254:
+            logger.error(f"Node::parse_ifconfig_values: CARP skew value out of bounds: {carp_prio_match.group('priority')}")
+            return False
 
     if carp_pass_match := re.search(PATTERN_CARP_PASS, line):
         logger.debug("parse_ifconfig_values: Found CARP password")
