@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [COMMANDS] Add a new `run_api_collector` management command, allowing to interactively run collectors using their ID or name
+### Changed
+- [API_PARSER] Use the new `run_api_collector` management command to improve CPU overhead of starting each collector
+### Fixed
+- [API_PARSER] Use a better forking strategy to avoid locked processes while allowing collectors using processes to work correctly
 
 
 ## [2.36.3] - 2026-11-26

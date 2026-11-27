@@ -23,20 +23,20 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Job to fetch API Clients log'
 
 
+import json
+import logging
+import os
+import subprocess
+import sys
+
 from django.conf import settings
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
-from gui.crontab.api_collector_worker import run_collector
-from time import sleep
-import multiprocessing
-import os
 
-import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
-# Module imported by the forkserver helper process before any collector is forked from it.
-FORKSERVER_PRELOAD = "gui.crontab.api_collector_worker"
+MANAGE_PY = os.path.join(settings.BASE_DIR, "manage.py")
 
 
 def execute_parser(frontend):
@@ -85,58 +85,39 @@ def node_selected(current_node, frontend):
                 return True
     return False
 
-def forkserver_context():
-    """ Return a multiprocessing context whose children are forked from a clean helper process.
-
-    Collectors must not be forked from this process: it holds an open MongoClient whose monitor
-    threads run TLS handshakes, and a native (OpenSSL/libc) lock held by one of those threads at
-    fork() time stays locked forever in the child, which then hangs before doing anything.
-    The "forkserver" start method execs a helper process that preloads Django (app registry only,
-    no database connection, no thread) and forks every collector from there.
-    """
-    # Python 3.11's forkserver ignores the sys.path it is handed and silently skips a preload
-    # module it cannot import: expose the project to the helper through the environment instead.
-    python_path = [p for p in os.environ.get("PYTHONPATH", "").split(os.pathsep) if p]
-    if settings.BASE_DIR not in python_path:
-        os.environ["PYTHONPATH"] = os.pathsep.join([settings.BASE_DIR] + python_path)
-
-    ctx = multiprocessing.get_context("forkserver")
-    ctx.set_forkserver_preload([FORKSERVER_PRELOAD])
-    return ctx
-
-def api_clients_parser():
+def selected_frontend_ids():
+    """ Return the ids of the API frontends this node has to collect """
     current_node = Cluster.get_current_node()
-
-    frontends = [
-        frontend for frontend in Frontend.objects.filter(
+    return [
+        frontend.pk for frontend in Frontend.objects.filter(
             mode="log",
             listening_mode="api",
             enabled=True
         )
         if node_selected(current_node, frontend)
     ]
-    if not frontends:
-        return
 
-    ctx = forkserver_context()
-    processes = []
-    for frontend in frontends:
-        p = ctx.Process(target=run_collector, name=frontend.name, args=(frontend.pk,))
-        p.start()
-        processes.append(p)
+def api_clients_parser():
+    # The collectors are forked by the run_api_collectors management command, run as a separate
+    # manage.py process: this cron process already holds an open MongoClient when the job starts
+    # (Django's system checks import forms that query the database), and forking from a process
+    # whose monitor threads may be inside OpenSSL can hang the collectors forever.
+    # The command is started first so that its Django setup overlaps the selection below.
+    spawner = subprocess.Popen([sys.executable, MANAGE_PY, "run_api_collectors", "--stdin"],
+                               stdin=subprocess.PIPE)
 
-    some_alive = True
-    while some_alive:
-        finished = []
-        some_alive = False
+    frontend_ids = []
+    try:
+        frontend_ids = selected_frontend_ids()
+    finally:
+        try:
+            spawner.stdin.write(json.dumps(frontend_ids).encode())
+            spawner.stdin.close()
+        except (OSError, AttributeError) as e:
+            logger.error(f"API Collector: could not send frontends to the spawner: {e}", extra={'frontend': 'main'})
+        spawner.wait()
 
-        sleep(1)
-
-        for p in processes:
-            p.join(0)
-            if p.is_alive():
-                some_alive = True
-            else:
-                finished.append(p)
-
-        processes = list(set(processes) - set(finished))
+    if spawner.returncode != 0:
+        logger.critical(f"API Collector: spawner exited with code {spawner.returncode}, "
+                        "collectors did not run (see the cron job's stderr)", extra={'frontend': 'main'})
+        raise RuntimeError(f"API collector spawner exited with code {spawner.returncode}")
